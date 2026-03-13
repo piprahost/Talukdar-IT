@@ -20,6 +20,7 @@
         @include('partials._footer')
     </div>
     
+    @yield('modals')
     @include('partials._scripts')
 </body>
 </html>

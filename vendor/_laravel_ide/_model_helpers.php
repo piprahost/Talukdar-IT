@@ -6546,6 +6546,8 @@ namespace App\Models {
      * @property string $product_name
      * @property string $service_number
      * @property int $id
+     * @property-read mixed $payment_status
+     * @property-read mixed $payment_method_label
      * @property-read \App\Models\User $creator
      * @property-read \Illuminate\Database\Eloquent\Collection<int, \App\Models\ServiceReturn> $returns
      * @property-read int|null $returns_count

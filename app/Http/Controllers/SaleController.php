@@ -44,7 +44,16 @@ class SaleController extends Controller
         $sales = $query->paginate(15)->appends($request->query());
         $customers = Customer::active()->latest()->get();
 
-        return view('sales.sales.index', compact('sales', 'customers'));
+        $stats = [
+            'total'         => Sale::count(),
+            'completed'     => Sale::where('status', 'completed')->count(),
+            'draft'         => Sale::where('status', 'draft')->count(),
+            'total_revenue' => Sale::where('status', 'completed')->sum('total_amount'),
+            'total_due'     => Sale::where('payment_status', '!=', 'paid')->sum('due_amount'),
+            'unpaid_count'  => Sale::where('payment_status', 'unpaid')->count(),
+        ];
+
+        return view('sales.sales.index', compact('sales', 'customers', 'stats'));
     }
 
     public function create()
@@ -60,25 +69,27 @@ class SaleController extends Controller
     {
         $this->authorizePermission('create sales');
         $validated = $request->validate([
-            'customer_id' => ['nullable', 'exists:customers,id'],
-            'customer_name' => ['nullable', 'string', 'max:255'],
-            'customer_phone' => ['nullable', 'string', 'max:20'],
+            'customer_id'      => ['nullable', 'exists:customers,id'],
+            'customer_name'    => ['nullable', 'string', 'max:255'],
+            'customer_phone'   => ['nullable', 'string', 'max:20'],
             'customer_address' => ['nullable', 'string'],
-            'sale_date' => ['required', 'date'],
-            'due_date' => ['nullable', 'date', 'after_or_equal:sale_date'],
-            'tax_amount' => ['nullable', 'numeric', 'min:0'],
-            'discount_amount' => ['nullable', 'numeric', 'min:0'],
-            'paid_amount' => ['nullable', 'numeric', 'min:0'],
-            'notes' => ['nullable', 'string'],
-            'internal_notes' => ['nullable', 'string'],
-            'items' => ['required', 'array', 'min:1'],
+            'sale_date'        => ['required', 'date'],
+            'due_date'         => ['nullable', 'date', 'after_or_equal:sale_date'],
+            'tax_amount'       => ['nullable', 'numeric', 'min:0'],
+            'discount_amount'  => ['nullable', 'numeric', 'min:0'],
+            'paid_amount'      => ['nullable', 'numeric', 'min:0'],
+            'payment_method'   => ['required', 'in:cash,card,mobile_banking,bank_transfer,cheque,other'],
+            'bank_account_id'  => ['nullable', 'exists:bank_accounts,id', 'required_if:payment_method,card,mobile_banking,bank_transfer,cheque'],
+            'notes'            => ['nullable', 'string'],
+            'internal_notes'   => ['nullable', 'string'],
+            'items'            => ['required', 'array', 'min:1'],
             'items.*.product_id' => ['required', 'exists:products,id'],
-            'items.*.barcode' => ['nullable', 'string'],
+            'items.*.barcode'    => ['nullable', 'string'],
             'items.*.unit_price' => ['required', 'numeric', 'min:0'],
-            'items.*.discount' => ['nullable', 'numeric', 'min:0'],
-            'items.*.quantity' => ['required', 'integer', 'min:1'],
-            'items.*.notes' => ['nullable', 'string'],
-            'status' => ['nullable', 'in:draft,completed'],
+            'items.*.discount'   => ['nullable', 'numeric', 'min:0'],
+            'items.*.quantity'   => ['required', 'integer', 'min:1'],
+            'items.*.notes'      => ['nullable', 'string'],
+            'status'             => ['nullable', 'in:draft,completed'],
         ]);
 
         // Use database transaction for data consistency
@@ -227,6 +238,37 @@ class SaleController extends Controller
         }
 
         return back()->with('success', 'Sale completed successfully. Stock updated.');
+    }
+
+    public function collectPayment(Request $request, Sale $sale)
+    {
+        $this->authorizePermission('edit sales');
+
+        if ($sale->due_amount <= 0) {
+            return back()->with('error', 'This sale has no outstanding due amount.');
+        }
+
+        $validated = $request->validate([
+            'payment_amount'  => ['required', 'numeric', 'min:0.01', 'max:' . $sale->due_amount],
+            'payment_method'  => ['required', 'in:cash,card,mobile_banking,bank_transfer,cheque,other'],
+            'bank_account_id' => ['nullable', 'exists:bank_accounts,id', 'required_if:payment_method,card,mobile_banking,bank_transfer,cheque'],
+        ], [
+            'payment_amount.max' => 'Payment amount cannot exceed the due amount (৳' . number_format($sale->due_amount, 2) . ').',
+        ]);
+
+        $newPaid = $sale->paid_amount + $validated['payment_amount'];
+        $newDue  = max(0, $sale->total_amount - $newPaid);
+
+        $sale->update([
+            'paid_amount'     => $newPaid,
+            'due_amount'      => $newDue,
+            'payment_status'  => $newDue == 0 ? 'paid' : 'partial',
+            'payment_method'  => $validated['payment_method'],
+            'bank_account_id' => $validated['bank_account_id'] ?? $sale->bank_account_id,
+        ]);
+
+        return redirect()->route('sales.show', $sale)
+            ->with('success', 'Payment of ৳' . number_format($validated['payment_amount'], 2) . ' collected successfully.');
     }
 
     public function printInvoice(Sale $sale)

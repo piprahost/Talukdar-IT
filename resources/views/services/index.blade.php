@@ -4,6 +4,47 @@
 @section('page-title', 'Service Orders')
 
 @section('content')
+
+{{-- ── Summary Stats ── --}}
+<div class="row g-3 mb-3">
+    <div class="col-6 col-md-2">
+        <div class="table-card p-3 text-center h-100">
+            <div style="font-size:10px;font-weight:700;text-transform:uppercase;letter-spacing:.5px;color:#6b7280;margin-bottom:4px;">Total Orders</div>
+            <div style="font-size:24px;font-weight:800;color:#111;">{{ $stats['total'] }}</div>
+        </div>
+    </div>
+    <div class="col-6 col-md-2">
+        <div class="table-card p-3 text-center h-100" style="border-left:3px solid #f97316;">
+            <div style="font-size:10px;font-weight:700;text-transform:uppercase;letter-spacing:.5px;color:#6b7280;margin-bottom:4px;">Pending</div>
+            <div style="font-size:24px;font-weight:800;color:#f97316;">{{ $stats['pending'] }}</div>
+        </div>
+    </div>
+    <div class="col-6 col-md-2">
+        <div class="table-card p-3 text-center h-100" style="border-left:3px solid #3b82f6;">
+            <div style="font-size:10px;font-weight:700;text-transform:uppercase;letter-spacing:.5px;color:#6b7280;margin-bottom:4px;">In Progress</div>
+            <div style="font-size:24px;font-weight:800;color:#3b82f6;">{{ $stats['in_progress'] }}</div>
+        </div>
+    </div>
+    <div class="col-6 col-md-2">
+        <div class="table-card p-3 text-center h-100" style="border-left:3px solid #16a34a;">
+            <div style="font-size:10px;font-weight:700;text-transform:uppercase;letter-spacing:.5px;color:#6b7280;margin-bottom:4px;">Completed</div>
+            <div style="font-size:24px;font-weight:800;color:#16a34a;">{{ $stats['completed'] }}</div>
+        </div>
+    </div>
+    <div class="col-6 col-md-2">
+        <div class="table-card p-3 text-center h-100" style="border-left:3px solid #ef4444;">
+            <div style="font-size:10px;font-weight:700;text-transform:uppercase;letter-spacing:.5px;color:#6b7280;margin-bottom:4px;">Unpaid Orders</div>
+            <div style="font-size:24px;font-weight:800;color:#ef4444;">{{ $stats['unpaid'] }}</div>
+        </div>
+    </div>
+    <div class="col-6 col-md-2">
+        <div class="table-card p-3 text-center h-100" style="border-left:3px solid #ef4444;">
+            <div style="font-size:10px;font-weight:700;text-transform:uppercase;letter-spacing:.5px;color:#6b7280;margin-bottom:4px;">Total Due</div>
+            <div style="font-size:18px;font-weight:800;color:#ef4444;">৳{{ number_format($stats['total_due'], 2) }}</div>
+        </div>
+    </div>
+</div>
+
 <div class="table-card">
     <div class="table-card-header">
         <h6><i class="fas fa-laptop-medical me-2"></i>All Service Orders</h6>
@@ -15,7 +56,7 @@
     </div>
     
     <!-- Search and Filters -->
-    <div class="mb-4">
+    <div class="mb-4 p-4">
         <form method="GET" action="{{ route('services.index') }}" id="filterForm">
             <!-- Search Bar -->
             <div class="row filter-row mb-3">
@@ -160,57 +201,67 @@
                             <strong>৳{{ number_format($service->service_cost, 2) }}</strong>
                         </td>
                         <td>
-                            @if($service->due_amount == 0)
-                                <span class="badge bg-success">Paid</span>
-                            @elseif($service->paid_amount == 0)
-                                <span class="badge bg-danger">Unpaid</span>
+                            @if($service->payment_status === 'fully_paid')
+                                <span class="badge bg-success">✓ Paid</span>
+                            @elseif($service->payment_status === 'partial')
+                                <span class="badge bg-warning text-dark">Partial</span>
                             @else
-                                <span class="badge bg-warning">Partial</span>
+                                <span class="badge bg-danger">Unpaid</span>
                             @endif
                             <br>
                             <small class="text-muted">
                                 Paid: ৳{{ number_format($service->paid_amount, 2) }}<br>
-                                Due: ৳{{ number_format($service->due_amount, 2) }}
+                                @if($service->due_amount > 0)
+                                    <span class="text-danger fw-semibold">Due: ৳{{ number_format($service->due_amount, 2) }}</span>
+                                @else
+                                    Due: ৳0.00
+                                @endif
                             </small>
                         </td>
                         <td>
                             @php
                                 $statusConfig = [
-                                    'pending' => ['label' => 'Pending', 'class' => 'bg-secondary', 'icon' => 'fa-clock', 'color' => '#6c757d'],
-                                    'in_progress' => ['label' => 'In Progress', 'class' => 'bg-info', 'icon' => 'fa-spinner', 'color' => '#0dcaf0'],
-                                    'completed' => ['label' => 'Completed', 'class' => 'bg-success', 'icon' => 'fa-check-circle', 'color' => '#198754'],
-                                    'delivered' => ['label' => 'Delivered', 'class' => 'bg-primary', 'icon' => 'fa-truck', 'color' => '#0d6efd'],
-                                    'cancelled' => ['label' => 'Cancelled', 'class' => 'bg-danger', 'icon' => 'fa-times-circle', 'color' => '#dc3545']
+                                    'pending' => ['label' => 'Pending', 'class' => 'bg-secondary', 'icon' => 'fa-clock'],
+                                    'in_progress' => ['label' => 'In Progress', 'class' => 'bg-info', 'icon' => 'fa-spinner'],
+                                    'completed' => ['label' => 'Completed', 'class' => 'bg-success', 'icon' => 'fa-check-circle'],
+                                    'delivered' => ['label' => 'Delivered', 'class' => 'bg-primary', 'icon' => 'fa-truck'],
+                                    'cancelled' => ['label' => 'Cancelled', 'class' => 'bg-danger', 'icon' => 'fa-times-circle']
                                 ];
                                 $currentStatus = $statusConfig[$service->status] ?? $statusConfig['pending'];
                             @endphp
-                            <div class="status-select-wrapper" data-service-id="{{ $service->id }}">
-                                <button type="button" class="status-select-btn status-select-btn-{{ $service->id }}" 
-                                        onclick="toggleStatusDropdown({{ $service->id }})"
-                                        data-current-status="{{ $service->status }}"
-                                        style="--status-color: {{ $currentStatus['color'] }};">
-                                    <i class="fas {{ $currentStatus['icon'] }} me-2"></i>
-                                    <span class="status-text">{{ $currentStatus['label'] }}</span>
-                                    <i class="fas fa-chevron-down ms-2 status-arrow"></i>
-                                </button>
-                                <div class="status-dropdown" id="statusDropdown{{ $service->id }}">
-                                    @foreach($statusConfig as $statusValue => $statusData)
-                                        @if($statusValue != $service->status)
-                                            <a href="#" class="status-option" 
-                                               onclick="event.preventDefault(); event.stopPropagation(); selectStatus({{ $service->id }}, '{{ $statusValue }}', '{{ $statusData['label'] }}', '{{ $statusData['icon'] }}', '{{ $statusData['color'] }}'); return false;">
-                                                <i class="fas {{ $statusData['icon'] }} me-2" style="color: {{ $statusData['color'] }};"></i>
-                                                <span>{{ $statusData['label'] }}</span>
-                                            </a>
-                                        @endif
-                                    @endforeach
-                                </div>
+                            <div class="d-flex flex-column gap-1">
+                                @can('update service-status')
+                                    <span
+                                        role="button"
+                                        tabindex="0"
+                                        class="badge {{ $currentStatus['class'] }}"
+                                        style="cursor: pointer;"
+                                        data-bs-toggle="modal"
+                                        data-bs-target="#serviceStatusModal"
+                                        data-service-id="{{ $service->id }}"
+                                        data-service-number="{{ $service->service_number }}"
+                                        data-current-status="{{ $service->status }}">
+                                        <i class="fas {{ $currentStatus['icon'] }} me-1"></i>
+                                        {{ $currentStatus['label'] }}
+                                    </span>
+                                @else
+                                    <span class="badge {{ $currentStatus['class'] }}">
+                                        <i class="fas {{ $currentStatus['icon'] }} me-1"></i>
+                                        {{ $currentStatus['label'] }}
+                                    </span>
+                                @endcan
                             </div>
                         </td>
                         <td>
                             <div class="btn-group" role="group">
-                                <a href="{{ route('services.show', $service) }}" class="btn btn-sm btn-outline-primary" title="View">
+                                <a href="{{ route('services.show', $service) }}" class="btn btn-sm btn-outline-primary" title="View Details">
                                     <i class="fas fa-eye"></i>
                                 </a>
+                                @if($service->due_amount > 0)
+                                <a href="{{ route('services.show', $service) }}#collectPayment" class="btn btn-sm btn-success" title="Collect Due Payment">
+                                    <i class="fas fa-hand-holding-usd"></i>
+                                </a>
+                                @endif
                                 <a href="{{ route('services.print', $service) }}" class="btn btn-sm btn-outline-info" title="Print Memo" target="_blank">
                                     <i class="fas fa-print"></i>
                                 </a>
@@ -303,6 +354,44 @@ document.addEventListener('DOMContentLoaded', function() {
                     document.getElementById('filterForm').submit();
                 }, 200);
             }
+        });
+    }
+
+    // Service status modal: populate and handle status selection
+    const statusModalEl = document.getElementById('serviceStatusModal');
+    if (statusModalEl && typeof bootstrap !== 'undefined') {
+        statusModalEl.addEventListener('show.bs.modal', function(event) {
+            const trigger = event.relatedTarget;
+            if (!trigger) return;
+            const serviceId = trigger.getAttribute('data-service-id');
+            const serviceNumber = trigger.getAttribute('data-service-number');
+            const currentStatus = trigger.getAttribute('data-current-status') || 'pending';
+            const form = statusModalEl.querySelector('form');
+            const serviceIdInput = statusModalEl.querySelector('input[name="service_id"]');
+            const statusInput = statusModalEl.querySelector('input[name="status"]');
+            const titleSpan = statusModalEl.querySelector('#serviceStatusModalService');
+            if (form) form.action = '{{ url("services") }}/' + serviceId + '/status';
+            if (serviceIdInput) serviceIdInput.value = serviceId;
+            if (statusInput) statusInput.value = currentStatus;
+            if (titleSpan) titleSpan.textContent = '#' + serviceNumber;
+            statusModalEl.querySelectorAll('[data-status-value]').forEach(function(btn) {
+                var val = btn.getAttribute('data-status-value');
+                btn.classList.toggle('btn-success', val === currentStatus);
+                btn.classList.toggle('btn-outline-secondary', val !== currentStatus);
+            });
+        });
+        statusModalEl.querySelectorAll('[data-status-value]').forEach(function(btn) {
+            btn.addEventListener('click', function() {
+                var value = this.getAttribute('data-status-value');
+                var statusInput = statusModalEl.querySelector('input[name="status"]');
+                if (statusInput) statusInput.value = value;
+                statusModalEl.querySelectorAll('[data-status-value]').forEach(function(b) {
+                    b.classList.remove('btn-success');
+                    b.classList.add('btn-outline-secondary');
+                });
+                this.classList.remove('btn-outline-secondary');
+                this.classList.add('btn-success');
+            });
         });
     }
 });
@@ -630,5 +719,41 @@ function showNotification(message, type) {
 }
 </script>
 @endpush
+@endsection
+
+@section('modals')
+<!-- Service Status Change Modal -->
+<div class="modal fade" id="serviceStatusModal" tabindex="-1" aria-labelledby="serviceStatusModalLabel" aria-hidden="true">
+    <div class="modal-dialog modal-dialog-centered">
+        <div class="modal-content">
+            <div class="modal-header">
+                <h5 class="modal-title" id="serviceStatusModalLabel">
+                    <i class="fas fa-laptop-medical me-2"></i>Update Service Status <small class="text-muted" id="serviceStatusModalService"></small>
+                </h5>
+                <button type="button" class="btn-close" data-bs-dismiss="modal" aria-label="Close"></button>
+            </div>
+            <form method="POST" action="#">
+                @csrf
+                @method('PATCH')
+                <input type="hidden" name="service_id">
+                <input type="hidden" name="status">
+                <div class="modal-body">
+                    <p class="text-muted mb-3">Choose a new status for this service order:</p>
+                    <div class="d-flex flex-wrap gap-2">
+                        <button type="button" class="btn btn-outline-secondary" data-status-value="pending">Pending</button>
+                        <button type="button" class="btn btn-outline-secondary" data-status-value="in_progress">In Progress</button>
+                        <button type="button" class="btn btn-outline-secondary" data-status-value="completed">Completed</button>
+                        <button type="button" class="btn btn-outline-secondary" data-status-value="delivered">Delivered</button>
+                        <button type="button" class="btn btn-outline-secondary" data-status-value="cancelled">Cancelled</button>
+                    </div>
+                </div>
+                <div class="modal-footer">
+                    <button type="button" class="btn btn-secondary" data-bs-dismiss="modal">Close</button>
+                    <button type="submit" class="btn btn-primary">Save changes</button>
+                </div>
+            </form>
+        </div>
+    </div>
+</div>
 @endsection
 

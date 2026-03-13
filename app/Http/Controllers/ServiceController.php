@@ -54,7 +54,18 @@ class ServiceController extends Controller
         }
         
         $services = $query->paginate(15)->appends($request->query());
-        return view('services.index', compact('services'));
+
+        // Summary stats (always based on all records, not filtered)
+        $stats = [
+            'total'       => Service::count(),
+            'pending'     => Service::where('status', 'pending')->count(),
+            'in_progress' => Service::where('status', 'in_progress')->count(),
+            'completed'   => Service::where('status', 'completed')->count(),
+            'total_due'   => Service::sum('due_amount'),
+            'unpaid'      => Service::where('paid_amount', 0)->where('service_cost', '>', 0)->count(),
+        ];
+
+        return view('services.index', compact('services', 'stats'));
     }
 
     /**
@@ -74,29 +85,25 @@ class ServiceController extends Controller
     {
         $this->authorizePermission('create services');
         $validated = $request->validate([
-            'product_name' => ['required', 'string', 'max:255'],
-            'serial_number' => ['nullable', 'string', 'max:255'],
-            'problem_notes' => ['nullable', 'string'],
-            'service_notes' => ['nullable', 'string'],
-            'service_cost' => ['required', 'numeric', 'min:0'],
-            'receive_date' => ['required', 'date'],
-            'delivery_date' => ['nullable', 'date', 'after_or_equal:receive_date'],
-            'customer_name' => ['required', 'string', 'max:255'],
-            'customer_phone' => ['required', 'string', 'max:20'],
-            'customer_address' => ['nullable', 'string'],
-            'paid_amount' => ['required', 'numeric', 'min:0'],
-            'due_amount' => ['nullable', 'numeric', 'min:0'],
-            'payment_method' => ['required', 'in:cash,card,mobile_banking,bank_transfer,cheque,other'],
+            'product_name'    => ['required', 'string', 'max:255'],
+            'serial_number'   => ['nullable', 'string', 'max:255'],
+            'problem_notes'   => ['nullable', 'string'],
+            'service_notes'   => ['nullable', 'string'],
+            'service_cost'    => ['required', 'numeric', 'min:0'],
+            'receive_date'    => ['required', 'date'],
+            'delivery_date'   => ['nullable', 'date', 'after_or_equal:receive_date'],
+            'customer_name'   => ['required', 'string', 'max:255'],
+            'customer_phone'  => ['required', 'string', 'max:20'],
+            'customer_address'=> ['nullable', 'string'],
+            'paid_amount'     => ['required', 'numeric', 'min:0', 'lte:service_cost'],
+            'payment_method'  => ['required', 'in:cash,card,mobile_banking,bank_transfer,cheque,other'],
             'bank_account_id' => ['nullable', 'exists:bank_accounts,id', 'required_if:payment_method,card,mobile_banking,bank_transfer,cheque'],
-            'status' => ['required', 'in:pending,in_progress,completed,delivered,cancelled'],
-            'internal_notes' => ['nullable', 'string'],
+            'status'          => ['required', 'in:pending,in_progress,completed,delivered,cancelled'],
+            'internal_notes'  => ['nullable', 'string'],
         ]);
 
-        // Calculate due amount if not provided
-        if (!isset($validated['due_amount'])) {
-            $validated['due_amount'] = max(0, $validated['service_cost'] - $validated['paid_amount']);
-        }
-
+        // Always recalculate due amount server-side
+        $validated['due_amount'] = max(0, $validated['service_cost'] - $validated['paid_amount']);
         $validated['created_by'] = auth()->id();
 
         Service::create($validated);
@@ -132,33 +139,59 @@ class ServiceController extends Controller
     {
         $this->authorizePermission('edit services');
         $validated = $request->validate([
-            'product_name' => ['required', 'string', 'max:255'],
-            'serial_number' => ['nullable', 'string', 'max:255'],
-            'problem_notes' => ['nullable', 'string'],
-            'service_notes' => ['nullable', 'string'],
-            'service_cost' => ['required', 'numeric', 'min:0'],
-            'receive_date' => ['required', 'date'],
-            'delivery_date' => ['nullable', 'date', 'after_or_equal:receive_date'],
-            'customer_name' => ['required', 'string', 'max:255'],
-            'customer_phone' => ['required', 'string', 'max:20'],
-            'customer_address' => ['nullable', 'string'],
-            'paid_amount' => ['required', 'numeric', 'min:0'],
-            'due_amount' => ['nullable', 'numeric', 'min:0'],
-            'payment_method' => ['required', 'in:cash,card,mobile_banking,bank_transfer,cheque,other'],
+            'product_name'    => ['required', 'string', 'max:255'],
+            'serial_number'   => ['nullable', 'string', 'max:255'],
+            'problem_notes'   => ['nullable', 'string'],
+            'service_notes'   => ['nullable', 'string'],
+            'service_cost'    => ['required', 'numeric', 'min:0'],
+            'receive_date'    => ['required', 'date'],
+            'delivery_date'   => ['nullable', 'date', 'after_or_equal:receive_date'],
+            'customer_name'   => ['required', 'string', 'max:255'],
+            'customer_phone'  => ['required', 'string', 'max:20'],
+            'customer_address'=> ['nullable', 'string'],
+            'paid_amount'     => ['required', 'numeric', 'min:0', 'lte:service_cost'],
+            'payment_method'  => ['required', 'in:cash,card,mobile_banking,bank_transfer,cheque,other'],
             'bank_account_id' => ['nullable', 'exists:bank_accounts,id', 'required_if:payment_method,card,mobile_banking,bank_transfer,cheque'],
-            'status' => ['required', 'in:pending,in_progress,completed,delivered,cancelled'],
-            'internal_notes' => ['nullable', 'string'],
+            'status'          => ['required', 'in:pending,in_progress,completed,delivered,cancelled'],
+            'internal_notes'  => ['nullable', 'string'],
         ]);
 
-        // Calculate due amount if not provided
-        if (!isset($validated['due_amount'])) {
-            $validated['due_amount'] = max(0, $validated['service_cost'] - $validated['paid_amount']);
-        }
+        // Always recalculate due amount server-side
+        $validated['due_amount'] = max(0, $validated['service_cost'] - $validated['paid_amount']);
 
         $service->update($validated);
 
-        return redirect()->route('services.index')
+        return redirect()->route('services.show', $service)
             ->with('success', 'Service order updated successfully.');
+    }
+
+    /**
+     * Collect additional payment against a service order.
+     */
+    public function collectPayment(Request $request, Service $service)
+    {
+        $this->authorizePermission('edit services');
+
+        $validated = $request->validate([
+            'payment_amount'  => ['required', 'numeric', 'min:0.01', 'max:' . $service->due_amount],
+            'payment_method'  => ['required', 'in:cash,card,mobile_banking,bank_transfer,cheque,other'],
+            'bank_account_id' => ['nullable', 'exists:bank_accounts,id', 'required_if:payment_method,card,mobile_banking,bank_transfer,cheque'],
+        ], [
+            'payment_amount.max' => 'Payment amount cannot exceed the due amount (৳' . number_format($service->due_amount, 2) . ').',
+        ]);
+
+        $newPaid = $service->paid_amount + $validated['payment_amount'];
+        $newDue  = max(0, $service->service_cost - $newPaid);
+
+        $service->update([
+            'paid_amount'     => $newPaid,
+            'due_amount'      => $newDue,
+            'payment_method'  => $validated['payment_method'],
+            'bank_account_id' => $validated['bank_account_id'] ?? $service->bank_account_id,
+        ]);
+
+        return redirect()->route('services.show', $service)
+            ->with('success', 'Payment of ৳' . number_format($validated['payment_amount'], 2) . ' collected successfully.');
     }
 
     /**

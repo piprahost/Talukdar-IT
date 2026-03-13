@@ -55,6 +55,40 @@ class Service extends Model
     }
 
     /**
+     * Payment status: fully_paid | partial | unpaid
+     */
+    public function getPaymentStatusAttribute(): string
+    {
+        $cost = (float) $this->service_cost;
+        $paid = (float) $this->paid_amount;
+        $due  = (float) $this->due_amount;
+
+        if ($cost == 0 || $due == 0) {
+            return 'fully_paid';
+        }
+        if ($paid > 0 && $due > 0) {
+            return 'partial';
+        }
+        return 'unpaid';
+    }
+
+    /**
+     * Human-readable payment method label
+     */
+    public function getPaymentMethodLabelAttribute(): string
+    {
+        $labels = [
+            'cash'          => 'Cash',
+            'card'          => 'Card',
+            'mobile_banking'=> 'Mobile Banking',
+            'bank_transfer' => 'Bank Transfer',
+            'cheque'        => 'Cheque',
+            'other'         => 'Other',
+        ];
+        return $labels[$this->payment_method] ?? ucfirst($this->payment_method ?? 'cash');
+    }
+
+    /**
      * Generate unique service number
      */
     protected static function boot()

@@ -1,12 +1,12 @@
 @extends('layouts.dashboard')
 
 @section('title', 'Dashboard')
-@section('page-title', 'Dashboard Overview')
+@section('page-title', 'Dashboard')
 
 @section('content')
-    <!-- Stats Cards Row 1 -->
+    <!-- Stats Overview -->
     <div class="row g-4 mb-4">
-        <div class="col-md-3 col-sm-6">
+        <div class="col-lg-3 col-sm-6">
             <div class="stat-card success">
                 <div class="stat-icon">
                     <i class="fas fa-dollar-sign"></i>
@@ -22,7 +22,7 @@
             </div>
         </div>
         
-        <div class="col-md-3 col-sm-6">
+        <div class="col-lg-3 col-sm-6">
             <div class="stat-card primary">
                 <div class="stat-icon">
                     <i class="fas fa-shopping-cart"></i>
@@ -38,7 +38,7 @@
             </div>
         </div>
         
-        <div class="col-md-3 col-sm-6">
+        <div class="col-lg-3 col-sm-6">
             <div class="stat-card info">
                 <div class="stat-icon">
                     <i class="fas fa-chart-line"></i>
@@ -53,7 +53,7 @@
             </div>
         </div>
         
-        <div class="col-md-3 col-sm-6">
+        <div class="col-lg-3 col-sm-6">
             <div class="stat-card warning">
                 <div class="stat-icon">
                     <i class="fas fa-box"></i>
@@ -69,9 +69,8 @@
         </div>
     </div>
     
-    <!-- Stats Cards Row 2 -->
     <div class="row g-4 mb-4">
-        <div class="col-md-3 col-sm-6">
+        <div class="col-lg-3 col-sm-6">
             <div class="stat-card danger">
                 <div class="stat-icon">
                     <i class="fas fa-exclamation-triangle"></i>
@@ -90,7 +89,7 @@
             </div>
         </div>
         
-        <div class="col-md-3 col-sm-6">
+        <div class="col-lg-3 col-sm-6">
             <div class="stat-card primary">
                 <div class="stat-icon">
                     <i class="fas fa-users"></i>
@@ -103,7 +102,7 @@
             </div>
         </div>
         
-        <div class="col-md-3 col-sm-6">
+        <div class="col-lg-3 col-sm-6">
             <div class="stat-card secondary">
                 <div class="stat-icon">
                     <i class="fas fa-truck"></i>
@@ -116,7 +115,7 @@
             </div>
         </div>
         
-        <div class="col-md-3 col-sm-6">
+        <div class="col-lg-3 col-sm-6">
             <div class="stat-card info">
                 <div class="stat-icon">
                     <i class="fas fa-calendar-day"></i>
@@ -132,38 +131,42 @@
     
     <!-- Charts Row -->
     <div class="row g-4 mb-4">
-        <div class="col-md-8">
+        <div class="col-xl-8">
             <div class="table-card">
                 <div class="table-card-header">
                     <h6><i class="fas fa-chart-line me-2"></i>Sales Trend (Last 30 Days)</h6>
                 </div>
-                <canvas id="salesChart" height="80"></canvas>
+                <div class="p-4">
+                    <canvas id="salesChart" height="80"></canvas>
+                </div>
             </div>
         </div>
         
-        <div class="col-md-4">
+        <div class="col-xl-4">
             <div class="table-card">
                 <div class="table-card-header">
                     <h6><i class="fas fa-chart-pie me-2"></i>Payment Status</h6>
                 </div>
-                <canvas id="paymentChart" height="200"></canvas>
-                <div class="mt-3">
-                    @php
-                        $paid = $salesPaymentStatus->get('paid')->total ?? 0;
-                        $partial = $salesPaymentStatus->get('partial')->total ?? 0;
-                        $unpaid = $salesPaymentStatus->get('unpaid')->total ?? 0;
-                    @endphp
-                    <div class="d-flex justify-content-between mb-2">
-                        <span><i class="fas fa-circle text-success"></i> Paid:</span>
-                        <strong>৳{{ number_format($paid, 2) }}</strong>
-                    </div>
-                    <div class="d-flex justify-content-between mb-2">
-                        <span><i class="fas fa-circle text-warning"></i> Partial:</span>
-                        <strong>৳{{ number_format($partial, 2) }}</strong>
-                    </div>
-                    <div class="d-flex justify-content-between">
-                        <span><i class="fas fa-circle text-danger"></i> Unpaid:</span>
-                        <strong>৳{{ number_format($unpaid, 2) }}</strong>
+                <div class="p-4">
+                    <canvas id="paymentChart" height="200"></canvas>
+                    <div class="mt-3">
+                        @php
+                            $paid = $salesPaymentStatus->get('paid')->total ?? 0;
+                            $partial = $salesPaymentStatus->get('partial')->total ?? 0;
+                            $unpaid = $salesPaymentStatus->get('unpaid')->total ?? 0;
+                        @endphp
+                        <div class="d-flex justify-content-between mb-2">
+                            <span><i class="fas fa-circle text-success"></i> Paid:</span>
+                            <strong>৳{{ number_format($paid, 2) }}</strong>
+                        </div>
+                        <div class="d-flex justify-content-between mb-2">
+                            <span><i class="fas fa-circle text-warning"></i> Partial:</span>
+                            <strong>৳{{ number_format($partial, 2) }}</strong>
+                        </div>
+                        <div class="d-flex justify-content-between">
+                            <span><i class="fas fa-circle text-danger"></i> Unpaid:</span>
+                            <strong>৳{{ number_format($unpaid, 2) }}</strong>
+                        </div>
                     </div>
                 </div>
             </div>
@@ -172,7 +175,7 @@
     
     <!-- Top Products & Recent Sales -->
     <div class="row g-4 mb-4">
-        <div class="col-md-6">
+        <div class="col-xl-6">
             <div class="table-card">
                 <div class="table-card-header">
                     <h6><i class="fas fa-star me-2"></i>Top Selling Products (Last 30 Days)</h6>
@@ -187,7 +190,7 @@
                             </tr>
                         </thead>
                         <tbody>
-                            @forelse($topProducts as $product)
+                            @forelse($topProducts->take(5) as $product)
                                 <tr>
                                     <td>
                                         <strong>{{ $product->name }}</strong>
@@ -205,7 +208,7 @@
             </div>
         </div>
         
-        <div class="col-md-6">
+        <div class="col-xl-6">
             <div class="table-card">
                 <div class="table-card-header">
                     <h6><i class="fas fa-clock me-2"></i>Recent Sales</h6>
@@ -223,7 +226,7 @@
                             </tr>
                         </thead>
                         <tbody>
-                            @forelse($recentSales as $sale)
+                            @forelse($recentSales->take(7) as $sale)
                                 <tr>
                                     <td>
                                         <a href="{{ route('sales.show', $sale) }}" class="text-primary">
@@ -251,63 +254,125 @@
         </div>
     </div>
     
-    <!-- Quick Links & Alerts -->
+    <!-- Alerts & Quick Actions -->
     <div class="row g-4">
-        <div class="col-md-12">
+        {{-- Alerts --}}
+        @if($lowStockProducts > 0 || $customerDues > 0 || $supplierDues > 0 || $pendingServices > 0 || $pendingWarranties > 0)
+        <div class="col-xl-8">
             <div class="table-card">
                 <div class="table-card-header">
-                    <h6><i class="fas fa-bell me-2"></i>Quick Alerts & Actions</h6>
+                    <h6><i class="fas fa-bell me-2"></i>Alerts Requiring Attention</h6>
                 </div>
-                <div class="row g-3 p-3">
-                    @if($lowStockProducts > 0)
-                    <div class="col-md-3">
-                        <div class="alert alert-warning mb-0">
-                            <i class="fas fa-exclamation-triangle me-2"></i>
-                            <strong>{{ $lowStockProducts }}</strong> products are low in stock
-                            <br><a href="{{ route('stock.low-stock') }}" class="btn btn-sm btn-warning mt-2">View</a>
+                <div class="p-3">
+                    <div class="row g-3">
+                        @if($lowStockProducts > 0)
+                        <div class="col-sm-6">
+                            <div class="d-flex align-items-center gap-3 p-3 rounded" style="background:#fff7ed;border-left:4px solid #f97316;">
+                                <div style="width:40px;height:40px;background:#fed7aa;border-radius:10px;display:flex;align-items:center;justify-content:center;flex-shrink:0;">
+                                    <i class="fas fa-exclamation-triangle" style="color:#c2410c;"></i>
+                                </div>
+                                <div class="flex-grow-1">
+                                    <div style="font-size:11px;color:#9a3412;font-weight:700;text-transform:uppercase;">Low Stock</div>
+                                    <div style="font-size:18px;font-weight:800;color:#111;">{{ $lowStockProducts }} Products</div>
+                                </div>
+                                <a href="{{ route('stock.low-stock') }}" class="btn btn-sm btn-outline-warning">View</a>
+                            </div>
                         </div>
-                    </div>
-                    @endif
-                    
-                    @if($customerDues > 0)
-                    <div class="col-md-3">
-                        <div class="alert alert-info mb-0">
-                            <i class="fas fa-money-bill-wave me-2"></i>
-                            <strong>৳{{ number_format($customerDues, 2) }}</strong> in customer dues
-                            <br><a href="{{ route('customers.index') }}" class="btn btn-sm btn-info mt-2">View</a>
+                        @endif
+                        @if($customerDues > 0)
+                        <div class="col-sm-6">
+                            <div class="d-flex align-items-center gap-3 p-3 rounded" style="background:#fef2f2;border-left:4px solid #ef4444;">
+                                <div style="width:40px;height:40px;background:#fecaca;border-radius:10px;display:flex;align-items:center;justify-content:center;flex-shrink:0;">
+                                    <i class="fas fa-users" style="color:#b91c1c;"></i>
+                                </div>
+                                <div class="flex-grow-1">
+                                    <div style="font-size:11px;color:#991b1b;font-weight:700;text-transform:uppercase;">Customer Dues</div>
+                                    <div style="font-size:18px;font-weight:800;color:#111;">৳{{ number_format($customerDues, 2) }}</div>
+                                </div>
+                                <a href="{{ route('sales.index', ['payment_status'=>'unpaid']) }}" class="btn btn-sm btn-outline-danger">View</a>
+                            </div>
                         </div>
-                    </div>
-                    @endif
-                    
-                    @if($supplierDues > 0)
-                    <div class="col-md-3">
-                        <div class="alert alert-secondary mb-0">
-                            <i class="fas fa-credit-card me-2"></i>
-                            <strong>৳{{ number_format($supplierDues, 2) }}</strong> in supplier dues
-                            <br><a href="{{ route('suppliers.index') }}" class="btn btn-sm btn-secondary mt-2">View</a>
+                        @endif
+                        @if($supplierDues > 0)
+                        <div class="col-sm-6">
+                            <div class="d-flex align-items-center gap-3 p-3 rounded" style="background:#eff6ff;border-left:4px solid #3b82f6;">
+                                <div style="width:40px;height:40px;background:#bfdbfe;border-radius:10px;display:flex;align-items:center;justify-content:center;flex-shrink:0;">
+                                    <i class="fas fa-truck" style="color:#1d4ed8;"></i>
+                                </div>
+                                <div class="flex-grow-1">
+                                    <div style="font-size:11px;color:#1e40af;font-weight:700;text-transform:uppercase;">Supplier Dues</div>
+                                    <div style="font-size:18px;font-weight:800;color:#111;">৳{{ number_format($supplierDues, 2) }}</div>
+                                </div>
+                                <a href="{{ route('purchases.index', ['payment_status'=>'unpaid']) }}" class="btn btn-sm btn-outline-primary">View</a>
+                            </div>
                         </div>
-                    </div>
-                    @endif
-                    
-                    @if($pendingServices > 0)
-                    <div class="col-md-3">
-                        <div class="alert alert-primary mb-0">
-                            <i class="fas fa-laptop-medical me-2"></i>
-                            <strong>{{ $pendingServices }}</strong> pending services
-                            <br><a href="{{ route('services.index') }}" class="btn btn-sm btn-primary mt-2">View</a>
+                        @endif
+                        @if($pendingServices > 0)
+                        <div class="col-sm-6">
+                            <div class="d-flex align-items-center gap-3 p-3 rounded" style="background:#f0fdf4;border-left:4px solid #16a34a;">
+                                <div style="width:40px;height:40px;background:#bbf7d0;border-radius:10px;display:flex;align-items:center;justify-content:center;flex-shrink:0;">
+                                    <i class="fas fa-laptop-medical" style="color:#15803d;"></i>
+                                </div>
+                                <div class="flex-grow-1">
+                                    <div style="font-size:11px;color:#166534;font-weight:700;text-transform:uppercase;">Pending Services</div>
+                                    <div style="font-size:18px;font-weight:800;color:#111;">{{ $pendingServices }} Orders</div>
+                                </div>
+                                <a href="{{ route('services.index', ['status'=>'pending']) }}" class="btn btn-sm btn-outline-success">View</a>
+                            </div>
                         </div>
-                    </div>
-                    @endif
-                    
-                    @if($pendingWarranties > 0)
-                    <div class="col-md-3">
-                        <div class="alert alert-success mb-0">
-                            <i class="fas fa-shield-alt me-2"></i>
-                            <strong>{{ $pendingWarranties }}</strong> warranty submissions
-                            <br><a href="{{ route('warranty-submissions.index') }}" class="btn btn-sm btn-success mt-2">View</a>
+                        @endif
+                        @if($pendingWarranties > 0)
+                        <div class="col-sm-6">
+                            <div class="d-flex align-items-center gap-3 p-3 rounded" style="background:#f5f3ff;border-left:4px solid #8b5cf6;">
+                                <div style="width:40px;height:40px;background:#ddd6fe;border-radius:10px;display:flex;align-items:center;justify-content:center;flex-shrink:0;">
+                                    <i class="fas fa-shield-alt" style="color:#6d28d9;"></i>
+                                </div>
+                                <div class="flex-grow-1">
+                                    <div style="font-size:11px;color:#5b21b6;font-weight:700;text-transform:uppercase;">Warranty Submissions</div>
+                                    <div style="font-size:18px;font-weight:800;color:#111;">{{ $pendingWarranties }} Pending</div>
+                                </div>
+                                <a href="{{ route('warranty-submissions.index') }}" class="btn btn-sm btn-outline-secondary">View</a>
+                            </div>
                         </div>
+                        @endif
                     </div>
-                    @endif
+                </div>
+            </div>
+        </div>
+        @endif
+
+        {{-- Quick Actions --}}
+        <div class="col-xl-4">
+            <div class="table-card h-100">
+                <div class="table-card-header">
+                    <h6><i class="fas fa-bolt me-2"></i>Quick Actions</h6>
+                </div>
+                <div class="p-3 d-flex flex-column gap-2">
+                    @can('create sales')
+                    <a href="{{ route('sales.create') }}" class="btn btn-primary w-100 text-start">
+                        <i class="fas fa-file-invoice-dollar me-2"></i>New Sale / Invoice
+                    </a>
+                    @endcan
+                    @can('create services')
+                    <a href="{{ route('services.create') }}" class="btn btn-outline-primary w-100 text-start">
+                        <i class="fas fa-laptop-medical me-2"></i>New Service Order
+                    </a>
+                    @endcan
+                    @can('create purchases')
+                    <a href="{{ route('purchases.create') }}" class="btn btn-outline-primary w-100 text-start">
+                        <i class="fas fa-shopping-cart me-2"></i>New Purchase Order
+                    </a>
+                    @endcan
+                    @can('view stock')
+                    <a href="{{ route('stock.index') }}" class="btn btn-outline-secondary w-100 text-start">
+                        <i class="fas fa-boxes me-2"></i>View Inventory
+                    </a>
+                    @endcan
+                    @canany(['view sales reports', 'view reports'])
+                    <a href="{{ route('reports.sales.index') }}" class="btn btn-outline-secondary w-100 text-start">
+                        <i class="fas fa-chart-bar me-2"></i>Sales Reports
+                    </a>
+                    @endcanany
                 </div>
             </div>
         </div>
@@ -326,10 +391,15 @@ const salesChart = new Chart(salesCtx, {
         datasets: [{
             label: 'Sales (BDT)',
             data: @json($salesChartData->pluck('total')),
-            borderColor: 'rgb(75, 192, 192)',
-            backgroundColor: 'rgba(75, 192, 192, 0.1)',
+            borderColor: '#16a34a',
+            backgroundColor: 'rgba(22, 163, 74, 0.1)',
             tension: 0.4,
-            fill: true
+            fill: true,
+            pointBackgroundColor: '#ffffff',
+            pointBorderColor: '#16a34a',
+            pointBorderWidth: 2,
+            pointRadius: 4,
+            pointHoverRadius: 6
         }]
     },
     options: {
@@ -354,39 +424,68 @@ const salesChart = new Chart(salesCtx, {
 });
 
 // Payment Status Chart
-const paymentCtx = document.getElementById('paymentChart').getContext('2d');
-const paymentChart = new Chart(paymentCtx, {
-    type: 'doughnut',
-    data: {
-        labels: ['Paid', 'Partial', 'Unpaid'],
-        datasets: [{
-            data: [
-                {{ $salesPaymentStatus->get('paid')->total ?? 0 }},
-                {{ $salesPaymentStatus->get('partial')->total ?? 0 }},
-                {{ $salesPaymentStatus->get('unpaid')->total ?? 0 }}
-            ],
-            backgroundColor: [
-                'rgba(75, 192, 192, 0.8)',
-                'rgba(255, 206, 86, 0.8)',
-                'rgba(255, 99, 132, 0.8)'
-            ],
-            borderColor: [
-                'rgb(75, 192, 192)',
-                'rgb(255, 206, 86)',
-                'rgb(255, 99, 132)'
-            ],
-            borderWidth: 2
-        }]
-    },
-    options: {
-        responsive: true,
-        maintainAspectRatio: true,
-        plugins: {
-            legend: {
-                display: false
+const paymentCanvas = document.getElementById('paymentChart');
+if (paymentCanvas && typeof Chart !== 'undefined') {
+    const paymentCtx = paymentCanvas.getContext('2d');
+    const paymentValues = @json([$paid, $partial, $unpaid]);
+    const hasPaymentData = paymentValues.some(v => v > 0);
+
+    let paymentConfig;
+
+    if (hasPaymentData) {
+        paymentConfig = {
+            type: 'doughnut',
+            data: {
+                labels: ['Paid', 'Partial', 'Unpaid'],
+                datasets: [{
+                    data: paymentValues,
+                    backgroundColor: [
+                        'rgba(34,197,94,0.85)',
+                        'rgba(234,179,8,0.85)',
+                        'rgba(239,68,68,0.85)'
+                    ],
+                    borderColor: [
+                        'rgba(21,128,61,1)',
+                        'rgba(202,138,4,1)',
+                        'rgba(185,28,28,1)'
+                    ],
+                    borderWidth: 2
+                }]
+            }
+        };
+    } else {
+        // Fallback: show neutral ring when there is no data
+        paymentConfig = {
+            type: 'doughnut',
+            data: {
+                labels: ['No data'],
+                datasets: [{
+                    data: [1],
+                    backgroundColor: ['rgba(148,163,184,0.3)'],
+                    borderColor: ['rgba(148,163,184,0.6)'],
+                    borderWidth: 2
+                }]
+            }
+        };
+    }
+
+    new Chart(paymentCtx, {
+        ...paymentConfig,
+        options: {
+            responsive: true,
+            maintainAspectRatio: true,
+            cutout: '65%',
+            plugins: {
+                legend: {
+                    display: false
+                },
+                // Hide tooltip when we are showing the neutral "no data" ring
+                tooltip: {
+                    enabled: hasPaymentData
+                }
             }
         }
-    }
-});
+    });
+}
 </script>
 @endpush

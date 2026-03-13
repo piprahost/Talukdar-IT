@@ -107,6 +107,12 @@ Route::middleware('auth')->group(function () {
     
     // Quick Status Update Route
     Route::patch('services/{service}/status', [ServiceController::class, 'updateStatus'])->name('services.update-status');
+
+    // Collect Payment Route
+    Route::post('services/{service}/collect-payment', [ServiceController::class, 'collectPayment'])->name('services.collect-payment');
+
+    // Sale Collect Payment Route
+    Route::post('sales/{sale}/collect-payment', [SaleController::class, 'collectPayment'])->name('sales.collect-payment');
     
     // Settings Routes
     Route::get('settings/company-info', [CompanyInfoController::class, 'edit'])->name('company-info.edit');
