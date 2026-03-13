@@ -225,13 +225,10 @@
         @endcanany
         
         @can('view expenses')
-        <!-- Expense Management -->
-        <div class="sidebar-menu-group {{ request()->routeIs('expenses.*') ? 'active' : '' }}">
-            <a href="{{ route('expenses.index') }}" class="sidebar-menu-item {{ request()->routeIs('expenses.*') ? 'active' : '' }}">
-                <i class="fas fa-receipt me-2"></i>
-                <span>Expense Management</span>
-            </a>
-        </div>
+        <a href="{{ route('expenses.index') }}" class="sidebar-menu-item {{ request()->routeIs('expenses.*') ? 'active' : '' }}">
+            <i class="fas fa-receipt"></i>
+            <span>Expense Management</span>
+        </a>
         @endcan
         
         @canany(['view sales-reports', 'view purchase-reports', 'view financial-reports', 'view inventory-reports'])

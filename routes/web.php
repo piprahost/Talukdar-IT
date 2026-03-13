@@ -113,6 +113,9 @@ Route::middleware('auth')->group(function () {
 
     // Sale Collect Payment Route
     Route::post('sales/{sale}/collect-payment', [SaleController::class, 'collectPayment'])->name('sales.collect-payment');
+
+    // Purchase Collect Payment Route
+    Route::post('purchases/{purchase}/collect-payment', [PurchaseController::class, 'collectPayment'])->name('purchases.collect-payment');
     
     // Settings Routes
     Route::get('settings/company-info', [CompanyInfoController::class, 'edit'])->name('company-info.edit');

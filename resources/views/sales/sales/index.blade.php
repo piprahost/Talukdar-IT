@@ -55,15 +55,48 @@
         @endcan
     </div>
     
-    <form method="GET" class="mb-4">
-        <div class="row">
-            <div class="col-md-3 mb-2"><input type="text" class="form-control" name="search" value="{{ request('search') }}" placeholder="Search invoice, customer..."></div>
-            <div class="col-md-2 mb-2"><select class="form-select" name="customer_id" onchange="this.form.submit()"><option value="">All Customers</option>@foreach($customers as $c)<option value="{{ $c->id }}" {{ request('customer_id')==$c->id?'selected':'' }}>{{ $c->name }}</option>@endforeach</select></div>
-            <div class="col-md-2 mb-2"><select class="form-select" name="status" onchange="this.form.submit()"><option value="">All Status</option><option value="draft" {{ request('status')=='draft'?'selected':'' }}>Draft</option><option value="completed" {{ request('status')=='completed'?'selected':'' }}>Completed</option><option value="cancelled" {{ request('status')=='cancelled'?'selected':'' }}>Cancelled</option></select></div>
-            <div class="col-md-2 mb-2"><select class="form-select" name="payment_status" onchange="this.form.submit()"><option value="">Payment Status</option><option value="unpaid" {{ request('payment_status')=='unpaid'?'selected':'' }}>Unpaid</option><option value="partial" {{ request('payment_status')=='partial'?'selected':'' }}>Partial</option><option value="paid" {{ request('payment_status')=='paid'?'selected':'' }}>Paid</option></select></div>
-            <div class="col-md-3 mb-2"><button type="submit" class="btn btn-outline-primary w-100">Search</button></div>
-        </div>
-    </form>
+    <div class="filter-wrapper">
+        <form method="GET" id="salesFilterForm">
+            <div class="row g-2 align-items-end">
+                <div class="col-md-3">
+                    <div class="input-group input-group-sm">
+                        <span class="input-group-text"><i class="fas fa-search"></i></span>
+                        <input type="text" class="form-control" name="search" value="{{ request('search') }}" placeholder="Invoice #, customer name...">
+                    </div>
+                </div>
+                <div class="col-md-2">
+                    <select class="form-select form-select-sm" name="customer_id" onchange="this.form.submit()">
+                        <option value="">All Customers</option>
+                        @foreach($customers as $c)
+                            <option value="{{ $c->id }}" {{ request('customer_id')==$c->id?'selected':'' }}>{{ $c->name }}</option>
+                        @endforeach
+                    </select>
+                </div>
+                <div class="col-md-2">
+                    <select class="form-select form-select-sm" name="status" onchange="this.form.submit()">
+                        <option value="">All Status</option>
+                        <option value="draft"     {{ request('status')=='draft'     ?'selected':'' }}>Draft</option>
+                        <option value="completed" {{ request('status')=='completed' ?'selected':'' }}>Completed</option>
+                        <option value="cancelled" {{ request('status')=='cancelled' ?'selected':'' }}>Cancelled</option>
+                    </select>
+                </div>
+                <div class="col-md-2">
+                    <select class="form-select form-select-sm" name="payment_status" onchange="this.form.submit()">
+                        <option value="">Payment Status</option>
+                        <option value="unpaid"  {{ request('payment_status')=='unpaid'  ?'selected':'' }}>Unpaid</option>
+                        <option value="partial" {{ request('payment_status')=='partial' ?'selected':'' }}>Partial</option>
+                        <option value="paid"    {{ request('payment_status')=='paid'    ?'selected':'' }}>Paid</option>
+                    </select>
+                </div>
+                <div class="col-md-3 d-flex gap-2">
+                    <button type="submit" class="btn btn-sm btn-outline-primary flex-grow-1">Search</button>
+                    @if(request()->anyFilled(['search','customer_id','status','payment_status']))
+                    <a href="{{ route('sales.index') }}" class="btn btn-sm btn-outline-secondary">Clear</a>
+                    @endif
+                </div>
+            </div>
+        </form>
+    </div>
     
     <div class="table-responsive">
         <table class="table table-hover">

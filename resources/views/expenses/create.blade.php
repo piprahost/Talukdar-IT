@@ -245,12 +245,8 @@ function toggleBankAccount() {
     const paymentDateField = document.getElementById('paymentDateField');
     const statusField = document.getElementById('status').value;
     
-    // Show bank account field for bank transfers and card payments
-    if (paymentMethod === 'bank_transfer' || paymentMethod === 'card') {
-        bankAccountField.style.display = 'block';
-    } else {
-        bankAccountField.style.display = 'none';
-    }
+    const needsBank = ['bank_transfer', 'card', 'mobile_banking', 'cheque'].includes(paymentMethod);
+    bankAccountField.style.display = needsBank ? 'block' : 'none';
     
     // Show payment date field if status is paid
     if (statusField === 'paid') {

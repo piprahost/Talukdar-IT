@@ -105,13 +105,27 @@
             </div>
         </div>
         
+        {{-- Net Profit / Loss Summary --}}
         <div class="row mt-4">
-            <div class="col-md-12">
-                <div class="alert {{ $netProfit >= 0 ? 'alert-success' : 'alert-danger' }}">
-                    <h4 class="mb-0 text-center">
-                        {{ $netProfit >= 0 ? 'Net Profit' : 'Net Loss' }}: 
-                        ৳{{ number_format(abs($netProfit), 2) }}
-                    </h4>
+            <div class="col-md-4">
+                <div class="module-stat-card" style="border-left:3px solid #16a34a;">
+                    <div class="msc-label">Total Revenue</div>
+                    <div class="msc-value" style="color:#16a34a;font-size:20px;">৳{{ number_format($totalRevenue, 2) }}</div>
+                </div>
+            </div>
+            <div class="col-md-4">
+                <div class="module-stat-card" style="border-left:3px solid #ef4444;">
+                    <div class="msc-label">Total Expenses</div>
+                    <div class="msc-value" style="color:#ef4444;font-size:20px;">৳{{ number_format($totalExpenses, 2) }}</div>
+                </div>
+            </div>
+            <div class="col-md-4">
+                <div class="module-stat-card" style="border-left:4px solid {{ $netProfit >= 0 ? '#16a34a' : '#ef4444' }};background:{{ $netProfit >= 0 ? '#f0fdf4' : '#fef2f2' }};">
+                    <div class="msc-label">{{ $netProfit >= 0 ? '✓ Net Profit' : '✗ Net Loss' }}</div>
+                    <div class="msc-value" style="color:{{ $netProfit >= 0 ? '#16a34a' : '#ef4444' }};font-size:22px;">৳{{ number_format(abs($netProfit), 2) }}</div>
+                    @if($totalRevenue > 0)
+                    <div class="msc-sub">{{ number_format(abs($netProfit) / $totalRevenue * 100, 1) }}% {{ $netProfit >= 0 ? 'margin' : 'loss ratio' }}</div>
+                    @endif
                 </div>
             </div>
         </div>

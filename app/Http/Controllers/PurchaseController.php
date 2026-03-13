@@ -213,6 +213,40 @@ class PurchaseController extends Controller
             ->with('success', 'Purchase order updated successfully.');
     }
 
+    /**
+     * Record an additional payment against a purchase order.
+     */
+    public function collectPayment(Request $request, Purchase $purchase)
+    {
+        $this->authorizePermission('edit purchases');
+
+        if ($purchase->due_amount <= 0) {
+            return back()->with('error', 'This purchase order has no outstanding due amount.');
+        }
+
+        $validated = $request->validate([
+            'payment_amount'  => ['required', 'numeric', 'min:0.01', 'max:' . $purchase->due_amount],
+            'payment_method'  => ['required', 'in:cash,card,mobile_banking,bank_transfer,cheque,other'],
+            'bank_account_id' => ['nullable', 'exists:bank_accounts,id', 'required_if:payment_method,card,mobile_banking,bank_transfer,cheque'],
+        ], [
+            'payment_amount.max' => 'Payment cannot exceed the due amount (৳' . number_format($purchase->due_amount, 2) . ').',
+        ]);
+
+        $newPaid = $purchase->paid_amount + $validated['payment_amount'];
+        $newDue  = max(0, $purchase->total_amount - $newPaid);
+
+        $purchase->update([
+            'paid_amount'     => $newPaid,
+            'due_amount'      => $newDue,
+            'payment_status'  => $newDue == 0 ? 'paid' : 'partial',
+            'payment_method'  => $validated['payment_method'],
+            'bank_account_id' => $validated['bank_account_id'] ?? $purchase->bank_account_id,
+        ]);
+
+        return redirect()->route('purchases.show', $purchase)
+            ->with('success', 'Payment of ৳' . number_format($validated['payment_amount'], 2) . ' recorded successfully.');
+    }
+
     public function destroy(Purchase $purchase)
     {
         if ($purchase->status === 'received') {

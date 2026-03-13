@@ -156,6 +156,11 @@
                             @can('view purchases')
                             <a href="{{ route('purchases.show', $purchase) }}" class="btn btn-outline-primary" title="View"><i class="fas fa-eye"></i></a>
                             @endcan
+                            @if($purchase->due_amount > 0)
+                            <a href="{{ route('purchases.show', $purchase) }}#payDue" class="btn btn-primary" title="Pay Due Amount">
+                                <i class="fas fa-hand-holding-usd"></i>
+                            </a>
+                            @endif
                             @can('print invoices')
                             <a href="{{ route('purchases.print', $purchase) }}" class="btn btn-outline-secondary" title="Print" target="_blank"><i class="fas fa-print"></i></a>
                             @endcan

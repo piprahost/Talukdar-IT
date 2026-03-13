@@ -89,18 +89,21 @@
         
         <div class="row g-3 mt-2">
             <div class="col-md-4">
-                <div class="alert alert-info mb-0">
-                    <strong>Average Sale:</strong> ৳{{ number_format($stats['average_sale'], 2) }}
+                <div class="module-stat-card" style="border-left:3px solid #8b5cf6;">
+                    <div class="msc-label">Average Sale Value</div>
+                    <div class="msc-value" style="font-size:18px;color:#8b5cf6;">৳{{ number_format($stats['average_sale'], 2) }}</div>
                 </div>
             </div>
             <div class="col-md-4">
-                <div class="alert alert-secondary mb-0">
-                    <strong>Total Discount:</strong> ৳{{ number_format($stats['total_discount'], 2) }}
+                <div class="module-stat-card" style="border-left:3px solid #f97316;">
+                    <div class="msc-label">Total Discount Given</div>
+                    <div class="msc-value" style="font-size:18px;color:#f97316;">৳{{ number_format($stats['total_discount'], 2) }}</div>
                 </div>
             </div>
             <div class="col-md-4">
-                <div class="alert alert-secondary mb-0">
-                    <strong>Total Tax:</strong> ৳{{ number_format($stats['total_tax'], 2) }}
+                <div class="module-stat-card" style="border-left:3px solid #6b7280;">
+                    <div class="msc-label">Total Tax Collected</div>
+                    <div class="msc-value" style="font-size:18px;color:#6b7280;">৳{{ number_format($stats['total_tax'], 2) }}</div>
                 </div>
             </div>
         </div>
@@ -197,9 +200,14 @@ new Chart(ctx, {
         datasets: [{
             label: 'Sales Amount',
             data: {!! json_encode($dailyBreakdown->pluck('total')->toArray()) !!},
-            borderColor: 'rgb(75, 192, 192)',
-            backgroundColor: 'rgba(75, 192, 192, 0.2)',
-            tension: 0.1
+            borderColor: '#16a34a',
+            backgroundColor: 'rgba(22, 163, 74, 0.1)',
+            tension: 0.4,
+            pointBackgroundColor: '#ffffff',
+            pointBorderColor: '#16a34a',
+            pointBorderWidth: 2,
+            pointRadius: 4,
+            fill: true
         }]
     },
     options: {
