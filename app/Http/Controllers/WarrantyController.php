@@ -123,7 +123,17 @@ class WarrantyController extends Controller
 
         $warranties = $query->latest('created_at')->paginate(20);
 
-        return view('warranties.index', compact('warranties'));
+        $stats = [
+            'total'    => \App\Models\Warranty::count(),
+            'active'   => \App\Models\Warranty::where('status', 'active')->whereDate('end_date', '>=', now())->count(),
+            'expired'  => \App\Models\Warranty::where('status', 'expired')->orWhereDate('end_date', '<', now())->count(),
+            'expiring' => \App\Models\Warranty::where('status', 'active')
+                            ->whereDate('end_date', '>=', now())
+                            ->whereDate('end_date', '<=', now()->addDays(30))
+                            ->count(),
+        ];
+
+        return view('warranties.index', compact('warranties', 'stats'));
     }
 
     /**

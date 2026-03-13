@@ -25,8 +25,20 @@ class SupplierController extends Controller
             $query->where('is_active', $request->status === 'active');
         }
 
-        $suppliers = $query->withCount('purchaseOrders')->paginate(15)->appends($request->query());
-        return view('purchases.suppliers.index', compact('suppliers'));
+        $suppliers = $query
+            ->withCount('purchaseOrders')
+            ->withSum('purchaseOrders', 'total_amount')
+            ->withSum('purchaseOrders', 'due_amount')
+            ->paginate(15)->appends($request->query());
+
+        $stats = [
+            'total'      => \App\Models\Supplier::count(),
+            'active'     => \App\Models\Supplier::where('is_active', true)->count(),
+            'total_due'  => \App\Models\Purchase::sum('due_amount'),
+            'total_spent'=> \App\Models\Purchase::sum('total_amount'),
+        ];
+
+        return view('purchases.suppliers.index', compact('suppliers', 'stats'));
     }
 
     public function create()
