@@ -37,10 +37,22 @@ class PurchaseController extends Controller
             $query->where('supplier_id', $request->supplier_id);
         }
 
+        if ($request->filled('payment_status')) {
+            $query->where('payment_status', $request->payment_status);
+        }
+
         $purchases = $query->paginate(15)->appends($request->query());
         $suppliers = Supplier::active()->latest()->get();
 
-        return view('purchases.purchases.index', compact('purchases', 'suppliers'));
+        $stats = [
+            'total'      => Purchase::count(),
+            'received'   => Purchase::where('status', 'received')->count(),
+            'pending'    => Purchase::whereIn('status', ['pending','ordered','draft'])->count(),
+            'total_due'  => Purchase::sum('due_amount'),
+            'total_cost' => Purchase::where('status', 'received')->sum('total_amount'),
+        ];
+
+        return view('purchases.purchases.index', compact('purchases', 'suppliers', 'stats'));
     }
 
     public function create()

@@ -25,8 +25,19 @@ class CustomerController extends Controller
             $query->where('is_active', $request->status === 'active');
         }
 
-        $customers = $query->withCount('sales')->paginate(15)->appends($request->query());
-        return view('sales.customers.index', compact('customers'));
+        $customers = $query->withCount('sales')
+            ->withSum('sales', 'total_amount')
+            ->withSum('sales', 'due_amount')
+            ->paginate(15)->appends($request->query());
+
+        $stats = [
+            'total'       => Customer::count(),
+            'active'      => Customer::where('is_active', true)->count(),
+            'total_sales' => \App\Models\Sale::where('status', 'completed')->sum('total_amount'),
+            'total_due'   => \App\Models\Sale::sum('due_amount'),
+        ];
+
+        return view('sales.customers.index', compact('customers', 'stats'));
     }
 
     public function create()

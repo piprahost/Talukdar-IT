@@ -381,12 +381,53 @@
     }
 
     /* Table Card */
+    /* Filter form wrapper inside table-card */
+    .table-card .filter-wrapper {
+        padding: 20px 24px;
+        border-bottom: 1px solid #f3f4f6;
+        background: #fafafa;
+    }
+
+    /* Module stats row - sits above table-card */
+    .module-stats {
+        display: grid;
+        grid-template-columns: repeat(auto-fit, minmax(140px, 1fr));
+        gap: 14px;
+        margin-bottom: 20px;
+    }
+    .module-stat-card {
+        background: #fff;
+        border-radius: 12px;
+        padding: 16px 20px;
+        border: 1px solid rgba(0,0,0,0.05);
+        box-shadow: 0 1px 3px rgba(0,0,0,0.04);
+    }
+    .module-stat-card .msc-label {
+        font-size: 10px;
+        font-weight: 700;
+        text-transform: uppercase;
+        letter-spacing: .6px;
+        color: #9ca3af;
+        margin-bottom: 5px;
+    }
+    .module-stat-card .msc-value {
+        font-size: 22px;
+        font-weight: 800;
+        color: #111;
+        line-height: 1;
+    }
+    .module-stat-card .msc-sub {
+        font-size: 11px;
+        color: #6b7280;
+        margin-top: 3px;
+    }
+
     .table-card {
         background: #ffffff;
         border-radius: 12px;
         padding: 0; /* Remove padding to let table go edge-to-edge or handle internally */
         box-shadow: 0 1px 3px rgba(0, 0, 0, 0.04), 0 4px 6px rgba(0, 0, 0, 0.02);
-        margin-top: 24px;
+        margin-top: 0;
         border: 1px solid rgba(0, 0, 0, 0.04);
         overflow: hidden; /* For rounded corners on table */
     }

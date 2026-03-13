@@ -41,7 +41,15 @@ class ProductController extends Controller
         $categories = Category::active()->ordered()->get();
         $brands = Brand::active()->ordered()->get();
 
-        return view('products.products.index', compact('products', 'categories', 'brands'));
+        $stats = [
+            'total'        => Product::count(),
+            'active'       => Product::where('is_active', true)->count(),
+            'low_stock'    => Product::lowStock()->count(),
+            'out_of_stock' => Product::where('status', 'out_of_stock')->count(),
+            'total_value'  => Product::selectRaw('SUM(stock_quantity * cost_price)')->value('SUM(stock_quantity * cost_price)') ?? 0,
+        ];
+
+        return view('products.products.index', compact('products', 'categories', 'brands', 'stats'));
     }
 
     public function create()
