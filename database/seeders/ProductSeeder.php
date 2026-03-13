@@ -144,7 +144,8 @@ class ProductSeeder extends Seeder
                 'is_active' => true,
                 'is_featured' => rand(0, 1) === 1,
                 'status' => $product['stock'] > 0 ? 'available' : 'out_of_stock',
-                'warranty_period' => '1 Year',
+                // Store warranty period as days (integer). 365 = 1 year.
+                'warranty_period' => 365,
                 'created_by' => $admin?->id,
             ]);
         }
