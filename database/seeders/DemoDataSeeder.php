@@ -394,6 +394,8 @@ class DemoDataSeeder extends Seeder
                 $amount = $faker->numberBetween(2000, 20000);
 
                 Expense::create([
+                    // Unique expense number per record (avoid clashes across categories)
+                    'expense_number' => 'EXP-' . now()->format('Ymd') . '-' . strtoupper(Str::random(6)),
                     'expense_date' => now()->subDays($faker->numberBetween(0, 45)),
                     'category' => $config['name'],
                     'account_id' => $config['account']?->id,
@@ -571,7 +573,8 @@ class DemoDataSeeder extends Seeder
                 'submission_date' => now()->subDays($faker->numberBetween(0, 30)),
                 'problem_description' => $faker->sentence(10),
                 'customer_complaint' => $faker->sentence(8),
-                'condition' => $faker->randomElement(['new', 'used', 'damaged']),
+                // Must match enum: excellent, good, fair, poor, damaged
+                'condition' => $faker->randomElement(['excellent', 'good', 'fair', 'poor', 'damaged']),
                 'physical_condition_notes' => $faker->optional()->sentence(8),
                 'customer_name' => $customer?->name ?? 'Unknown Customer',
                 'customer_phone' => $customer?->phone ?? $customer?->mobile,
