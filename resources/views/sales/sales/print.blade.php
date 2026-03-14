@@ -25,7 +25,7 @@
 
         <div class="bill-to-section">
             <div class="bill-to-label">Bill To</div>
-            <div class="bill-to-name">{{ $sale->customer ? $sale->customer->name : ($sale->customer_name ?? 'Walk-in Customer') }}</div>
+            <div class="bill-to-name">{{ $sale->display_customer_name }}</div>
             <div class="bill-to-details">
                 @if($sale->customer_phone){{ $sale->customer_phone }}<br>@endif
                 @if($sale->customer_address){{ $sale->customer_address }}@endif

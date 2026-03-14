@@ -124,11 +124,19 @@
                         <h6 style="font-size:11px;font-weight:700;text-transform:uppercase;letter-spacing:.6px;color:#6b7280;margin-bottom:10px;">Customer</h6>
                         <table class="table table-sm table-borderless mb-0" style="font-size:14px;">
                             <tr>
-                                <td class="text-muted ps-0" style="width:40%;">Name</td>
+                                <td class="text-muted ps-0" style="width:40%;">Name on invoice</td>
                                 <td class="fw-semibold pe-0">
-                                    {{ $sale->customer ? $sale->customer->name : ($sale->customer_name ?? 'Walk-in Customer') }}
+                                    {{ $sale->display_customer_name }}
                                 </td>
                             </tr>
+                            @if($sale->customer_id && $sale->customer)
+                            <tr>
+                                <td class="text-muted ps-0">Customer (account)</td>
+                                <td class="pe-0">
+                                    <a href="{{ route('customers.show', $sale->customer) }}">{{ $sale->customer->name }}</a>
+                                </td>
+                            </tr>
+                            @endif
                             @if($sale->customer_phone)
                             <tr>
                                 <td class="text-muted ps-0">Phone</td>

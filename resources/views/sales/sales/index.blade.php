@@ -116,7 +116,7 @@
                 @forelse($sales as $sale)
                     <tr class="table-row-clickable" data-href="{{ route('sales.show', $sale) }}">
                         <td><strong>{{ $sale->invoice_number }}</strong></td>
-                        <td>{{ $sale->customer ? $sale->customer->name : ($sale->customer_name ?? 'Walk-in') }}</td>
+                        <td>{{ $sale->display_customer_name === 'Walk-in Customer' ? 'Walk-in' : $sale->display_customer_name }}</td>
                         <td>{{ $sale->sale_date->format('d M Y') }}</td>
                         <td><span class="badge bg-secondary">{{ $sale->items()->count() }}</span></td>
                         <td><strong>৳{{ number_format($sale->total_amount, 2) }}</strong></td>

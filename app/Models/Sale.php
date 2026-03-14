@@ -159,7 +159,7 @@ class Sale extends Model
 
     /**
      * Sync customer_name, customer_phone, customer_address from Customer when customer_id is set.
-     * Keeps snapshot for history while using relation as source of truth.
+     * Only fills when empty so "name on invoice" can be set separately (e.g. pykari / bill-to someone else).
      */
     protected static function syncCustomerSnapshot(Sale $sale): void
     {
@@ -167,20 +167,30 @@ class Sale extends Model
             return;
         }
         $customer = Customer::find($sale->customer_id);
-        if ($customer) {
+        if (!$customer) {
+            return;
+        }
+        if (trim((string) $sale->customer_name) === '') {
             $sale->customer_name = $customer->name;
+        }
+        if (trim((string) ($sale->customer_phone ?? '')) === '') {
             $sale->customer_phone = $customer->phone ?? $customer->mobile ?? $sale->customer_phone;
+        }
+        if (trim((string) ($sale->customer_address ?? '')) === '') {
             $sale->customer_address = $customer->address ?? $sale->customer_address;
         }
     }
 
-    /** Display name: prefer relation when loaded, else snapshot. */
+    /** Display name for invoice/list: prefer name-on-invoice (customer_name), then customer relation. */
     public function getDisplayCustomerNameAttribute(): string
     {
+        if (trim((string) ($this->customer_name ?? '')) !== '') {
+            return trim($this->customer_name);
+        }
         if ($this->customer_id && $this->relationLoaded('customer') && $this->customer) {
             return $this->customer->name;
         }
-        return (string) $this->customer_name;
+        return 'Walk-in Customer';
     }
 
     // Helper Methods

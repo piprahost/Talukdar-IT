@@ -39,11 +39,12 @@
                                     <label class="form-check-label small" for="walkInCustomer">Walk-in customer</label>
                                 </div>
                             </div>
-                            <div class="col-6 col-md-3" id="walkInFields" style="display:none;">
-                                <label for="customer_name" class="form-label fw-semibold small">Name</label>
-                                <input type="text" class="form-control form-control-sm" id="customer_name" name="customer_name" placeholder="Name">
+                            <div class="col-6 col-md-3">
+                                <label for="customer_name" class="form-label fw-semibold small">Name on invoice</label>
+                                <input type="text" class="form-control form-control-sm" id="customer_name" name="customer_name" placeholder="Name (e.g. for pykari)">
+                                <div class="form-text small">Can differ from customer; used on invoice.</div>
                             </div>
-                            <div class="col-6 col-md-3" id="walkInPhone" style="display:none;">
+                            <div class="col-6 col-md-3">
                                 <label for="customer_phone" class="form-label fw-semibold small">Phone</label>
                                 <input type="text" class="form-control form-control-sm" id="customer_phone" name="customer_phone" placeholder="Phone">
                             </div>
@@ -267,11 +268,10 @@ function initCustomerSearch() {
 
 function toggleWalkIn() {
     const walkIn = document.getElementById('walkInCustomer').checked;
-    document.getElementById('walkInFields').style.display = walkIn ? 'block' : 'none';
-    document.getElementById('walkInPhone').style.display = walkIn ? 'block' : 'none';
     if (walkIn) {
         document.getElementById('customer_id').value = '';
         document.getElementById('customerSearch').value = '';
+        selectedCustomer = null;
     }
 }
 
