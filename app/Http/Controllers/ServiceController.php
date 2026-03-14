@@ -111,7 +111,10 @@ class ServiceController extends Controller
         $validated['due_amount'] = max(0, $validated['service_cost'] - $validated['paid_amount']);
         $validated['created_by'] = auth()->id();
 
-        Service::create($validated);
+        $service = Service::create($validated);
+
+        // Optional SMS: new service order
+        \App\Services\SmsNotificationService::serviceCreated($service);
 
         return redirect()->route('services.index')
             ->with('success', 'Service order created successfully.');
@@ -164,10 +167,17 @@ class ServiceController extends Controller
         // Always recalculate due amount server-side
         $validated['due_amount'] = max(0, $validated['service_cost'] - $validated['paid_amount']);
 
+        $oldStatus = $service->status;
         $service->update($validated);
-        AccountingService::recordService($service->fresh());
+        $serviceFresh = $service->fresh();
+        AccountingService::recordService($serviceFresh);
 
-        return redirect()->route('services.show', $service)
+        // Optional SMS when status changed
+        if ($oldStatus !== $serviceFresh->status) {
+            \App\Services\SmsNotificationService::serviceStatusChanged($serviceFresh);
+        }
+
+        return redirect()->route('services.show', $serviceFresh)
             ->with('success', 'Service order updated successfully.');
     }
 
@@ -191,8 +201,8 @@ class ServiceController extends Controller
             'payment_amount.max' => 'Payment amount cannot exceed the due amount (৳' . number_format($service->due_amount, 2) . ').',
         ]);
 
-        DB::transaction(function () use ($service, $validated) {
-            Payment::create([
+        $payment = DB::transaction(function () use ($service, $validated) {
+            $payment = Payment::create([
                 'payment_type'     => 'customer',
                 'service_id'       => $service->id,
                 'customer_id'      => $service->customer_id,
@@ -208,7 +218,12 @@ class ServiceController extends Controller
                 'bank_account_id' => $validated['bank_account_id'] ?? $service->bank_account_id,
             ]);
             AccountingService::recordService($service->fresh());
+
+            return $payment;
         });
+
+        // Optional SMS for customer payment
+        \App\Services\SmsNotificationService::customerPayment($payment);
 
         return redirect()->route('services.show', $service)
             ->with('success', 'Payment of ৳' . number_format($validated['payment_amount'], 2) . ' collected successfully.');

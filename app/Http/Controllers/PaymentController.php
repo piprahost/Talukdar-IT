@@ -128,6 +128,13 @@ class PaymentController extends Controller
             return $payment;
         });
 
+        // Optional SMS notifications
+        if ($payment->payment_type === 'customer') {
+            \App\Services\SmsNotificationService::customerPayment($payment);
+        } elseif ($payment->payment_type === 'supplier') {
+            \App\Services\SmsNotificationService::supplierPayment($payment);
+        }
+
         $redirectRoute = $validated['payment_type'] === 'customer' 
             ? route('sales.show', $validated['sale_id'])
             : route('purchases.show', $validated['purchase_id']);

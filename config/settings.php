@@ -223,5 +223,107 @@ return [
                 ],
             ],
         ],
+        'sms' => [
+            'label' => 'SMS & Notifications',
+            'icon' => 'fas fa-sms',
+            'keys' => [
+                'enabled' => [
+                    'type' => 'boolean',
+                    'label' => 'Enable SMS notifications',
+                    'description' => 'Turn all outbound SMS notifications on or off.',
+                    'default' => '0',
+                ],
+                'default_gateway' => [
+                    'type' => 'text',
+                    'label' => 'Default SMS gateway name',
+                    'description' => 'Gateway name configured in lara-sms-bd (e.g. bangladeshsms, teletalk). Leave blank to use package default.',
+                    'default' => '',
+                ],
+                'from' => [
+                    'type' => 'text',
+                    'label' => 'Sender ID / From',
+                    'description' => 'Optional sender name/ID if supported by the gateway.',
+                    'default' => '',
+                ],
+                'test_mode' => [
+                    'type' => 'boolean',
+                    'label' => 'Test mode (send only to test number)',
+                    'description' => 'When enabled, all SMS will be redirected to the test number below.',
+                    'default' => '0',
+                ],
+                'test_number' => [
+                    'type' => 'text',
+                    'label' => 'Test phone number',
+                    'description' => 'Used when test mode is enabled.',
+                    'default' => '',
+                ],
+            ],
+        ],
+        'sms_notifications' => [
+            'label' => 'SMS Notification Rules',
+            'icon' => 'fas fa-bell',
+            'keys' => [
+                'sale_completed_enabled' => [
+                    'type' => 'boolean',
+                    'label' => 'Sale completed – send SMS to customer',
+                    'description' => 'Send an SMS when a sale invoice is completed.',
+                    'default' => '0',
+                ],
+                'sale_completed_template' => [
+                    'type' => 'text',
+                    'label' => 'Sale completed SMS template',
+                    'description' => 'Placeholders: {customer_name}, {invoice_number}, {total_amount}, {paid_amount}, {due_amount}.',
+                    'default' => 'Dear {customer_name}, your invoice {invoice_number} total {total_amount}, paid {paid_amount}, due {due_amount}. Thank you for shopping with us.',
+                ],
+                'customer_payment_enabled' => [
+                    'type' => 'boolean',
+                    'label' => 'Customer payment received – SMS',
+                    'description' => 'Send an SMS when you record a customer payment.',
+                    'default' => '0',
+                ],
+                'customer_payment_template' => [
+                    'type' => 'text',
+                    'label' => 'Customer payment SMS template',
+                    'description' => 'Placeholders: {customer_name}, {invoice_number}, {amount}, {due_amount}.',
+                    'default' => 'We received {amount} for invoice {invoice_number}. Remaining due: {due_amount}. Thank you, {customer_name}.',
+                ],
+                'supplier_payment_enabled' => [
+                    'type' => 'boolean',
+                    'label' => 'Supplier payment made – SMS',
+                    'description' => 'Send an SMS when you record a supplier payment.',
+                    'default' => '0',
+                ],
+                'supplier_payment_template' => [
+                    'type' => 'text',
+                    'label' => 'Supplier payment SMS template',
+                    'description' => 'Placeholders: {supplier_name}, {po_number}, {amount}, {due_amount}.',
+                    'default' => 'Payment {amount} made for PO {po_number}. Remaining due: {due_amount}. Regards, {supplier_name}.',
+                ],
+                'service_created_enabled' => [
+                    'type' => 'boolean',
+                    'label' => 'Service order created – SMS',
+                    'description' => 'Send an SMS when a new service order is created.',
+                    'default' => '0',
+                ],
+                'service_created_template' => [
+                    'type' => 'text',
+                    'label' => 'Service created SMS template',
+                    'description' => 'Placeholders: {customer_name}, {service_number}, {problem_notes}.',
+                    'default' => 'Dear {customer_name}, your device is received. Service number: {service_number}. Problem: {problem_notes}.',
+                ],
+                'service_status_enabled' => [
+                    'type' => 'boolean',
+                    'label' => 'Service status changed – SMS',
+                    'description' => 'Send an SMS when service status is updated.',
+                    'default' => '0',
+                ],
+                'service_status_template' => [
+                    'type' => 'text',
+                    'label' => 'Service status SMS template',
+                    'description' => 'Placeholders: {customer_name}, {service_number}, {status}.',
+                    'default' => 'Dear {customer_name}, your service {service_number} status is now: {status}.',
+                ],
+            ],
+        ],
     ],
 ];

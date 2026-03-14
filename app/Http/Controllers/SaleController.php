@@ -287,6 +287,9 @@ class SaleController extends Controller
         // Post sale to accounting (so completed sales always have a journal entry)
         AccountingService::recordSale($sale);
 
+        // Optional SMS notification
+        \App\Services\SmsNotificationService::saleCompleted($sale);
+
         return back()->with('success', 'Sale completed successfully. Stock updated.');
     }
 
@@ -306,7 +309,7 @@ class SaleController extends Controller
             'payment_amount.max' => 'Payment amount cannot exceed the due amount (' . (function_exists('money') ? money($sale->due_amount, 2) : '৳' . number_format($sale->due_amount, 2)) . ').',
         ]);
 
-        DB::transaction(function () use ($sale, $validated) {
+        $payment = DB::transaction(function () use ($sale, $validated) {
             $payment = Payment::create([
                 'payment_type'   => 'customer',
                 'sale_id'        => $sale->id,
@@ -319,7 +322,11 @@ class SaleController extends Controller
             ]);
             // Payment observer updates sale paid_amount/due_amount; post to accounting
             AccountingService::recordPayment($payment);
+            return $payment;
         });
+
+        // Optional SMS notification for customer payment
+        \App\Services\SmsNotificationService::customerPayment($payment);
 
         return redirect()->route('sales.show', $sale)
             ->with('success', 'Payment of ' . (function_exists('money') ? money($validated['payment_amount'], 2) : '৳' . number_format($validated['payment_amount'], 2)) . ' collected successfully.');
