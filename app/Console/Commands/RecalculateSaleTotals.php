@@ -23,21 +23,23 @@ class RecalculateSaleTotals extends Command
             $this->warn('Dry run – no changes will be saved.');
         }
 
-        // Step 1: Fix sale_items.subtotal (many have 0 in DB from older code or import)
-        $itemsAffected = 0;
-        if (!$itemsOnly) {
-            $this->info('Fixing sale_items.subtotal from unit_price, quantity, discount…');
-            if (!$dryRun) {
-                $itemsAffected = DB::update('
-                    UPDATE sale_items
-                    SET subtotal = (unit_price * quantity) - COALESCE(discount, 0)
-                    WHERE ABS(COALESCE(subtotal, 0)) < 0.01
-                       OR subtotal IS NULL
-                ');
-            } else {
-                $itemsAffected = SaleItem::whereRaw('ABS(COALESCE(subtotal, 0)) < 0.01 OR subtotal IS NULL')->count();
-            }
-            $this->info(($dryRun ? 'Would fix ' : 'Fixed ') . $itemsAffected . ' sale item(s).');
+        // Step 1: Fix sale_items.subtotal (0 or wrong after import / deploy)
+        $this->info('Fixing sale_items.subtotal from unit_price, quantity, discount…');
+        if (!$dryRun) {
+            $itemsAffected = DB::update('
+                UPDATE sale_items
+                SET subtotal = (unit_price * quantity) - COALESCE(discount, 0)
+                WHERE ABS(COALESCE(subtotal, 0)) < 0.01
+                   OR subtotal IS NULL
+            ');
+        } else {
+            $itemsAffected = SaleItem::whereRaw('ABS(COALESCE(subtotal, 0)) < 0.01 OR subtotal IS NULL')->count();
+        }
+        $this->info(($dryRun ? 'Would fix ' : 'Fixed ') . $itemsAffected . ' sale item(s).');
+
+        if ($itemsOnly) {
+            $this->info('Items-only run finished. Run without --items-only to recalculate sale totals.');
+            return self::SUCCESS;
         }
 
         // Step 2: Recalculate each sale's totals from items
