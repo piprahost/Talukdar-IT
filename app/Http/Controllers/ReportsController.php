@@ -15,12 +15,24 @@ use App\Models\Expense;
 use App\Models\Payment;
 use Illuminate\Http\Request;
 use Illuminate\Support\Facades\DB;
+use Illuminate\Support\Facades\Gate;
 use Carbon\Carbon;
 use Illuminate\Support\Facades\Response;
 use Barryvdh\DomPDF\Facade\Pdf as PDF;
 
 class ReportsController extends Controller
 {
+    /**
+     * Reports hub – one place to access all report categories.
+     */
+    public function index()
+    {
+        if (! Gate::any(['view sales-reports', 'view purchase-reports', 'view financial-reports', 'view inventory-reports'])) {
+            abort(403);
+        }
+        return view('reports.index');
+    }
+
     // ==================== SALES REPORTS ====================
     
     public function salesReport(Request $request)

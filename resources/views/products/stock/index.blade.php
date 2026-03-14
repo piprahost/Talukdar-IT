@@ -6,16 +6,17 @@
 @section('content')
 <div class="table-card">
     <div class="table-card-header">
-        <h6><i class="fas fa-warehouse me-2"></i>Stock Movements</h6>
-        <div class="d-flex gap-2">
+        <h6><i class="fas fa-warehouse me-2"></i>Stock & Movement</h6>
+        <div class="d-flex align-items-center gap-2">
+            <small class="text-muted d-none d-md-inline"><i class="fas fa-barcode me-1"></i>1 barcode = 1 unit</small>
             @can('view stock')
             <a href="{{ route('stock.low-stock') }}" class="btn btn-sm btn-outline-warning">
-                <i class="fas fa-exclamation-triangle me-1"></i>Low Stock Alert
+                <i class="fas fa-exclamation-triangle me-1"></i>Low Stock
             </a>
             @endcan
             @can('create stock')
             <a href="{{ route('stock.create-manual') }}" class="btn btn-sm btn-primary">
-                <i class="fas fa-plus me-1"></i>Manual Entry
+                <i class="fas fa-barcode me-1"></i>Add by Barcode
             </a>
             @endcan
         </div>

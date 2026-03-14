@@ -4,6 +4,7 @@ namespace App\Http\Controllers;
 
 use App\Models\Service;
 use App\Models\BankAccount;
+use App\Services\AccountingService;
 use Illuminate\Http\Request;
 
 class ServiceController extends Controller
@@ -14,7 +15,7 @@ class ServiceController extends Controller
     public function index(Request $request)
     {
         $this->authorizePermission('view services');
-        $query = Service::with('creator')->latest();
+        $query = Service::withStandardRelations()->latest();
         
         // Search by barcode/serial number or customer phone
         if ($request->has('search') && $request->search) {
@@ -118,7 +119,7 @@ class ServiceController extends Controller
     public function show(Service $service)
     {
         $this->authorizePermission('view services');
-        $service->load('creator', 'returns', 'bankAccount');
+        $service->load(Service::getStandardRelations());
         return view('services.show', compact('service'));
     }
 
@@ -160,6 +161,7 @@ class ServiceController extends Controller
         $validated['due_amount'] = max(0, $validated['service_cost'] - $validated['paid_amount']);
 
         $service->update($validated);
+        AccountingService::recordService($service->fresh());
 
         return redirect()->route('services.show', $service)
             ->with('success', 'Service order updated successfully.');
@@ -189,6 +191,7 @@ class ServiceController extends Controller
             'payment_method'  => $validated['payment_method'],
             'bank_account_id' => $validated['bank_account_id'] ?? $service->bank_account_id,
         ]);
+        AccountingService::recordService($service->fresh());
 
         return redirect()->route('services.show', $service)
             ->with('success', 'Payment of ৳' . number_format($validated['payment_amount'], 2) . ' collected successfully.');
@@ -200,6 +203,7 @@ class ServiceController extends Controller
     public function destroy(Service $service)
     {
         $this->authorizePermission('delete services');
+        AccountingService::deleteJournalEntry('service', $service->id);
         $service->delete();
 
         return redirect()->route('services.index')
@@ -227,6 +231,7 @@ class ServiceController extends Controller
         ]);
 
         $service->update(['status' => $validated['status']]);
+        AccountingService::recordService($service->fresh());
 
         if ($request->ajax()) {
             return response()->json([

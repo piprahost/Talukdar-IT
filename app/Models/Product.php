@@ -119,6 +119,25 @@ class Product extends Model
     }
 
     // Accessors & Mutators
+    /**
+     * For shops where 1 barcode = 1 stock: show stock as barcode count when barcodes exist,
+     * so display never shows more than actual traceable units.
+     */
+    public function getDisplayStockAttribute()
+    {
+        $barcodeCount = $this->getBarcodesCount();
+        if ($barcodeCount > 0) {
+            return $barcodeCount;
+        }
+        return (int) $this->stock_quantity;
+    }
+
+    /** Whether this product uses barcode-based stock (1 barcode = 1 unit). */
+    public function getUsesBarcodeStockAttribute(): bool
+    {
+        return $this->getBarcodesCount() > 0;
+    }
+
     public function getStockStatusAttribute()
     {
         if ($this->stock_quantity <= 0) {
@@ -272,6 +291,26 @@ class Product extends Model
             return true;
         }
         return false;
+    }
+
+    /**
+     * Remove multiple barcodes and reduce stock once (1 barcode = 1 unit).
+     * Returns number of barcodes actually removed.
+     */
+    public function removeBarcodes(array $barcodesToRemove, $notes = null): int
+    {
+        $current = $this->barcodes ?? [];
+        $toRemove = array_values(array_intersect($current, $barcodesToRemove));
+        if (count($toRemove) === 0) {
+            return 0;
+        }
+        $newBarcodes = array_values(array_diff($current, $toRemove));
+        $this->barcodes = $newBarcodes;
+        $this->save();
+        $count = count($toRemove);
+        $notes = $notes ?? 'Barcodes removed: ' . implode(', ', array_slice($toRemove, 0, 5)) . (count($toRemove) > 5 ? '...' : '');
+        $this->reduceStock($count, 'out', $notes, 'barcode', null);
+        return $count;
     }
 
     public function hasBarcode($barcode)

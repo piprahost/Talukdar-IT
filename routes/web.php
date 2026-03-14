@@ -357,6 +357,7 @@ Route::middleware('auth')->group(function () {
     Route::get('accounting/profit-loss/export/{format}', [AccountingReportController::class, 'exportProfitLoss'])->name('accounting.profit-loss.export');
     
     // Reports & Analytics Routes
+    Route::get('reports', [ReportsController::class, 'index'])->name('reports.index');
     // Sales Reports
     Route::get('reports/sales', [ReportsController::class, 'salesReport'])->name('reports.sales.index');
     Route::get('reports/sales/by-product', [ReportsController::class, 'salesByProduct'])->name('reports.sales.by-product');

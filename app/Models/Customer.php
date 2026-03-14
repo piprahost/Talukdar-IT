@@ -32,9 +32,22 @@ class Customer extends Model
         return $this->hasMany(Sale::class);
     }
 
+    public function services()
+    {
+        return $this->hasMany(Service::class);
+    }
+
     // Scopes
     public function scopeActive($query)
     {
         return $query->where('is_active', true);
+    }
+
+    /** Eager-load relations needed for list/detail views (connected data). */
+    public function scopeWithStandardRelations($query)
+    {
+        return $query->withCount('sales')
+            ->withSum('sales', 'total_amount')
+            ->withSum('sales', 'due_amount');
     }
 }

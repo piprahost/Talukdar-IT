@@ -97,7 +97,7 @@ class JournalEntryController extends Controller
     public function show(JournalEntry $journalEntry)
     {
         $this->authorizePermission('view journal-entries');
-        $journalEntry->load(['items.account', 'creator', 'poster']);
+        $journalEntry->load(JournalEntry::getStandardRelations());
         return view('accounting.journal-entries.show', compact('journalEntry'));
     }
 
@@ -110,7 +110,7 @@ class JournalEntryController extends Controller
         }
 
         $accounts = Account::active()->orderBy('code')->get();
-        $journalEntry->load('items.account');
+        $journalEntry->load(JournalEntry::getStandardRelations());
         return view('accounting.journal-entries.edit', compact('journalEntry', 'accounts'));
     }
 

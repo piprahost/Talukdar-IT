@@ -90,6 +90,17 @@ class SaleReturn extends Model
         return $this->belongsTo(User::class, 'approved_by');
     }
 
+    /** Relation names for show/detail (single source of truth). */
+    public static function getStandardRelations(): array
+    {
+        return ['sale.customer', 'customer', 'items.product', 'items.saleItem', 'creator', 'approver'];
+    }
+
+    public function scopeWithStandardRelations($query)
+    {
+        return $query->with(self::getStandardRelations());
+    }
+
     // Helper Methods
     public function calculateTotals()
     {

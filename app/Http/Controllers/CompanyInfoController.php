@@ -42,6 +42,7 @@ class CompanyInfoController extends Controller
         $this->authorizePermission('edit settings');
         $validated = $request->validate([
             'company_name' => 'required|string|max:255',
+            'tagline' => 'nullable|string|max:255',
             'service_center_name' => 'nullable|string|max:255',
             'address' => 'nullable|string',
             'city' => 'required|string|max:255',

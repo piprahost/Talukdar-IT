@@ -4,216 +4,155 @@
 @section('page-title', 'Edit Service Order')
 
 @section('content')
-<div class="row">
-    <div class="col-xl-10 mx-auto">
-        <form action="{{ route('services.update', $service) }}" method="POST" id="serviceForm">
-            @csrf
-            @method('PUT')
-            <div class="row g-3">
+<div class="service-form-wrap">
+    <div class="d-flex flex-column flex-md-row align-items-start align-items-md-center justify-content-between gap-3 mb-4 pb-3 border-bottom">
+        <div>
+            <h5 class="mb-1 fw-bold">Edit service order</h5>
+            <p class="text-muted small mb-0"><code class="bg-light px-2 py-1 rounded">{{ $service->service_number }}</code> · Received {{ $service->receive_date->format('d M Y') }}</p>
+        </div>
+        <div class="d-flex gap-2">
+            <a href="{{ route('services.show', $service) }}" class="btn btn-outline-secondary btn-sm"><i class="fas fa-eye me-1"></i>View</a>
+            <a href="{{ route('services.index') }}" class="btn btn-outline-secondary btn-sm"><i class="fas fa-arrow-left me-1"></i>Back</a>
+            <button type="submit" form="serviceForm" class="btn btn-primary btn-sm"><i class="fas fa-save me-1"></i>Save</button>
+        </div>
+    </div>
 
-                {{-- ── Left Column: Product + Customer ── --}}
-                <div class="col-md-8">
-
-                    {{-- Product Information --}}
-                    <div class="table-card mb-3">
-                        <div class="table-card-header">
-                            <h6><i class="fas fa-box me-2"></i>Product Information</h6>
-                            <a href="{{ route('services.show', $service) }}" class="btn btn-sm btn-outline-secondary">
-                                <i class="fas fa-eye me-1"></i>View Details
-                            </a>
-                        </div>
-                        <div class="p-4">
+    <form action="{{ route('services.update', $service) }}" method="POST" id="serviceForm">
+        @csrf
+        @method('PUT')
+        <div class="row g-4">
+            <div class="col-lg-8">
+                <div class="table-card mb-0">
+                    <div class="table-card-header bg-light border-0 py-3">
+                        <h6 class="mb-0 fw-semibold text-dark"><i class="fas fa-box me-2 text-primary"></i>Product</h6>
+                    </div>
+                    <div class="p-4 pt-3">
                             <div class="row g-3">
                                 <div class="col-md-6">
-                                    <label class="form-label">Product Name <span class="text-danger">*</span></label>
+                                    <label class="form-label fw-semibold">Product name <span class="text-danger">*</span></label>
                                     <input type="text" class="form-control @error('product_name') is-invalid @enderror"
-                                           name="product_name" id="product_name"
-                                           value="{{ old('product_name', $service->product_name) }}"
-                                           placeholder="e.g. Laptop, Printer, Desktop" required>
+                                           name="product_name" id="product_name" value="{{ old('product_name', $service->product_name) }}" required placeholder="e.g. Laptop, Printer">
                                     @error('product_name')<div class="invalid-feedback">{{ $message }}</div>@enderror
                                 </div>
                                 <div class="col-md-6">
-                                    <label class="form-label">
-                                        Serial / Barcode
-                                        <button type="button" class="btn btn-sm btn-outline-secondary ms-1 py-0 px-2"
-                                                onclick="focusBarcodeField()" title="Focus for barcode (Ctrl+B)">
-                                            <i class="fas fa-barcode"></i>
-                                        </button>
-                                    </label>
+                                    <label class="form-label fw-semibold">Serial / Barcode <button type="button" class="btn btn-link btn-sm p-0 ms-1" onclick="focusBarcodeField()" title="Ctrl+B"><i class="fas fa-barcode"></i></button></label>
                                     <input type="text" class="form-control @error('serial_number') is-invalid @enderror"
-                                           name="serial_number" id="serial_number"
-                                           value="{{ old('serial_number', $service->serial_number) }}"
-                                           placeholder="Scan or enter serial number">
+                                           name="serial_number" id="serial_number" value="{{ old('serial_number', $service->serial_number) }}" placeholder="Scan or enter">
                                     @error('serial_number')<div class="invalid-feedback">{{ $message }}</div>@enderror
-                                    <div class="form-text"><i class="fas fa-info-circle me-1"></i>Press Ctrl+B to focus for scanning</div>
                                 </div>
                                 <div class="col-12">
-                                    <label class="form-label">Problem Description</label>
-                                    <textarea class="form-control @error('problem_notes') is-invalid @enderror"
-                                              name="problem_notes" id="problem_notes" rows="3"
-                                              placeholder="Describe the problem reported by the customer...">{{ old('problem_notes', $service->problem_notes) }}</textarea>
+                                    <label class="form-label fw-semibold small text-muted">Problem description</label>
+                                    <textarea class="form-control form-control-sm @error('problem_notes') is-invalid @enderror"
+                                              name="problem_notes" id="problem_notes" rows="2" placeholder="Customer reported issue...">{{ old('problem_notes', $service->problem_notes) }}</textarea>
                                     @error('problem_notes')<div class="invalid-feedback">{{ $message }}</div>@enderror
                                 </div>
                                 <div class="col-12">
-                                    <label class="form-label">Technician Notes</label>
-                                    <textarea class="form-control @error('service_notes') is-invalid @enderror"
-                                              name="service_notes" id="service_notes" rows="3"
-                                              placeholder="Internal technician notes, diagnosis, parts used...">{{ old('service_notes', $service->service_notes) }}</textarea>
+                                    <label class="form-label fw-semibold small text-muted">Technician notes</label>
+                                    <textarea class="form-control form-control-sm @error('service_notes') is-invalid @enderror"
+                                              name="service_notes" id="service_notes" rows="2" placeholder="Diagnosis, parts used...">{{ old('service_notes', $service->service_notes) }}</textarea>
                                     @error('service_notes')<div class="invalid-feedback">{{ $message }}</div>@enderror
                                 </div>
                             </div>
                         </div>
                     </div>
 
-                    {{-- Customer Information --}}
-                    <div class="table-card mb-3">
-                        <div class="table-card-header">
-                            <h6><i class="fas fa-user me-2"></i>Customer Information</h6>
+                    <div class="table-card mt-4">
+                        <div class="table-card-header bg-light border-0 py-3">
+                            <h6 class="mb-0 fw-semibold text-dark"><i class="fas fa-user me-2 text-primary"></i>Customer</h6>
                         </div>
-                        <div class="p-4">
+                        <div class="p-4 pt-3">
                             <div class="row g-3">
                                 <div class="col-md-6">
-                                    <label class="form-label">Customer Name <span class="text-danger">*</span></label>
+                                    <label class="form-label fw-semibold">Name <span class="text-danger">*</span></label>
                                     <input type="text" class="form-control @error('customer_name') is-invalid @enderror"
-                                           name="customer_name" value="{{ old('customer_name', $service->customer_name) }}" required
-                                           placeholder="Full name">
+                                           name="customer_name" value="{{ old('customer_name', $service->customer_name) }}" required placeholder="Full name">
                                     @error('customer_name')<div class="invalid-feedback">{{ $message }}</div>@enderror
                                 </div>
                                 <div class="col-md-6">
-                                    <label class="form-label">Phone Number <span class="text-danger">*</span></label>
+                                    <label class="form-label fw-semibold">Phone <span class="text-danger">*</span></label>
                                     <input type="text" class="form-control @error('customer_phone') is-invalid @enderror"
-                                           name="customer_phone" value="{{ old('customer_phone', $service->customer_phone) }}" required
-                                           placeholder="+880 1XXX XXXXXX">
+                                           name="customer_phone" value="{{ old('customer_phone', $service->customer_phone) }}" required placeholder="+880 1XXX XXXXXX">
                                     @error('customer_phone')<div class="invalid-feedback">{{ $message }}</div>@enderror
                                 </div>
                                 <div class="col-12">
-                                    <label class="form-label">Address</label>
-                                    <textarea class="form-control @error('customer_address') is-invalid @enderror"
-                                              name="customer_address" rows="2"
-                                              placeholder="Customer address...">{{ old('customer_address', $service->customer_address) }}</textarea>
+                                    <label class="form-label fw-semibold small text-muted">Address</label>
+                                    <textarea class="form-control form-control-sm @error('customer_address') is-invalid @enderror"
+                                              name="customer_address" rows="2" placeholder="Address...">{{ old('customer_address', $service->customer_address) }}</textarea>
                                     @error('customer_address')<div class="invalid-feedback">{{ $message }}</div>@enderror
                                 </div>
                             </div>
                         </div>
                     </div>
 
-                    {{-- Internal Notes --}}
-                    <div class="table-card">
-                        <div class="table-card-header">
-                            <h6><i class="fas fa-sticky-note me-2"></i>Internal Notes <small class="text-muted fw-normal">(not visible to customer)</small></h6>
+                    <div class="table-card mt-4">
+                        <div class="table-card-header bg-light border-0 py-3">
+                            <h6 class="mb-0 fw-semibold text-dark"><i class="fas fa-sticky-note me-2 text-primary"></i>Internal notes</h6>
                         </div>
-                        <div class="p-4">
-                            <textarea class="form-control @error('internal_notes') is-invalid @enderror"
-                                      name="internal_notes" rows="3"
-                                      placeholder="Private notes for internal use only...">{{ old('internal_notes', $service->internal_notes) }}</textarea>
+                        <div class="p-4 pt-3">
+                            <textarea class="form-control form-control-sm @error('internal_notes') is-invalid @enderror"
+                                      name="internal_notes" rows="2" placeholder="Private...">{{ old('internal_notes', $service->internal_notes) }}</textarea>
                             @error('internal_notes')<div class="invalid-feedback">{{ $message }}</div>@enderror
                         </div>
                     </div>
                 </div>
 
-                {{-- ── Right Column: Dates, Cost, Payment, Status ── --}}
-                <div class="col-md-4">
-
-                    {{-- Service Number info strip --}}
-                    <div class="alert alert-light border mb-3 py-2 px-3" style="font-size:13px;">
-                        <i class="fas fa-hashtag me-1 text-muted"></i>
-                        <strong>{{ $service->service_number }}</strong>
-                        <span class="text-muted ms-2">· Received {{ $service->receive_date->format('d M Y') }}</span>
-                    </div>
-
-                    {{-- Dates & Cost --}}
-                    <div class="table-card mb-3">
-                        <div class="table-card-header">
-                            <h6><i class="fas fa-calendar me-2"></i>Dates & Cost</h6>
+                <div class="col-lg-4">
+                    <div class="service-form-sidebar">
+                    <div class="table-card mb-4">
+                        <div class="table-card-header bg-light border-0 py-3">
+                            <h6 class="mb-0 fw-semibold text-dark"><i class="fas fa-calendar me-2 text-primary"></i>Dates & cost</h6>
                         </div>
-                        <div class="p-4">
-                            <div class="mb-3">
-                                <label class="form-label">Receive Date <span class="text-danger">*</span></label>
-                                <input type="date" class="form-control @error('receive_date') is-invalid @enderror"
-                                       name="receive_date" value="{{ old('receive_date', $service->receive_date->format('Y-m-d')) }}" required>
-                                @error('receive_date')<div class="invalid-feedback">{{ $message }}</div>@enderror
+                        <div class="p-4 pt-3">
+                            <label class="form-label fw-semibold small">Receive date <span class="text-danger">*</span></label>
+                            <input type="date" class="form-control form-control-sm @error('receive_date') is-invalid @enderror"
+                                   name="receive_date" value="{{ old('receive_date', $service->receive_date->format('Y-m-d')) }}" required>
+                            @error('receive_date')<div class="invalid-feedback">{{ $message }}</div>@enderror
+                            <label class="form-label fw-semibold small mt-3">Expected delivery</label>
+                            <input type="date" class="form-control form-control-sm @error('delivery_date') is-invalid @enderror"
+                                   name="delivery_date" value="{{ old('delivery_date', $service->delivery_date ? $service->delivery_date->format('Y-m-d') : '') }}">
+                            @error('delivery_date')<div class="invalid-feedback">{{ $message }}</div>@enderror
+                            <label class="form-label fw-semibold small mt-3">Service cost (BDT) <span class="text-danger">*</span></label>
+                            <div class="input-group input-group-sm">
+                                <span class="input-group-text fw-bold">৳</span>
+                                <input type="number" step="0.01" min="0" class="form-control @error('service_cost') is-invalid @enderror"
+                                       name="service_cost" id="service_cost" value="{{ old('service_cost', $service->service_cost) }}" required oninput="recalculate()">
                             </div>
-                            <div class="mb-3">
-                                <label class="form-label">Expected Delivery</label>
-                                <input type="date" class="form-control @error('delivery_date') is-invalid @enderror"
-                                       name="delivery_date" value="{{ old('delivery_date', $service->delivery_date ? $service->delivery_date->format('Y-m-d') : '') }}">
-                                @error('delivery_date')<div class="invalid-feedback">{{ $message }}</div>@enderror
-                            </div>
-                            <div class="mb-0">
-                                <label class="form-label">Service Cost (BDT) <span class="text-danger">*</span></label>
-                                <div class="input-group">
-                                    <span class="input-group-text fw-bold">৳</span>
-                                    <input type="number" step="0.01" min="0"
-                                           class="form-control @error('service_cost') is-invalid @enderror"
-                                           name="service_cost" id="service_cost"
-                                           value="{{ old('service_cost', $service->service_cost) }}" required
-                                           oninput="recalculate()">
-                                </div>
-                                @error('service_cost')<div class="invalid-feedback d-block">{{ $message }}</div>@enderror
-                            </div>
+                            @error('service_cost')<div class="invalid-feedback d-block">{{ $message }}</div>@enderror
                         </div>
                     </div>
 
-                    {{-- Payment Information --}}
-                    <div class="table-card mb-3">
-                        <div class="table-card-header">
-                            <h6><i class="fas fa-money-bill-wave me-2"></i>Payment</h6>
+                    <div class="table-card mb-4">
+                        <div class="table-card-header bg-light border-0 py-3">
+                            <h6 class="mb-0 fw-semibold text-dark"><i class="fas fa-money-bill-wave me-2 text-primary"></i>Payment</h6>
                         </div>
-                        <div class="p-4">
+                        <div class="p-4 pt-3">
 
-                            {{-- Live payment summary strip --}}
-                            <div class="d-flex justify-content-between mb-3 p-2 rounded" style="background:#f9fafb;border:1px solid #e5e7eb;font-size:12px;">
-                                <div class="text-center">
-                                    <div class="text-muted">Cost</div>
-                                    <div class="fw-bold" id="preview_cost">৳0.00</div>
-                                </div>
-                                <div class="text-center">
-                                    <div class="text-muted">Paid</div>
-                                    <div class="fw-bold text-success" id="preview_paid">৳0.00</div>
-                                </div>
-                                <div class="text-center">
-                                    <div class="text-muted">Due</div>
-                                    <div class="fw-bold text-danger" id="preview_due">৳0.00</div>
-                                </div>
-                                <div class="text-center">
-                                    <div class="text-muted">Status</div>
-                                    <div id="preview_status" class="badge bg-secondary" style="font-size:10px;">—</div>
-                                </div>
+                            <div class="d-flex justify-content-between mb-3 p-2 rounded bg-light border small">
+                                <div class="text-center"><span class="text-muted d-block">Cost</span><span class="fw-bold" id="preview_cost">৳0.00</span></div>
+                                <div class="text-center"><span class="text-muted d-block">Paid</span><span class="fw-bold text-success" id="preview_paid">৳0.00</span></div>
+                                <div class="text-center"><span class="text-muted d-block">Due</span><span class="fw-bold text-danger" id="preview_due">৳0.00</span></div>
+                                <div class="text-center"><span class="text-muted d-block">Status</span><span id="preview_status" class="badge bg-secondary">—</span></div>
                             </div>
-
-                            <div class="mb-3">
-                                <label class="form-label">Paid Amount (BDT) <span class="text-danger">*</span></label>
-                                <div class="input-group">
-                                    <span class="input-group-text fw-bold">৳</span>
-                                    <input type="number" step="0.01" min="0"
-                                           class="form-control @error('paid_amount') is-invalid @enderror"
-                                           name="paid_amount" id="paid_amount"
-                                           value="{{ old('paid_amount', $service->paid_amount) }}" required
-                                           oninput="recalculate()">
-                                </div>
-                                @error('paid_amount')<div class="invalid-feedback d-block">{{ $message }}</div>@enderror
-                                <div class="d-flex gap-2 mt-1">
-                                    <button type="button" class="btn btn-sm btn-outline-secondary py-0 px-2" onclick="setFullPayment()">Full</button>
-                                    <button type="button" class="btn btn-sm btn-outline-secondary py-0 px-2" onclick="setHalfPayment()">Half</button>
-                                    <button type="button" class="btn btn-sm btn-outline-secondary py-0 px-2" onclick="setZeroPayment()">None</button>
-                                </div>
+                            <label class="form-label fw-semibold small">Paid (BDT) <span class="text-danger">*</span></label>
+                            <div class="input-group input-group-sm mb-1">
+                                <span class="input-group-text fw-bold">৳</span>
+                                <input type="number" step="0.01" min="0" class="form-control @error('paid_amount') is-invalid @enderror"
+                                       name="paid_amount" id="paid_amount" value="{{ old('paid_amount', $service->paid_amount) }}" required oninput="recalculate()">
                             </div>
-
-                            <div class="mb-3">
-                                <label class="form-label">Due Amount (BDT)</label>
-                                <div class="input-group">
-                                    <span class="input-group-text fw-bold">৳</span>
-                                    <input type="number" step="0.01" class="form-control"
-                                           id="due_amount" value="{{ old('due_amount', $service->due_amount) }}"
-                                           readonly style="background:#f8f9fa;">
-                                </div>
-                                <div class="form-text">Auto-calculated</div>
+                            @error('paid_amount')<div class="invalid-feedback d-block">{{ $message }}</div>@enderror
+                            <div class="d-flex gap-2 mb-3">
+                                <button type="button" class="btn btn-sm btn-outline-secondary py-0 px-2" onclick="setFullPayment()">Full</button>
+                                <button type="button" class="btn btn-sm btn-outline-secondary py-0 px-2" onclick="setHalfPayment()">Half</button>
+                                <button type="button" class="btn btn-sm btn-outline-secondary py-0 px-2" onclick="setZeroPayment()">None</button>
                             </div>
-
-                            <div class="mb-3">
-                                <label class="form-label">Payment Method <span class="text-danger">*</span></label>
-                                <select class="form-select @error('payment_method') is-invalid @enderror"
-                                        name="payment_method" id="payment_method" required onchange="toggleBankAccount()">
+                            <label class="form-label fw-semibold small">Due (BDT)</label>
+                            <div class="input-group input-group-sm mb-3">
+                                <span class="input-group-text fw-bold">৳</span>
+                                <input type="number" step="0.01" class="form-control bg-light" id="due_amount" value="{{ old('due_amount', $service->due_amount) }}" readonly>
+                            </div>
+                            <label class="form-label fw-semibold small">Payment method <span class="text-danger">*</span></label>
+                            <select class="form-select form-select-sm @error('payment_method') is-invalid @enderror"
+                                    name="payment_method" id="payment_method" required onchange="toggleBankAccount()">
                                     @php $pm = old('payment_method', $service->payment_method ?? 'cash'); @endphp
                                     <option value="cash"           {{ $pm=='cash'           ?'selected':'' }}>Cash</option>
                                     <option value="card"           {{ $pm=='card'           ?'selected':'' }}>Card</option>
@@ -225,9 +164,9 @@
                                 @error('payment_method')<div class="invalid-feedback">{{ $message }}</div>@enderror
                             </div>
 
-                            <div class="mb-0" id="bankAccountField" style="display:none;">
-                                <label class="form-label">Bank Account <span class="text-danger">*</span></label>
-                                <select class="form-select @error('bank_account_id') is-invalid @enderror"
+                            <div class="mt-3" id="bankAccountField" style="display:none;">
+                                <label class="form-label fw-semibold small">Bank account</label>
+                                <select class="form-select form-select-sm @error('bank_account_id') is-invalid @enderror"
                                         name="bank_account_id" id="bank_account_id">
                                     <option value="">— Select Bank Account —</option>
                                     @foreach($bankAccounts as $ba)
@@ -241,13 +180,12 @@
                         </div>
                     </div>
 
-                    {{-- Status --}}
-                    <div class="table-card mb-3">
-                        <div class="table-card-header">
-                            <h6><i class="fas fa-tag me-2"></i>Service Status</h6>
+                    <div class="table-card mb-4">
+                        <div class="table-card-header bg-light border-0 py-3">
+                            <h6 class="mb-0 fw-semibold text-dark"><i class="fas fa-tag me-2 text-primary"></i>Status</h6>
                         </div>
-                        <div class="p-4">
-                            <select class="form-select @error('status') is-invalid @enderror"
+                        <div class="p-4 pt-3">
+                            <select class="form-select form-select-sm @error('status') is-invalid @enderror"
                                     name="status" required>
                                 @php $st = old('status', $service->status); @endphp
                                 <option value="pending"     {{ $st=='pending'     ?'selected':'' }}>⏳ Pending</option>
@@ -260,20 +198,14 @@
                         </div>
                     </div>
 
-                    {{-- Actions --}}
                     <div class="d-grid gap-2">
-                        <button type="submit" class="btn btn-primary btn-lg">
-                            <i class="fas fa-save me-2"></i>Save Changes
-                        </button>
-                        <a href="{{ route('services.show', $service) }}" class="btn btn-outline-secondary">
-                            <i class="fas fa-times me-1"></i>Cancel
-                        </a>
+                        <button type="submit" form="serviceForm" class="btn btn-primary btn-sm"><i class="fas fa-save me-1"></i>Save</button>
+                        <a href="{{ route('services.show', $service) }}" class="btn btn-outline-secondary btn-sm"><i class="fas fa-times me-1"></i>Cancel</a>
+                    </div>
                     </div>
                 </div>
-
-            </div>
-        </form>
-    </div>
+        </div>
+    </form>
 </div>
 @push('scripts')
 <script>

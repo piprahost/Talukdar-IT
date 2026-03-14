@@ -1,7 +1,13 @@
 @extends('layouts.dashboard')
 
-@section('title', 'Sale / Invoice Details')
-@section('page-title', 'Sale / Invoice Details')
+@section('title', 'Invoice ' . $sale->invoice_number)
+@section('page-title', 'Invoice ' . $sale->invoice_number)
+
+@section('breadcrumbs')
+<li class="breadcrumb-item"><a href="{{ route('dashboard') }}">Home</a></li>
+<li class="breadcrumb-item"><a href="{{ route('sales.index') }}">Invoices</a></li>
+<li class="breadcrumb-item active" aria-current="page">{{ $sale->invoice_number }}</li>
+@endsection
 
 @section('content')
 <div class="row g-3">
@@ -319,6 +325,30 @@
                 @endif
             </div>
         </div>
+
+        {{-- Payment history (when payments are recorded via Collect Payment) --}}
+        @if($sale->payments && $sale->payments->count() > 0)
+        <div class="table-card mb-3">
+            <div class="table-card-header">
+                <h6><i class="fas fa-money-bill-wave me-2"></i>Payment History ({{ $sale->payments->count() }})</h6>
+                <a href="{{ route('payments.index') }}" class="btn btn-sm btn-outline-secondary">View in Payments</a>
+            </div>
+            <div class="p-3">
+                @foreach($sale->payments->sortByDesc('payment_date') as $payment)
+                <div class="d-flex justify-content-between align-items-center mb-2 p-2" style="background:#f9fafb;border-radius:8px;">
+                    <div>
+                        <div style="font-size:12px;font-weight:700;">{{ $payment->payment_number }}</div>
+                        <div style="font-size:11px;color:#6b7280;">{{ $payment->payment_date->format('d M Y') }} · {{ ucfirst(str_replace('_', ' ', $payment->payment_method ?? 'cash')) }}</div>
+                    </div>
+                    <div class="text-end">
+                        <span style="font-size:14px;font-weight:700;color:#16a34a;">৳{{ number_format($payment->amount, 2) }}</span>
+                        <a href="{{ route('payments.show', $payment) }}" class="btn btn-sm btn-link p-0 ms-1" title="View payment">View</a>
+                    </div>
+                </div>
+                @endforeach
+            </div>
+        </div>
+        @endif
 
         {{-- Returns --}}
         @if($sale->returns && $sale->returns->count() > 0)

@@ -88,6 +88,17 @@ class PurchaseReturn extends Model
         return $this->belongsTo(User::class, 'approved_by');
     }
 
+    /** Relation names for show/detail. */
+    public static function getStandardRelations(): array
+    {
+        return ['purchase.supplier', 'supplier', 'items.product', 'items.purchaseItem', 'creator', 'approver'];
+    }
+
+    public function scopeWithStandardRelations($query)
+    {
+        return $query->with(self::getStandardRelations());
+    }
+
     // Helper Methods
     public function calculateTotals()
     {

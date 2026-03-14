@@ -21,11 +21,19 @@
                 <div class="p-4">
                     <div class="row g-3">
                         <div class="col-md-6">
-                            <label class="form-label fw-semibold">Company Name <span class="text-danger">*</span></label>
+                            <label class="form-label fw-semibold">Shop / Company Name <span class="text-danger">*</span></label>
                             <input type="text" class="form-control @error('company_name') is-invalid @enderror"
                                    name="company_name" value="{{ old('company_name', $company->company_name ?? '') }}" required
-                                   placeholder="e.g. Talukdar IT">
+                                   placeholder="e.g. Computer Accessories & Used Laptops">
                             @error('company_name')<div class="invalid-feedback">{{ $message }}</div>@enderror
+                        </div>
+                        <div class="col-md-6">
+                            <label class="form-label fw-semibold">Tagline</label>
+                            <input type="text" class="form-control @error('tagline') is-invalid @enderror"
+                                   name="tagline" value="{{ old('tagline', $company->tagline ?? '') }}"
+                                   placeholder="e.g. All types of computer accessories • Sales & Service">
+                            @error('tagline')<div class="invalid-feedback">{{ $message }}</div>@enderror
+                            <div class="form-text">Shown in sidebar. e.g. &quot;You Can Buy And Replace Here&quot;</div>
                         </div>
                         <div class="col-md-6">
                             <label class="form-label fw-semibold">Service Center Name</label>

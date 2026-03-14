@@ -6,6 +6,7 @@ use App\Models\Product;
 use App\Models\Purchase;
 use App\Models\PurchaseItem;
 use App\Models\Supplier;
+use App\Models\Payment;
 use App\Models\BankAccount;
 use App\Services\AccountingService;
 use Illuminate\Http\Request;
@@ -165,7 +166,7 @@ class PurchaseController extends Controller
     public function show(Purchase $purchase)
     {
         $this->authorizePermission('view purchases');
-        $purchase->load(['supplier', 'items.product', 'creator', 'receiver', 'returns', 'bankAccount']);
+        $purchase->load(Purchase::getStandardRelations());
         return view('purchases.purchases.show', compact('purchase'));
     }
 
@@ -232,16 +233,19 @@ class PurchaseController extends Controller
             'payment_amount.max' => 'Payment cannot exceed the due amount (৳' . number_format($purchase->due_amount, 2) . ').',
         ]);
 
-        $newPaid = $purchase->paid_amount + $validated['payment_amount'];
-        $newDue  = max(0, $purchase->total_amount - $newPaid);
-
-        $purchase->update([
-            'paid_amount'     => $newPaid,
-            'due_amount'      => $newDue,
-            'payment_status'  => $newDue == 0 ? 'paid' : 'partial',
-            'payment_method'  => $validated['payment_method'],
-            'bank_account_id' => $validated['bank_account_id'] ?? $purchase->bank_account_id,
-        ]);
+        DB::transaction(function () use ($purchase, $validated) {
+            $payment = Payment::create([
+                'payment_type'     => 'supplier',
+                'purchase_id'      => $purchase->id,
+                'supplier_id'      => $purchase->supplier_id,
+                'amount'           => $validated['payment_amount'],
+                'payment_date'     => now()->toDateString(),
+                'payment_method'   => $validated['payment_method'],
+                'reference_number' => null,
+                'notes'            => 'Payment for PO ' . $purchase->po_number,
+            ]);
+            AccountingService::recordPayment($payment);
+        });
 
         return redirect()->route('purchases.show', $purchase)
             ->with('success', 'Payment of ৳' . number_format($validated['payment_amount'], 2) . ' recorded successfully.');

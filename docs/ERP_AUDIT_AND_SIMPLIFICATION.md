@@ -2,6 +2,8 @@
 
 This document summarizes the audit of all modules, options, and buttons, and the changes made to keep the software **easy to use**, **clean**, and focused on **mandatory business operations** for a laptop/computer accessories reseller.
 
+**For a full list of every module, page, route, and how they interconnect (including accounting), see [ERP_SOFTWARE_MODULES_AND_OPTIONS.md](ERP_SOFTWARE_MODULES_AND_OPTIONS.md).**
+
 ---
 
 ## 1. What Was Audited
@@ -57,6 +59,22 @@ This document summarizes the audit of all modules, options, and buttons, and the
 ### 2.2 Products & Stock
 
 - **Stock & Movement** is one menu item and covers both stock movements and low-stock view; **Manual Entry** is done from the Stock index page, so no separate sidebar link.
+
+### 2.3 Header
+
+- **Removed** non-functional icons: **Notifications** (bell) and **Messages** (envelope). Calculator and user profile dropdown kept.
+
+### 2.4 Every-Page Standards (Ongoing)
+
+To keep the ERP clean and consistent across all pages:
+
+- **Breadcrumbs** – Every list and detail page shows breadcrumbs (e.g. Home → Invoices, Home → Invoices → #123).
+- **Index pages** – One primary CTA (e.g. “New Invoice”), essential filters only (e.g. search, status, payment), table rows clickable to open the record, and a single **Actions** dropdown per row (View, Edit, Print, etc.) instead of multiple icon buttons.
+- **Show pages** – One primary action (e.g. Collect Payment, Complete Sale) and secondary actions (Print, Return, Back) in a **More** dropdown where appropriate.
+
+### 2.5 Reports Hub
+
+- **Added** a Reports **Overview** (hub) at **Reports → Overview** (`/reports`). One place to open the main report in each category: Sales, Purchases, Financial, Inventory. Sidebar Reports submenu now has “Overview” as the first item; other report links unchanged.
 
 ---
 
@@ -135,6 +153,10 @@ These are the **mandatory daily operations** and are always visible on the dashb
 
 ## 6. Summary
 
-- **Sidebar**: Reordered (daily ops first, Access Control last), shorter labels, one “Stock & Movement” entry, Manual Stock Entry removed from menu (still on Stock page).
+- **Sidebar**: Reordered (daily ops first, Access Control last), shorter labels, one “Stock & Movement” entry, Manual Stock Entry removed from menu (still on Stock page). Reports submenu has an **Overview** link to the reports hub.
+- **Header**: Notifications and Messages icons removed (non-functional).
+- **Breadcrumbs**: Global breadcrumb partial; list/detail pages should define `@section('breadcrumbs')` for consistent navigation.
+- **Index pages (e.g. Invoices)**: Simplified filters (search, status, payment), clickable rows, one Actions dropdown per row; customer filter removed from invoice list for simplicity.
+- **Reports hub**: New `/reports` page with four cards (Sales, Purchases, Financial, Inventory) linking to the main report in each category; access requires at least one report permission.
 - **Dashboard**: Quick Actions updated to include **Add Expense**, **Payments**, and **Low Stock**.
-- **No features removed**: Everything is still available; only navigation and labels were simplified to make the software easier and cleaner for daily use.
+- **No features removed**: All routes and backend features remain; only UI/navigation simplified for a cleaner, easier-to-use ERP.

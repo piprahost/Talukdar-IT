@@ -380,6 +380,38 @@
         font-weight: 500;
     }
 
+    /* Breadcrumbs */
+    .breadcrumb-nav {
+        padding: 8px 0 12px;
+        font-size: 13px;
+    }
+    .breadcrumb-nav .breadcrumb {
+        background: transparent;
+        padding: 0;
+    }
+    .breadcrumb-nav .breadcrumb-item a {
+        color: var(--text-muted);
+        text-decoration: none;
+    }
+    .breadcrumb-nav .breadcrumb-item a:hover {
+        color: var(--accent-strong);
+    }
+    .breadcrumb-nav .breadcrumb-item.active {
+        color: var(--text-main);
+        font-weight: 600;
+    }
+    .breadcrumb-nav .breadcrumb-item + .breadcrumb-item::before {
+        content: "›";
+        color: var(--text-soft);
+        padding: 0 6px;
+    }
+
+    .table-row-clickable { cursor: pointer; }
+    .table-row-clickable:hover { background-color: rgba(22, 163, 74, 0.06); }
+
+    .report-hub-card { transition: transform 0.15s ease, box-shadow 0.15s ease; }
+    .report-hub-card:hover { transform: translateY(-2px); box-shadow: 0 0.5rem 1rem rgba(0,0,0,0.1) !important; }
+
     /* Table Card */
     /* Filter form wrapper inside table-card */
     .table-card .filter-wrapper {
@@ -1362,6 +1394,19 @@
     /* Padding for Show pages content inside table-card */
     .table-card > .p-4 {
         padding: 24px !important;
+    }
+    /* Product Add/Edit form layout */
+    .product-form-wrap .table-card-header.bg-light {
+        background-color: #f8fafc !important;
+    }
+    @media (min-width: 992px) {
+        .product-form-sidebar,
+        .purchase-form-sidebar,
+        .sale-form-sidebar,
+        .service-form-sidebar {
+            position: sticky;
+            top: 1rem;
+        }
     }
 </style>
 

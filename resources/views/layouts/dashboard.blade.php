@@ -14,6 +14,7 @@
         <!-- Content Wrapper -->
         <div class="content-wrapper">
             @include('partials._alerts')
+            @include('partials._breadcrumbs')
             @yield('content')
         </div>
         

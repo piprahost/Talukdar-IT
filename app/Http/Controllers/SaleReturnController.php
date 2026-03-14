@@ -4,6 +4,8 @@ namespace App\Http\Controllers;
 
 use App\Models\SaleReturn;
 use App\Models\Sale;
+use App\Models\SaleItem;
+use App\Models\SaleReturnItem;
 use App\Services\AccountingService;
 use Illuminate\Http\Request;
 use Illuminate\Support\Facades\DB;
@@ -75,6 +77,21 @@ class SaleReturnController extends Controller
         ]);
 
         $sale = Sale::findOrFail($validated['sale_id']);
+
+        // Validate return quantity does not exceed (original - already returned) per line
+        foreach ($validated['items'] as $itemData) {
+            $saleItem = SaleItem::find($itemData['sale_item_id']);
+            if (!$saleItem || $saleItem->sale_id != $sale->id) {
+                return back()->withErrors(['items' => 'Invalid sale item for this invoice.'])->withInput();
+            }
+            $alreadyReturned = (int) SaleReturnItem::where('sale_item_id', $saleItem->id)
+                ->whereHas('saleReturn', fn ($q) => $q->where('sale_id', $sale->id))
+                ->sum('quantity');
+            $maxReturnable = $saleItem->quantity - $alreadyReturned;
+            if ($itemData['quantity'] > $maxReturnable) {
+                return back()->withErrors(['items' => "Return quantity for product cannot exceed {$maxReturnable} (sold: {$saleItem->quantity}, already returned: {$alreadyReturned})."])->withInput();
+            }
+        }
 
         $return = DB::transaction(function () use ($validated, $sale) {
             $return = SaleReturn::create([

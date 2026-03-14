@@ -11,6 +11,7 @@ use App\Models\Payment;
 use App\Models\PurchaseReturn;
 use App\Models\SaleReturn;
 use App\Models\ServiceReturn;
+use App\Models\Service;
 use App\Models\Expense;
 use Illuminate\Support\Facades\DB;
 
@@ -353,6 +354,83 @@ class AccountingService
                     ]);
                 }
             }
+        });
+    }
+
+    /**
+     * Create journal entry for a completed/delivered service order (service revenue).
+     * Call when service is created/updated/paid or status set to completed/delivered.
+     * Removes the entry when status is not completed/delivered (e.g. cancelled).
+     */
+    public static function recordService(Service $service)
+    {
+        // Remove any existing journal entry for this service (idempotent; also clears on cancel)
+        JournalEntry::where('reference_type', 'service')
+            ->where('reference_id', $service->id)
+            ->delete();
+
+        $total = (float) $service->service_cost;
+        if ($total <= 0) {
+            return;
+        }
+
+        $status = $service->status;
+        if (!in_array($status, ['completed', 'delivered'], true)) {
+            return;
+        }
+
+        $accounts = [
+            'accounts_receivable' => Account::where('code', '1200')->first(),
+            'service_revenue'     => Account::where('code', '4100')->first(),
+            'cash'                => Account::where('code', '1000')->first(),
+        ];
+
+        if (!$accounts['service_revenue']) {
+            return;
+        }
+
+        DB::transaction(function () use ($service, $accounts) {
+            $entry = JournalEntry::create([
+                'entry_date'   => $service->delivery_date ?? $service->receive_date ?? now(),
+                'description'  => "Service - SN: {$service->service_number}",
+                'reference'    => $service->service_number,
+                'reference_type' => 'service',
+                'reference_id' => $service->id,
+                'status'       => 'posted',
+                'posted_by'    => auth()->id(),
+                'posted_at'    => now(),
+            ]);
+
+            $paid = (float) $service->paid_amount;
+            $due  = (float) $service->due_amount;
+
+            if ($paid > 0 && $accounts['cash']) {
+                JournalEntryItem::create([
+                    'journal_entry_id' => $entry->id,
+                    'account_id'       => $accounts['cash']->id,
+                    'debit'            => $paid,
+                    'credit'           => 0,
+                    'description'      => 'Cash received for service',
+                ]);
+            }
+
+            if ($due > 0 && $accounts['accounts_receivable']) {
+                JournalEntryItem::create([
+                    'journal_entry_id' => $entry->id,
+                    'account_id'       => $accounts['accounts_receivable']->id,
+                    'debit'            => $due,
+                    'credit'           => 0,
+                    'description'      => 'Receivable for service',
+                ]);
+            }
+
+            JournalEntryItem::create([
+                'journal_entry_id' => $entry->id,
+                'account_id'       => $accounts['service_revenue']->id,
+                'debit'            => 0,
+                'credit'           => (float) $service->service_cost,
+                'description'      => 'Service revenue',
+            ]);
         });
     }
 

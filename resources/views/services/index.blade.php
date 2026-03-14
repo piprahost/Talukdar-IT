@@ -4,59 +4,61 @@
 @section('page-title', 'Service Orders')
 
 @section('content')
-
-{{-- ── Summary Stats ── --}}
-<div class="row g-3 mb-3">
-    <div class="col-6 col-md-2">
-        <div class="table-card p-3 text-center h-100">
-            <div style="font-size:10px;font-weight:700;text-transform:uppercase;letter-spacing:.5px;color:#6b7280;margin-bottom:4px;">Total Orders</div>
-            <div style="font-size:24px;font-weight:800;color:#111;">{{ $stats['total'] }}</div>
+<div class="service-orders-wrap">
+    <div class="d-flex flex-column flex-md-row align-items-start align-items-md-center justify-content-between gap-3 mb-4 pb-3 border-bottom">
+        <div>
+            <h5 class="mb-1 fw-bold">Service Orders</h5>
+            <p class="text-muted small mb-0">Repair and service job tracking.</p>
         </div>
-    </div>
-    <div class="col-6 col-md-2">
-        <div class="table-card p-3 text-center h-100" style="border-left:3px solid #f97316;">
-            <div style="font-size:10px;font-weight:700;text-transform:uppercase;letter-spacing:.5px;color:#6b7280;margin-bottom:4px;">Pending</div>
-            <div style="font-size:24px;font-weight:800;color:#f97316;">{{ $stats['pending'] }}</div>
-        </div>
-    </div>
-    <div class="col-6 col-md-2">
-        <div class="table-card p-3 text-center h-100" style="border-left:3px solid #3b82f6;">
-            <div style="font-size:10px;font-weight:700;text-transform:uppercase;letter-spacing:.5px;color:#6b7280;margin-bottom:4px;">In Progress</div>
-            <div style="font-size:24px;font-weight:800;color:#3b82f6;">{{ $stats['in_progress'] }}</div>
-        </div>
-    </div>
-    <div class="col-6 col-md-2">
-        <div class="table-card p-3 text-center h-100" style="border-left:3px solid #16a34a;">
-            <div style="font-size:10px;font-weight:700;text-transform:uppercase;letter-spacing:.5px;color:#6b7280;margin-bottom:4px;">Completed</div>
-            <div style="font-size:24px;font-weight:800;color:#16a34a;">{{ $stats['completed'] }}</div>
-        </div>
-    </div>
-    <div class="col-6 col-md-2">
-        <div class="table-card p-3 text-center h-100" style="border-left:3px solid #ef4444;">
-            <div style="font-size:10px;font-weight:700;text-transform:uppercase;letter-spacing:.5px;color:#6b7280;margin-bottom:4px;">Unpaid Orders</div>
-            <div style="font-size:24px;font-weight:800;color:#ef4444;">{{ $stats['unpaid'] }}</div>
-        </div>
-    </div>
-    <div class="col-6 col-md-2">
-        <div class="table-card p-3 text-center h-100" style="border-left:3px solid #ef4444;">
-            <div style="font-size:10px;font-weight:700;text-transform:uppercase;letter-spacing:.5px;color:#6b7280;margin-bottom:4px;">Total Due</div>
-            <div style="font-size:18px;font-weight:800;color:#ef4444;">৳{{ number_format($stats['total_due'], 2) }}</div>
-        </div>
-    </div>
-</div>
-
-<div class="table-card">
-    <div class="table-card-header">
-        <h6><i class="fas fa-laptop-medical me-2"></i>All Service Orders</h6>
         @can('create services')
-        <a href="{{ route('services.create') }}" class="btn btn-primary">
-            <i class="fas fa-plus me-2"></i>Add New Service
-        </a>
+        <a href="{{ route('services.create') }}" class="btn btn-primary btn-sm"><i class="fas fa-plus me-1"></i>Add service</a>
         @endcan
     </div>
-    
-    <!-- Search and Filters -->
-    <div class="mb-4 p-4">
+
+    <div class="row g-3 mb-4">
+        <div class="col-6 col-md-2">
+            <div class="table-card p-3 text-center h-100">
+                <div class="small text-muted text-uppercase fw-semibold mb-1">Total</div>
+                <div class="fw-bold fs-5">{{ $stats['total'] }}</div>
+            </div>
+        </div>
+        <div class="col-6 col-md-2">
+            <div class="table-card p-3 text-center h-100 border-start border-3 border-warning">
+                <div class="small text-muted text-uppercase fw-semibold mb-1">Pending</div>
+                <div class="fw-bold fs-5 text-warning">{{ $stats['pending'] }}</div>
+            </div>
+        </div>
+        <div class="col-6 col-md-2">
+            <div class="table-card p-3 text-center h-100 border-start border-3 border-info">
+                <div class="small text-muted text-uppercase fw-semibold mb-1">In progress</div>
+                <div class="fw-bold fs-5 text-info">{{ $stats['in_progress'] }}</div>
+            </div>
+        </div>
+        <div class="col-6 col-md-2">
+            <div class="table-card p-3 text-center h-100 border-start border-3 border-success">
+                <div class="small text-muted text-uppercase fw-semibold mb-1">Completed</div>
+                <div class="fw-bold fs-5 text-success">{{ $stats['completed'] }}</div>
+            </div>
+        </div>
+        <div class="col-6 col-md-2">
+            <div class="table-card p-3 text-center h-100 border-start border-3 border-danger">
+                <div class="small text-muted text-uppercase fw-semibold mb-1">Unpaid</div>
+                <div class="fw-bold fs-5 text-danger">{{ $stats['unpaid'] }}</div>
+            </div>
+        </div>
+        <div class="col-6 col-md-2">
+            <div class="table-card p-3 text-center h-100 border-start border-3 border-danger">
+                <div class="small text-muted text-uppercase fw-semibold mb-1">Total due</div>
+                <div class="fw-bold text-danger">৳{{ number_format($stats['total_due'], 0) }}</div>
+            </div>
+        </div>
+    </div>
+
+    <div class="table-card">
+        <div class="table-card-header bg-light border-0 py-3">
+            <h6 class="mb-0 fw-semibold text-dark"><i class="fas fa-laptop-medical me-2 text-primary"></i>All service orders</h6>
+        </div>
+        <div class="p-4">
         <form method="GET" action="{{ route('services.index') }}" id="filterForm">
             <!-- Search Bar -->
             <div class="row filter-row mb-3">
@@ -155,8 +157,8 @@
     @endif
     
     <div class="table-responsive">
-        <table class="table table-hover" style="width: 100%;">
-            <thead>
+        <table class="table table-hover table-sm mb-0" style="width: 100%;">
+            <thead class="table-light">
                 <tr>
                     <th>Service #</th>
                     <th>Product</th>

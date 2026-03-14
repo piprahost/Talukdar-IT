@@ -3,6 +3,11 @@
 @section('title', 'Purchase Orders')
 @section('page-title', 'Purchase Orders')
 
+@section('breadcrumbs')
+<li class="breadcrumb-item"><a href="{{ route('dashboard') }}">Home</a></li>
+<li class="breadcrumb-item active" aria-current="page">Purchase Orders</li>
+@endsection
+
 @section('content')
 
 {{-- Stats --}}

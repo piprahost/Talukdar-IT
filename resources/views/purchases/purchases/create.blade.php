@@ -4,239 +4,172 @@
 @section('page-title', 'Create Purchase Order')
 
 @section('content')
-<div class="row">
-    <div class="col-md-12">
-        <div class="table-card">
-            <div class="table-card-header">
-                <h6><i class="fas fa-shopping-bag me-2"></i>Create Purchase Order</h6>
-                <a href="{{ route('purchases.index') }}" class="btn btn-sm btn-outline-secondary">Back</a>
-            </div>
-            
-            <form action="{{ route('purchases.store') }}" method="POST" id="purchaseForm">
-                @csrf
-                
-                <!-- Purchase Order Information -->
-                <div class="mb-4">
-                    <h6 class="border-bottom pb-2 mb-3"><i class="fas fa-info-circle me-2"></i>Purchase Order Information</h6>
-                    <div class="row">
-                        <div class="col-md-4 mb-3">
-                            <label for="supplier_id" class="form-label">Supplier <span class="text-danger">*</span></label>
-                            <select class="form-select @error('supplier_id') is-invalid @enderror" id="supplier_id" name="supplier_id" required>
-                                <option value="">Select Supplier</option>
-                                @foreach($suppliers as $supplier)
-                                    <option value="{{ $supplier->id }}" {{ old('supplier_id') == $supplier->id ? 'selected' : '' }}>
-                                        {{ $supplier->name }}@if($supplier->company_name) - {{ $supplier->company_name }}@endif
-                                    </option>
-                                @endforeach
-                            </select>
-                            @error('supplier_id')
-                                <div class="invalid-feedback">{{ $message }}</div>
-                            @enderror
-                        </div>
-                        
-                        <div class="col-md-4 mb-3">
-                            <label for="order_date" class="form-label">Order Date <span class="text-danger">*</span></label>
-                            <input type="date" class="form-control @error('order_date') is-invalid @enderror" id="order_date" name="order_date" value="{{ old('order_date', date('Y-m-d')) }}" required>
-                            @error('order_date')
-                                <div class="invalid-feedback">{{ $message }}</div>
-                            @enderror
-                        </div>
-                        
-                        <div class="col-md-4 mb-3">
-                            <label for="expected_delivery_date" class="form-label">Expected Delivery Date</label>
-                            <input type="date" class="form-control @error('expected_delivery_date') is-invalid @enderror" id="expected_delivery_date" name="expected_delivery_date" value="{{ old('expected_delivery_date') }}">
-                            @error('expected_delivery_date')
-                                <div class="invalid-feedback">{{ $message }}</div>
-                            @enderror
+<div class="purchase-form-wrap">
+    <div class="d-flex flex-column flex-md-row align-items-start align-items-md-center justify-content-between gap-3 mb-4 pb-3 border-bottom">
+        <div>
+            <h5 class="mb-1 fw-bold">Create Purchase Order</h5>
+            <p class="text-muted small mb-0">Select supplier, add items by barcode, then set payment.</p>
+        </div>
+        <div class="d-flex gap-2">
+            <a href="{{ route('purchases.index') }}" class="btn btn-outline-secondary btn-sm"><i class="fas fa-arrow-left me-1"></i>Back</a>
+            <button type="submit" form="purchaseForm" class="btn btn-primary btn-sm" id="submitBtn" disabled><i class="fas fa-save me-1"></i>Create PO</button>
+        </div>
+    </div>
+
+    <form action="{{ route('purchases.store') }}" method="POST" id="purchaseForm">
+        @csrf
+        <div class="row g-4">
+            <div class="col-lg-8">
+                <div class="table-card mb-0">
+                    <div class="table-card-header bg-light border-0 py-3">
+                        <h6 class="mb-0 fw-semibold text-dark"><i class="fas fa-info-circle me-2 text-primary"></i>Order info</h6>
+                    </div>
+                    <div class="p-4 pt-3">
+                        <div class="row g-3">
+                            <div class="col-md-6">
+                                <label for="supplier_id" class="form-label fw-semibold">Supplier <span class="text-danger">*</span></label>
+                                <select class="form-select @error('supplier_id') is-invalid @enderror" id="supplier_id" name="supplier_id" required>
+                                    <option value="">Select supplier</option>
+                                    @foreach($suppliers as $supplier)
+                                        <option value="{{ $supplier->id }}" {{ old('supplier_id') == $supplier->id ? 'selected' : '' }}>{{ $supplier->name }}@if($supplier->company_name) — {{ $supplier->company_name }}@endif</option>
+                                    @endforeach
+                                </select>
+                                @error('supplier_id')<div class="invalid-feedback">{{ $message }}</div>@enderror
+                            </div>
+                            <div class="col-6 col-md-3">
+                                <label for="order_date" class="form-label fw-semibold">Order date <span class="text-danger">*</span></label>
+                                <input type="date" class="form-control @error('order_date') is-invalid @enderror" id="order_date" name="order_date" value="{{ old('order_date', date('Y-m-d')) }}" required>
+                                @error('order_date')<div class="invalid-feedback">{{ $message }}</div>@enderror
+                            </div>
+                            <div class="col-6 col-md-3">
+                                <label for="expected_delivery_date" class="form-label fw-semibold">Expected delivery</label>
+                                <input type="date" class="form-control @error('expected_delivery_date') is-invalid @enderror" id="expected_delivery_date" name="expected_delivery_date" value="{{ old('expected_delivery_date') }}">
+                                @error('expected_delivery_date')<div class="invalid-feedback">{{ $message }}</div>@enderror
+                            </div>
                         </div>
                     </div>
                 </div>
-                
-                <hr>
-                
-                <!-- Add Items by Scanning Barcodes -->
-                <div class="mb-4">
-                    <h6 class="border-bottom pb-2 mb-3"><i class="fas fa-box me-2"></i>Add Items by Scanning Barcodes</h6>
-                    
-                    <!-- Product Selection and Barcode Scanner -->
-                    <div class="alert alert-primary">
-                        <div class="row align-items-end">
-                            <div class="col-md-4 mb-2">
-                                <label class="form-label">Select Product <span class="text-danger">*</span></label>
-                                <div class="position-relative">
-                                    <input type="text" class="form-control" id="productSearch" placeholder="Search product by name or SKU..." autocomplete="off">
-                                    <div class="position-absolute w-100 bg-white border border-top-0 rounded-bottom shadow-lg" id="productDropdown" style="display: none; max-height: 300px; overflow-y: auto; z-index: 1000;">
-                                        <!-- Product options will be populated here -->
+
+                <div class="table-card mt-4">
+                    <div class="table-card-header bg-light border-0 py-3">
+                        <h6 class="mb-0 fw-semibold text-dark"><i class="fas fa-barcode me-2 text-primary"></i>Add items <span class="badge bg-secondary ms-1" id="totalItemsCount">0</span></h6>
+                    </div>
+                    <div class="p-4 pt-3">
+                        <div class="p-3 rounded-3 mb-3" style="background:#f8fafc;border:1px solid #e2e8f0;">
+                            <div class="row g-2 align-items-end">
+                                <div class="col-12 col-md-4">
+                                    <label class="form-label small fw-semibold mb-1">Product</label>
+                                    <div class="position-relative">
+                                        <input type="text" class="form-control form-control-sm" id="productSearch" placeholder="Search by name or SKU..." autocomplete="off">
+                                        <div class="position-absolute w-100 bg-white border rounded shadow-lg" id="productDropdown" style="display:none;max-height:260px;overflow-y:auto;z-index:1000;"></div>
+                                        <input type="hidden" id="currentProduct" value="">
                                     </div>
-                                    <input type="hidden" id="currentProduct" value="">
-                                    <div id="selectedProduct" class="mt-2" style="display: none;">
-                                        <div class="d-flex justify-content-between align-items-center bg-light p-2 rounded">
-                                            <span><strong id="selectedProductName"></strong></span>
-                                            <button type="button" class="btn btn-sm btn-outline-danger" onclick="clearProductSelection()">
-                                                <i class="fas fa-times"></i>
-                                            </button>
-                                        </div>
+                                    <div id="selectedProduct" class="mt-1" style="display:none;">
+                                        <span class="small text-success"><strong id="selectedProductName"></strong></span>
+                                        <button type="button" class="btn btn-link btn-sm p-0 ms-1 text-danger" onclick="clearProductSelection()"><i class="fas fa-times"></i></button>
                                     </div>
                                 </div>
+                                <div class="col-12 col-md-5">
+                                    <label class="form-label small fw-semibold mb-1">Scan barcode <button type="button" class="btn btn-link btn-sm p-0 ms-1" onclick="focusBarcodeScanner()" title="Focus (Ctrl+B)"><i class="fas fa-crosshairs"></i></button></label>
+                                    <input type="text" class="form-control form-control-sm" id="barcodeScanner" placeholder="Scan or type barcode" autofocus>
+                                </div>
+                                <div class="col-12 col-md-3">
+                                    <button type="button" class="btn btn-primary btn-sm w-100" onclick="addBarcodeManually()"><i class="fas fa-plus me-1"></i>Add</button>
+                                </div>
                             </div>
-                            <div class="col-md-6 mb-2">
-                                <label class="form-label">
-                                    Scan Barcode
-                                    <button type="button" class="btn btn-sm btn-outline-light ms-2" onclick="focusBarcodeScanner()" title="Focus for barcode scanning">
-                                        <i class="fas fa-barcode"></i> Scan
-                                    </button>
-                                </label>
-                                <input type="text" class="form-control form-control-lg" id="barcodeScanner" placeholder="Scan barcode here - multiple barcodes for same product" autofocus>
-                                <small class="text-muted"><i class="fas fa-info-circle"></i> Scan multiple barcodes for the selected product. Each barcode = 1 stock unit.</small>
-                            </div>
-                            <div class="col-md-2 mb-2">
-                                <button type="button" class="btn btn-primary w-100" onclick="addBarcodeManually()">
-                                    <i class="fas fa-plus"></i> Add
-                                </button>
-                            </div>
+                            <p class="small text-muted mb-0 mt-2">Select product, then scan. Each barcode = 1 unit.</p>
                         </div>
-                    </div>
-                    
-                    <!-- Scanned Items Table -->
-                    <div class="mb-3">
-                        <h6>Scanned Items (<span id="totalItemsCount">0</span> items)</h6>
                         <div class="table-responsive">
-                            <table class="table table-hover table-sm" id="scannedItemsTable">
-                                <thead>
+                            <table class="table table-sm table-hover mb-0" id="scannedItemsTable">
+                                <thead class="table-light">
                                     <tr>
                                         <th>Product</th>
                                         <th>Barcodes</th>
                                         <th>Qty</th>
-                                        <th>Cost Price (BDT)</th>
-                                        <th>Selling Price (BDT)</th>
+                                        <th>Cost (৳)</th>
+                                        <th>Selling (৳)</th>
                                         <th>Subtotal</th>
-                                        <th>Actions</th>
-                                    </tr>
-                                </thead>
-                                <tbody id="scannedItemsBody">
-                                    <!-- Scanned items will appear here -->
-                                </tbody>
-                                <tfoot>
-                                    <tr class="table-secondary">
-                                        <th colspan="5" class="text-end">Subtotal:</th>
-                                        <th id="itemsSubtotal">৳0.00</th>
                                         <th></th>
                                     </tr>
+                                </thead>
+                                <tbody id="scannedItemsBody"></tbody>
+                                <tfoot class="table-light">
+                                    <tr><th colspan="5" class="text-end">Subtotal</th><th id="itemsSubtotal">৳0.00</th><th></th></tr>
                                 </tfoot>
                             </table>
                         </div>
                     </div>
-                    
-                    <div class="alert alert-info">
-                        <i class="fas fa-info-circle me-2"></i>
-                        <strong>Instructions:</strong> Search and select a product, then scan multiple barcodes for that product. Each barcode = 1 stock unit. You can add multiple barcodes to the same product item.
-                    </div>
                 </div>
-                
-                <hr>
-                
-                <!-- Financial Summary -->
-                <div class="mb-4">
-                    <h6 class="border-bottom pb-2 mb-3"><i class="fas fa-dollar-sign me-2"></i>Financial Summary</h6>
-                    <div class="row">
-                        <div class="col-md-3 mb-3">
-                            <label for="tax_amount" class="form-label">Tax Amount (BDT)</label>
-                            <input type="number" step="0.01" class="form-control @error('tax_amount') is-invalid @enderror" id="tax_amount" name="tax_amount" value="{{ old('tax_amount', 0) }}" oninput="calculateTotals()">
-                            @error('tax_amount')
-                                <div class="invalid-feedback">{{ $message }}</div>
-                            @enderror
+            </div>
+
+            <div class="col-lg-4">
+                <div class="purchase-form-sidebar">
+                    <div class="table-card mb-4">
+                        <div class="table-card-header bg-light border-0 py-3">
+                            <h6 class="mb-0 fw-semibold text-dark"><i class="fas fa-calculator me-2 text-primary"></i>Summary & payment</h6>
                         </div>
-                        
-                        <div class="col-md-3 mb-3">
-                            <label for="discount_amount" class="form-label">Discount Amount (BDT)</label>
-                            <input type="number" step="0.01" class="form-control @error('discount_amount') is-invalid @enderror" id="discount_amount" name="discount_amount" value="{{ old('discount_amount', 0) }}" oninput="calculateTotals()">
-                            @error('discount_amount')
-                                <div class="invalid-feedback">{{ $message }}</div>
-                            @enderror
-                        </div>
-                        
-                        <div class="col-md-2 mb-3">
-                            <label for="paid_amount" class="form-label">Paid Amount (BDT)</label>
-                            <input type="number" step="0.01" class="form-control @error('paid_amount') is-invalid @enderror" id="paid_amount" name="paid_amount" value="{{ old('paid_amount', 0) }}" oninput="calculateTotals()">
-                            @error('paid_amount')
-                                <div class="invalid-feedback">{{ $message }}</div>
-                            @enderror
-                        </div>
-                        
-                        <div class="col-md-3 mb-3">
-                            <label class="form-label">Total Amount (BDT)</label>
-                            <div class="form-control bg-light">
-                                <strong id="totalDisplay">৳0.00</strong>
+                        <div class="p-4 pt-3">
+                            <div class="mb-3">
+                                <label for="tax_amount" class="form-label small fw-semibold">Tax (৳)</label>
+                                <input type="number" step="0.01" class="form-control form-control-sm @error('tax_amount') is-invalid @enderror" id="tax_amount" name="tax_amount" value="{{ old('tax_amount', 0) }}" oninput="calculateTotals()">
+                                @error('tax_amount')<div class="invalid-feedback">{{ $message }}</div>@enderror
+                            </div>
+                            <div class="mb-3">
+                                <label for="discount_amount" class="form-label small fw-semibold">Discount (৳)</label>
+                                <input type="number" step="0.01" class="form-control form-control-sm @error('discount_amount') is-invalid @enderror" id="discount_amount" name="discount_amount" value="{{ old('discount_amount', 0) }}" oninput="calculateTotals()">
+                                @error('discount_amount')<div class="invalid-feedback">{{ $message }}</div>@enderror
+                            </div>
+                            <div class="mb-3">
+                                <label for="paid_amount" class="form-label small fw-semibold">Paid (৳)</label>
+                                <input type="number" step="0.01" class="form-control form-control-sm @error('paid_amount') is-invalid @enderror" id="paid_amount" name="paid_amount" value="{{ old('paid_amount', 0) }}" oninput="calculateTotals()">
+                                @error('paid_amount')<div class="invalid-feedback">{{ $message }}</div>@enderror
+                            </div>
+                            <div class="p-3 rounded-3 mb-3" style="background:#f8fafc;border:1px solid #e2e8f0;">
+                                <div class="d-flex justify-content-between small mb-1"><span class="text-muted">Total</span><strong id="totalDisplay">৳0.00</strong></div>
+                                <div class="d-flex justify-content-between small"><span class="text-muted">Due</span><strong id="dueDisplay" class="text-danger">৳0.00</strong></div>
+                            </div>
+                            <div class="mb-3">
+                                <label for="payment_method" class="form-label small fw-semibold">Payment method <span class="text-danger">*</span></label>
+                                <select class="form-select form-select-sm @error('payment_method') is-invalid @enderror" id="payment_method" name="payment_method" required onchange="toggleBankAccount()">
+                                    <option value="cash" {{ old('payment_method', 'cash')=='cash'?'selected':'' }}>Cash</option>
+                                    <option value="card" {{ old('payment_method')=='card'?'selected':'' }}>Card</option>
+                                    <option value="mobile_banking" {{ old('payment_method')=='mobile_banking'?'selected':'' }}>Mobile Banking</option>
+                                    <option value="bank_transfer" {{ old('payment_method')=='bank_transfer'?'selected':'' }}>Bank Transfer</option>
+                                    <option value="cheque" {{ old('payment_method')=='cheque'?'selected':'' }}>Cheque</option>
+                                    <option value="other" {{ old('payment_method')=='other'?'selected':'' }}>Other</option>
+                                </select>
+                                @error('payment_method')<div class="invalid-feedback">{{ $message }}</div>@enderror
+                            </div>
+                            <div class="mb-3" id="bankAccountField" style="display:none;">
+                                <label for="bank_account_id" class="form-label small fw-semibold">Bank account</label>
+                                <select class="form-select form-select-sm @error('bank_account_id') is-invalid @enderror" id="bank_account_id" name="bank_account_id">
+                                    <option value="">Select account</option>
+                                    @foreach($bankAccounts as $bankAccount)
+                                        <option value="{{ $bankAccount->id }}" {{ old('bank_account_id')==$bankAccount->id?'selected':'' }}>{{ $bankAccount->account_name }} — {{ $bankAccount->bank_name }}</option>
+                                    @endforeach
+                                </select>
+                                @error('bank_account_id')<div class="invalid-feedback">{{ $message }}</div>@enderror
+                            </div>
+                            <div class="mb-3">
+                                <label for="notes" class="form-label small fw-semibold">Notes</label>
+                                <textarea class="form-control form-control-sm @error('notes') is-invalid @enderror" id="notes" name="notes" rows="2" placeholder="Order notes...">{{ old('notes') }}</textarea>
+                                @error('notes')<div class="invalid-feedback">{{ $message }}</div>@enderror
+                            </div>
+                            <div class="mb-0">
+                                <label for="internal_notes" class="form-label small fw-semibold">Internal notes</label>
+                                <textarea class="form-control form-control-sm @error('internal_notes') is-invalid @enderror" id="internal_notes" name="internal_notes" rows="2" placeholder="Private...">{{ old('internal_notes') }}</textarea>
+                                @error('internal_notes')<div class="invalid-feedback">{{ $message }}</div>@enderror
                             </div>
                         </div>
                     </div>
-                    
-                    <div class="row">
-                        <div class="col-md-4 mb-3">
-                            <label for="payment_method" class="form-label">Payment Method <span class="text-danger">*</span></label>
-                            <select class="form-select @error('payment_method') is-invalid @enderror" id="payment_method" name="payment_method" required onchange="toggleBankAccount()">
-                                <option value="cash" {{ old('payment_method', 'cash')=='cash'?'selected':'' }}>Cash</option>
-                                <option value="card" {{ old('payment_method')=='card'?'selected':'' }}>Card</option>
-                                <option value="mobile_banking" {{ old('payment_method')=='mobile_banking'?'selected':'' }}>Mobile Banking</option>
-                                <option value="bank_transfer" {{ old('payment_method')=='bank_transfer'?'selected':'' }}>Bank Transfer</option>
-                                <option value="cheque" {{ old('payment_method')=='cheque'?'selected':'' }}>Cheque</option>
-                                <option value="other" {{ old('payment_method')=='other'?'selected':'' }}>Other</option>
-                            </select>
-                            @error('payment_method')
-                                <div class="invalid-feedback">{{ $message }}</div>
-                            @enderror
-                        </div>
-                        <div class="col-md-4 mb-3" id="bankAccountField" style="display: none;">
-                            <label for="bank_account_id" class="form-label">Bank Account</label>
-                            <select class="form-select @error('bank_account_id') is-invalid @enderror" id="bank_account_id" name="bank_account_id">
-                                <option value="">Select Bank Account</option>
-                                @foreach($bankAccounts as $bankAccount)
-                                    <option value="{{ $bankAccount->id }}" {{ old('bank_account_id')==$bankAccount->id?'selected':'' }}>
-                                        {{ $bankAccount->account_name }} - {{ $bankAccount->bank_name }}
-                                    </option>
-                                @endforeach
-                            </select>
-                            @error('bank_account_id')
-                                <div class="invalid-feedback">{{ $message }}</div>
-                            @enderror
-                            <small class="text-muted">Required for bank payments</small>
-                        </div>
-                        <div class="col-md-4 mb-3">
-                            <label class="form-label">Due Amount</label>
-                            <div class="form-control bg-light">
-                                <strong id="dueDisplay" class="text-danger">৳0.00</strong>
-                            </div>
-                        </div>
-                    </div>
-                    
-                    <div class="row">
-                        <div class="col-md-6 mb-3">
-                            <label for="notes" class="form-label">Notes</label>
-                            <textarea class="form-control @error('notes') is-invalid @enderror" id="notes" name="notes" rows="2">{{ old('notes') }}</textarea>
-                            @error('notes')
-                                <div class="invalid-feedback">{{ $message }}</div>
-                            @enderror
-                        </div>
-                        
-                        <div class="col-md-6 mb-3">
-                            <label for="internal_notes" class="form-label">Internal Notes</label>
-                            <textarea class="form-control @error('internal_notes') is-invalid @enderror" id="internal_notes" name="internal_notes" rows="2">{{ old('internal_notes') }}</textarea>
-                            @error('internal_notes')
-                                <div class="invalid-feedback">{{ $message }}</div>
-                            @enderror
-                        </div>
+                    <div class="d-none d-lg-grid gap-2">
+                        <button type="submit" class="btn btn-primary" id="submitBtnSidebar" disabled><i class="fas fa-save me-2"></i>Create Purchase Order</button>
+                        <a href="{{ route('purchases.index') }}" class="btn btn-outline-secondary">Cancel</a>
                     </div>
                 </div>
-                
-                <div class="d-flex justify-content-between">
-                    <a href="{{ route('purchases.index') }}" class="btn btn-secondary">Cancel</a>
-                    <button type="submit" class="btn btn-primary" id="submitBtn" disabled>
-                        <i class="fas fa-save me-2"></i>Create Purchase Order
-                    </button>
-                </div>
-            </form>
+            </div>
         </div>
-    </div>
+    </form>
 </div>
 
 @php
@@ -494,8 +427,10 @@ function updateScannedItemsTable() {
     totalCount.textContent = totalQty;
     document.getElementById('itemsSubtotal').textContent = '৳' + subtotal.toFixed(2);
     
-    // Enable/disable submit button
-    document.getElementById('submitBtn').disabled = Object.keys(productItems).length === 0;
+    var hasItems = Object.keys(productItems).length > 0;
+    document.getElementById('submitBtn').disabled = !hasItems;
+    var sidebarBtn = document.getElementById('submitBtnSidebar');
+    if (sidebarBtn) sidebarBtn.disabled = !hasItems;
 }
 
 function toggleBankAccount() {

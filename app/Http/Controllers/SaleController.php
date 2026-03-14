@@ -6,6 +6,7 @@ use App\Models\Customer;
 use App\Models\Product;
 use App\Models\Sale;
 use App\Models\SaleItem;
+use App\Models\Payment;
 use App\Models\BankAccount;
 use App\Services\AccountingService;
 use Illuminate\Http\Request;
@@ -148,7 +149,7 @@ class SaleController extends Controller
     public function show(Sale $sale)
     {
         $this->authorizePermission('view sales');
-        $sale->load(['customer', 'items.product', 'creator', 'returns', 'bankAccount']);
+        $sale->load(Sale::getStandardRelations());
         return view('sales.sales.show', compact('sale'));
     }
 
@@ -228,6 +229,10 @@ class SaleController extends Controller
         $sale->status = 'completed';
         $sale->save();
 
+        // Recalculate totals so amounts are in sync before accounting
+        $sale->calculateTotals();
+        $sale->refresh();
+
         // Update product stock and create warranties
         foreach ($sale->items as $item) {
             $item->updateProductStock();
@@ -236,6 +241,9 @@ class SaleController extends Controller
                 $item->createWarranty();
             }
         }
+
+        // Post sale to accounting (so completed sales always have a journal entry)
+        AccountingService::recordSale($sale);
 
         return back()->with('success', 'Sale completed successfully. Stock updated.');
     }
@@ -256,16 +264,20 @@ class SaleController extends Controller
             'payment_amount.max' => 'Payment amount cannot exceed the due amount (৳' . number_format($sale->due_amount, 2) . ').',
         ]);
 
-        $newPaid = $sale->paid_amount + $validated['payment_amount'];
-        $newDue  = max(0, $sale->total_amount - $newPaid);
-
-        $sale->update([
-            'paid_amount'     => $newPaid,
-            'due_amount'      => $newDue,
-            'payment_status'  => $newDue == 0 ? 'paid' : 'partial',
-            'payment_method'  => $validated['payment_method'],
-            'bank_account_id' => $validated['bank_account_id'] ?? $sale->bank_account_id,
-        ]);
+        DB::transaction(function () use ($sale, $validated) {
+            $payment = Payment::create([
+                'payment_type'   => 'customer',
+                'sale_id'        => $sale->id,
+                'customer_id'    => $sale->customer_id,
+                'amount'         => $validated['payment_amount'],
+                'payment_date'   => now()->toDateString(),
+                'payment_method' => $validated['payment_method'],
+                'reference_number' => null,
+                'notes'          => 'Collected from invoice ' . $sale->invoice_number,
+            ]);
+            // Payment observer updates sale paid_amount/due_amount; post to accounting
+            AccountingService::recordPayment($payment);
+        });
 
         return redirect()->route('sales.show', $sale)
             ->with('success', 'Payment of ৳' . number_format($validated['payment_amount'], 2) . ' collected successfully.');
@@ -274,7 +286,7 @@ class SaleController extends Controller
     public function printInvoice(Sale $sale)
     {
         $this->authorizePermission('print invoices');
-        $sale->load(['customer', 'items.product', 'creator']);
+        $sale->load(Sale::getStandardRelations());
         return view('sales.sales.print', compact('sale'));
     }
 

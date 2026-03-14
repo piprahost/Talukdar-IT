@@ -55,10 +55,10 @@ class Sale extends Model
             if (auth()->check() && empty($sale->created_by)) {
                 $sale->created_by = auth()->id();
             }
-            // Calculate due amount
             if (!isset($sale->due_amount)) {
                 $sale->due_amount = max(0, $sale->total_amount - ($sale->paid_amount ?? 0));
             }
+            static::syncCustomerSnapshot($sale);
         });
 
         static::updating(function ($sale) {
@@ -116,6 +116,11 @@ class Sale extends Model
         return $this->hasMany(SaleReturn::class);
     }
 
+    public function payments()
+    {
+        return $this->hasMany(Payment::class);
+    }
+
     public function creator()
     {
         return $this->belongsTo(User::class, 'created_by');
@@ -132,23 +137,67 @@ class Sale extends Model
         return $query->where('status', 'completed');
     }
 
+    /** Eager-load relations needed for list/detail views (connected data). */
+    public function scopeWithStandardRelations($query)
+    {
+        return $query->with(self::getStandardRelations());
+    }
+
+    /** Relation names for list/detail (single source of truth). */
+    public static function getStandardRelations(): array
+    {
+        return [
+            'customer',
+            'items.product',
+            'creator',
+            'returns',
+            'payments',
+            'bankAccount',
+        ];
+    }
+
+    /**
+     * Sync customer_name, customer_phone, customer_address from Customer when customer_id is set.
+     * Keeps snapshot for history while using relation as source of truth.
+     */
+    protected static function syncCustomerSnapshot(Sale $sale): void
+    {
+        if (!$sale->customer_id) {
+            return;
+        }
+        $customer = Customer::find($sale->customer_id);
+        if ($customer) {
+            $sale->customer_name = $customer->name;
+            $sale->customer_phone = $customer->phone ?? $customer->mobile ?? $sale->customer_phone;
+            $sale->customer_address = $customer->address ?? $sale->customer_address;
+        }
+    }
+
+    /** Display name: prefer relation when loaded, else snapshot. */
+    public function getDisplayCustomerNameAttribute(): string
+    {
+        if ($this->customer_id && $this->relationLoaded('customer') && $this->customer) {
+            return $this->customer->name;
+        }
+        return (string) $this->customer_name;
+    }
+
     // Helper Methods
     public function calculateTotals()
     {
-        // Use database aggregation instead of loading all items into memory
-        $this->subtotal = $this->items()->sum('subtotal') ?? 0;
-        $this->total_amount = $this->subtotal + $this->tax_amount - $this->discount_amount;
-        $this->due_amount = max(0, $this->total_amount - $this->paid_amount);
-        
-        // Update payment status based on due amount (already handled in boot, but ensure consistency)
-        if ($this->due_amount <= 0 && $this->paid_amount > 0) {
-            $this->payment_status = 'paid';
-        } elseif ($this->paid_amount > 0 && $this->due_amount > 0) {
-            $this->payment_status = 'partial';
-        } else {
-            $this->payment_status = 'unpaid';
-        }
-        
+        $subtotal = (float) ($this->items()->sum('subtotal') ?? 0);
+        $taxAmount = (float) ($this->tax_amount ?? 0);
+        $discountAmount = (float) ($this->discount_amount ?? 0);
+        $paidAmount = (float) ($this->paid_amount ?? 0);
+
+        $this->subtotal = $subtotal;
+        $this->total_amount = $subtotal + $taxAmount - $discountAmount;
+        $this->due_amount = max(0, $this->total_amount - $paidAmount);
+
+        $this->payment_status = $this->due_amount <= 0 && $paidAmount > 0
+            ? 'paid'
+            : ($paidAmount > 0 && $this->due_amount > 0 ? 'partial' : 'unpaid');
+
         $this->save();
     }
 }

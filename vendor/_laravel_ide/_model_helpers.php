@@ -1368,6 +1368,8 @@ namespace App\Models {
      * @property int $id
      * @property-read \Illuminate\Database\Eloquent\Collection<int, \App\Models\Sale> $sales
      * @property-read int|null $sales_count
+     * @property-read \Illuminate\Database\Eloquent\Collection<int, \App\Models\Service> $services
+     * @property-read int|null $services_count
      * @method static \Illuminate\Database\Eloquent\Builder<Customer>|Customer whereId($value)
      * @method static \Illuminate\Database\Eloquent\Builder<Customer>|Customer whereName($value)
      * @method static \Illuminate\Database\Eloquent\Builder<Customer>|Customer whereEmail($value)
@@ -1386,6 +1388,7 @@ namespace App\Models {
      * @method static \Illuminate\Database\Eloquent\Builder<Customer>|Customer newQuery()
      * @method static \Illuminate\Database\Eloquent\Builder<Customer>|Customer query()
      * @method static \Illuminate\Database\Eloquent\Builder<Customer>|Customer active() {@see App\Models\Customer::scopeActive()}
+     * @method static \Illuminate\Database\Eloquent\Builder<Customer>|Customer withStandardRelations() {@see App\Models\Customer::scopeWithStandardRelations()}
      * @method static \Illuminate\Database\Eloquent\Builder<Customer>|Customer select(mixed $columns)
      * @method static \Illuminate\Database\Eloquent\Builder<Customer>|Customer selectSub(\Closure|\Illuminate\Database\Query\Builder|\Illuminate\Database\Eloquent\Builder<mixed>|string $query, string $as)
      * @method static \Illuminate\Database\Eloquent\Builder<Customer>|Customer selectRaw(string $expression)
@@ -1746,6 +1749,7 @@ namespace App\Models {
      * @method static \Illuminate\Database\Eloquent\Builder<Expense>|Expense paid() {@see App\Models\Expense::scopePaid()}
      * @method static \Illuminate\Database\Eloquent\Builder<Expense>|Expense byCategory(mixed $category) {@see App\Models\Expense::scopeByCategory()}
      * @method static \Illuminate\Database\Eloquent\Builder<Expense>|Expense byStatus(mixed $status) {@see App\Models\Expense::scopeByStatus()}
+     * @method static \Illuminate\Database\Eloquent\Builder<Expense>|Expense withStandardRelations() {@see App\Models\Expense::scopeWithStandardRelations()}
      * @method static \Illuminate\Database\Eloquent\Builder<Expense>|Expense select(mixed $columns)
      * @method static \Illuminate\Database\Eloquent\Builder<Expense>|Expense selectSub(\Closure|\Illuminate\Database\Query\Builder|\Illuminate\Database\Eloquent\Builder<mixed>|string $query, string $as)
      * @method static \Illuminate\Database\Eloquent\Builder<Expense>|Expense selectRaw(string $expression)
@@ -2756,6 +2760,7 @@ namespace App\Models {
      * @method static \Illuminate\Database\Eloquent\Builder<Payment>|Payment newModelQuery()
      * @method static \Illuminate\Database\Eloquent\Builder<Payment>|Payment newQuery()
      * @method static \Illuminate\Database\Eloquent\Builder<Payment>|Payment query()
+     * @method static \Illuminate\Database\Eloquent\Builder<Payment>|Payment withStandardRelations() {@see App\Models\Payment::scopeWithStandardRelations()}
      * @method static \Illuminate\Database\Eloquent\Builder<Payment>|Payment select(mixed $columns)
      * @method static \Illuminate\Database\Eloquent\Builder<Payment>|Payment selectSub(\Closure|\Illuminate\Database\Query\Builder|\Illuminate\Database\Eloquent\Builder<mixed>|string $query, string $as)
      * @method static \Illuminate\Database\Eloquent\Builder<Payment>|Payment selectRaw(string $expression)
@@ -3088,6 +3093,8 @@ namespace App\Models {
      * @property string $sku
      * @property string $name
      * @property int $id
+     * @property-read mixed $display_stock
+     * @property-read mixed $uses_barcode_stock
      * @property-read mixed $stock_status
      * @property-read \App\Models\Category $category
      * @property-read \App\Models\Brand $brand
@@ -3796,6 +3803,8 @@ namespace App\Models {
      * @property-read \App\Models\Supplier $supplier
      * @property-read \Illuminate\Database\Eloquent\Collection<int, \App\Models\PurchaseItem> $items
      * @property-read int|null $items_count
+     * @property-read \Illuminate\Database\Eloquent\Collection<int, \App\Models\Payment> $payments
+     * @property-read int|null $payments_count
      * @property-read \App\Models\User $creator
      * @property-read \App\Models\User $receiver
      * @property-read \Illuminate\Database\Eloquent\Collection<int, \App\Models\PurchaseReturn> $returns
@@ -3829,6 +3838,7 @@ namespace App\Models {
      * @method static \Illuminate\Database\Eloquent\Builder<Purchase>|Purchase query()
      * @method static \Illuminate\Database\Eloquent\Builder<Purchase>|Purchase pending() {@see App\Models\Purchase::scopePending()}
      * @method static \Illuminate\Database\Eloquent\Builder<Purchase>|Purchase received() {@see App\Models\Purchase::scopeReceived()}
+     * @method static \Illuminate\Database\Eloquent\Builder<Purchase>|Purchase withStandardRelations() {@see App\Models\Purchase::scopeWithStandardRelations()}
      * @method static \Illuminate\Database\Eloquent\Builder<Purchase>|Purchase select(mixed $columns)
      * @method static \Illuminate\Database\Eloquent\Builder<Purchase>|Purchase selectSub(\Closure|\Illuminate\Database\Query\Builder|\Illuminate\Database\Eloquent\Builder<mixed>|string $query, string $as)
      * @method static \Illuminate\Database\Eloquent\Builder<Purchase>|Purchase selectRaw(string $expression)
@@ -4515,6 +4525,7 @@ namespace App\Models {
      * @method static \Illuminate\Database\Eloquent\Builder<PurchaseReturn>|PurchaseReturn newModelQuery()
      * @method static \Illuminate\Database\Eloquent\Builder<PurchaseReturn>|PurchaseReturn newQuery()
      * @method static \Illuminate\Database\Eloquent\Builder<PurchaseReturn>|PurchaseReturn query()
+     * @method static \Illuminate\Database\Eloquent\Builder<PurchaseReturn>|PurchaseReturn withStandardRelations() {@see App\Models\PurchaseReturn::scopeWithStandardRelations()}
      * @method static \Illuminate\Database\Eloquent\Builder<PurchaseReturn>|PurchaseReturn select(mixed $columns)
      * @method static \Illuminate\Database\Eloquent\Builder<PurchaseReturn>|PurchaseReturn selectSub(\Closure|\Illuminate\Database\Query\Builder|\Illuminate\Database\Eloquent\Builder<mixed>|string $query, string $as)
      * @method static \Illuminate\Database\Eloquent\Builder<PurchaseReturn>|PurchaseReturn selectRaw(string $expression)
@@ -5173,6 +5184,7 @@ namespace App\Models {
      * @property mixed $customer_id
      * @property string $invoice_number
      * @property int $id
+     * @property-read mixed $display_customer_name
      * @property-read \App\Models\Customer $customer
      * @property-read \Illuminate\Database\Eloquent\Collection<int, \App\Models\SaleItem> $items
      * @property-read int|null $items_count
@@ -5180,6 +5192,8 @@ namespace App\Models {
      * @property-read int|null $warranties_count
      * @property-read \Illuminate\Database\Eloquent\Collection<int, \App\Models\SaleReturn> $returns
      * @property-read int|null $returns_count
+     * @property-read \Illuminate\Database\Eloquent\Collection<int, \App\Models\Payment> $payments
+     * @property-read int|null $payments_count
      * @property-read \App\Models\User $creator
      * @property-read \App\Models\BankAccount $bankAccount
      * @method static \Illuminate\Database\Eloquent\Builder<Sale>|Sale whereId($value)
@@ -5210,6 +5224,7 @@ namespace App\Models {
      * @method static \Illuminate\Database\Eloquent\Builder<Sale>|Sale newQuery()
      * @method static \Illuminate\Database\Eloquent\Builder<Sale>|Sale query()
      * @method static \Illuminate\Database\Eloquent\Builder<Sale>|Sale completed() {@see App\Models\Sale::scopeCompleted()}
+     * @method static \Illuminate\Database\Eloquent\Builder<Sale>|Sale withStandardRelations() {@see App\Models\Sale::scopeWithStandardRelations()}
      * @method static \Illuminate\Database\Eloquent\Builder<Sale>|Sale select(mixed $columns)
      * @method static \Illuminate\Database\Eloquent\Builder<Sale>|Sale selectSub(\Closure|\Illuminate\Database\Query\Builder|\Illuminate\Database\Eloquent\Builder<mixed>|string $query, string $as)
      * @method static \Illuminate\Database\Eloquent\Builder<Sale>|Sale selectRaw(string $expression)
@@ -5889,6 +5904,7 @@ namespace App\Models {
      * @method static \Illuminate\Database\Eloquent\Builder<SaleReturn>|SaleReturn newModelQuery()
      * @method static \Illuminate\Database\Eloquent\Builder<SaleReturn>|SaleReturn newQuery()
      * @method static \Illuminate\Database\Eloquent\Builder<SaleReturn>|SaleReturn query()
+     * @method static \Illuminate\Database\Eloquent\Builder<SaleReturn>|SaleReturn withStandardRelations() {@see App\Models\SaleReturn::scopeWithStandardRelations()}
      * @method static \Illuminate\Database\Eloquent\Builder<SaleReturn>|SaleReturn select(mixed $columns)
      * @method static \Illuminate\Database\Eloquent\Builder<SaleReturn>|SaleReturn selectSub(\Closure|\Illuminate\Database\Query\Builder|\Illuminate\Database\Eloquent\Builder<mixed>|string $query, string $as)
      * @method static \Illuminate\Database\Eloquent\Builder<SaleReturn>|SaleReturn selectRaw(string $expression)
@@ -6534,6 +6550,7 @@ namespace App\Models {
      * @property mixed $payment_method
      * @property float $due_amount
      * @property float $paid_amount
+     * @property mixed $customer_id
      * @property string|null $customer_address
      * @property string $customer_phone
      * @property string $customer_name
@@ -6546,6 +6563,7 @@ namespace App\Models {
      * @property string $product_name
      * @property string $service_number
      * @property int $id
+     * @property-read mixed $display_customer_name
      * @property-read mixed $payment_status
      * @property-read mixed $payment_method_label
      * @property-read \App\Models\User $creator
@@ -6564,6 +6582,7 @@ namespace App\Models {
      * @method static \Illuminate\Database\Eloquent\Builder<Service>|Service whereCustomerName($value)
      * @method static \Illuminate\Database\Eloquent\Builder<Service>|Service whereCustomerPhone($value)
      * @method static \Illuminate\Database\Eloquent\Builder<Service>|Service whereCustomerAddress($value)
+     * @method static \Illuminate\Database\Eloquent\Builder<Service>|Service whereCustomerId($value)
      * @method static \Illuminate\Database\Eloquent\Builder<Service>|Service wherePaidAmount($value)
      * @method static \Illuminate\Database\Eloquent\Builder<Service>|Service whereDueAmount($value)
      * @method static \Illuminate\Database\Eloquent\Builder<Service>|Service wherePaymentMethod($value)
@@ -6576,6 +6595,7 @@ namespace App\Models {
      * @method static \Illuminate\Database\Eloquent\Builder<Service>|Service newModelQuery()
      * @method static \Illuminate\Database\Eloquent\Builder<Service>|Service newQuery()
      * @method static \Illuminate\Database\Eloquent\Builder<Service>|Service query()
+     * @method static \Illuminate\Database\Eloquent\Builder<Service>|Service withStandardRelations() {@see App\Models\Service::scopeWithStandardRelations()}
      * @method static \Illuminate\Database\Eloquent\Builder<Service>|Service select(mixed $columns)
      * @method static \Illuminate\Database\Eloquent\Builder<Service>|Service selectSub(\Closure|\Illuminate\Database\Query\Builder|\Illuminate\Database\Eloquent\Builder<mixed>|string $query, string $as)
      * @method static \Illuminate\Database\Eloquent\Builder<Service>|Service selectRaw(string $expression)
@@ -6915,6 +6935,7 @@ namespace App\Models {
      * @method static \Illuminate\Database\Eloquent\Builder<ServiceReturn>|ServiceReturn newModelQuery()
      * @method static \Illuminate\Database\Eloquent\Builder<ServiceReturn>|ServiceReturn newQuery()
      * @method static \Illuminate\Database\Eloquent\Builder<ServiceReturn>|ServiceReturn query()
+     * @method static \Illuminate\Database\Eloquent\Builder<ServiceReturn>|ServiceReturn withStandardRelations() {@see App\Models\ServiceReturn::scopeWithStandardRelations()}
      * @method static \Illuminate\Database\Eloquent\Builder<ServiceReturn>|ServiceReturn select(mixed $columns)
      * @method static \Illuminate\Database\Eloquent\Builder<ServiceReturn>|ServiceReturn selectSub(\Closure|\Illuminate\Database\Query\Builder|\Illuminate\Database\Eloquent\Builder<mixed>|string $query, string $as)
      * @method static \Illuminate\Database\Eloquent\Builder<ServiceReturn>|ServiceReturn selectRaw(string $expression)

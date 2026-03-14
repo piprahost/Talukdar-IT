@@ -16,7 +16,7 @@ class ExpenseController extends Controller
     public function index(Request $request)
     {
         $this->authorizePermission('view expenses');
-        $query = Expense::with(['account', 'bankAccount', 'creator', 'approver'])->latest();
+        $query = Expense::withStandardRelations()->latest();
 
         // Search
         if ($request->has('search') && $request->search) {
@@ -146,7 +146,7 @@ class ExpenseController extends Controller
     public function show(Expense $expense)
     {
         $this->authorizePermission('view expenses');
-        $expense->load(['account', 'bankAccount', 'creator', 'approver']);
+        $expense->load(Expense::getStandardRelations());
         
         // Load journal entry separately
         $journalEntry = \App\Models\JournalEntry::where('reference_type', Expense::class)

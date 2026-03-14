@@ -1,7 +1,13 @@
 @extends('layouts.dashboard')
 
-@section('title', 'Purchase Order Details')
-@section('page-title', 'Purchase Order Details')
+@section('title', 'PO ' . $purchase->po_number)
+@section('page-title', 'PO ' . $purchase->po_number)
+
+@section('breadcrumbs')
+<li class="breadcrumb-item"><a href="{{ route('dashboard') }}">Home</a></li>
+<li class="breadcrumb-item"><a href="{{ route('purchases.index') }}">Purchase Orders</a></li>
+<li class="breadcrumb-item active" aria-current="page">{{ $purchase->po_number }}</li>
+@endsection
 
 @section('content')
 <div class="row g-3">
@@ -297,6 +303,29 @@
                 @endif
             </div>
         </div>
+
+        @if($purchase->payments && $purchase->payments->count() > 0)
+        <div class="table-card mb-3">
+            <div class="table-card-header">
+                <h6><i class="fas fa-money-bill-wave me-2"></i>Payment History ({{ $purchase->payments->count() }})</h6>
+                <a href="{{ route('payments.index') }}" class="btn btn-sm btn-outline-secondary">View in Payments</a>
+            </div>
+            <div class="p-3">
+                @foreach($purchase->payments->sortByDesc('payment_date') as $payment)
+                <div class="d-flex justify-content-between align-items-center mb-2 p-2" style="background:#f9fafb;border-radius:8px;">
+                    <div>
+                        <div style="font-size:12px;font-weight:700;">{{ $payment->payment_number }}</div>
+                        <div style="font-size:11px;color:#6b7280;">{{ $payment->payment_date->format('d M Y') }} · {{ ucfirst(str_replace('_', ' ', $payment->payment_method ?? 'cash')) }}</div>
+                    </div>
+                    <div class="text-end">
+                        <span style="font-size:14px;font-weight:700;color:#16a34a;">৳{{ number_format($payment->amount, 2) }}</span>
+                        <a href="{{ route('payments.show', $payment) }}" class="btn btn-sm btn-link p-0 ms-1" title="View payment">View</a>
+                    </div>
+                </div>
+                @endforeach
+            </div>
+        </div>
+        @endif
 
         @if($purchase->returns->count() > 0)
         <div class="table-card mb-3">

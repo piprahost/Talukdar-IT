@@ -16,10 +16,17 @@ class PaymentController extends Controller
     public function index(Request $request)
     {
         $this->authorizePermission('view payments');
-        $query = Payment::with(['sale', 'purchase', 'customer', 'supplier', 'creator'])->latest();
+        $query = Payment::withStandardRelations()->latest();
 
         if ($request->has('type') && $request->type) {
             $query->where('payment_type', $request->type);
+        }
+
+        if ($request->filled('sale_id')) {
+            $query->where('sale_id', $request->sale_id);
+        }
+        if ($request->filled('purchase_id')) {
+            $query->where('purchase_id', $request->purchase_id);
         }
 
         if ($request->has('search') && $request->search) {
@@ -131,7 +138,7 @@ class PaymentController extends Controller
     public function show(Payment $payment)
     {
         $this->authorizePermission('view payments');
-        $payment->load(['sale.customer', 'purchase.supplier', 'customer', 'supplier', 'creator']);
+        $payment->load(array_merge(Payment::getStandardRelations(), ['sale.customer', 'purchase.supplier']));
         return view('payments.show', compact('payment'));
     }
 

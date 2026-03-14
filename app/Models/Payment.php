@@ -89,45 +89,31 @@ class Payment extends Model
     public function updateRelatedPaymentStatus()
     {
         if ($this->payment_type === 'customer' && $this->sale_id) {
-            $sale = Sale::find($this->sale_id);
+            $sale = $this->sale;
             if ($sale) {
-                // Recalculate paid amount from all payments
-                $paidAmount = Payment::where('sale_id', $sale->id)
+                $paidAmount = static::where('sale_id', $sale->id)
                     ->where('payment_type', 'customer')
                     ->sum('amount');
-                
+
                 $sale->paid_amount = $paidAmount;
                 $sale->due_amount = max(0, $sale->total_amount - $paidAmount);
-                
-                if ($sale->due_amount <= 0 && $sale->paid_amount > 0) {
-                    $sale->payment_status = 'paid';
-                } elseif ($sale->paid_amount > 0 && $sale->due_amount > 0) {
-                    $sale->payment_status = 'partial';
-                } else {
-                    $sale->payment_status = 'unpaid';
-                }
-                
+                $sale->payment_status = $sale->due_amount <= 0 && $sale->paid_amount > 0
+                    ? 'paid'
+                    : ($sale->paid_amount > 0 && $sale->due_amount > 0 ? 'partial' : 'unpaid');
                 $sale->save();
             }
         } elseif ($this->payment_type === 'supplier' && $this->purchase_id) {
-            $purchase = Purchase::find($this->purchase_id);
+            $purchase = $this->purchase;
             if ($purchase) {
-                // Recalculate paid amount from all payments
-                $paidAmount = Payment::where('purchase_id', $purchase->id)
+                $paidAmount = static::where('purchase_id', $purchase->id)
                     ->where('payment_type', 'supplier')
                     ->sum('amount');
-                
+
                 $purchase->paid_amount = $paidAmount;
                 $purchase->due_amount = max(0, $purchase->total_amount - $paidAmount);
-                
-                if ($purchase->due_amount <= 0 && $purchase->paid_amount > 0) {
-                    $purchase->payment_status = 'paid';
-                } elseif ($purchase->paid_amount > 0 && $purchase->due_amount > 0) {
-                    $purchase->payment_status = 'partial';
-                } else {
-                    $purchase->payment_status = 'unpaid';
-                }
-                
+                $purchase->payment_status = $purchase->due_amount <= 0 && $purchase->paid_amount > 0
+                    ? 'paid'
+                    : ($purchase->paid_amount > 0 && $purchase->due_amount > 0 ? 'partial' : 'unpaid');
                 $purchase->save();
             }
         }
@@ -144,5 +130,23 @@ class Payment extends Model
             'other' => 'Other',
             default => 'Cash',
         };
+    }
+
+    /** Eager-load relations needed for list/detail views (connected data). */
+    public function scopeWithStandardRelations($query)
+    {
+        return $query->with(self::getStandardRelations());
+    }
+
+    /** Relation names for list/detail (single source of truth). */
+    public static function getStandardRelations(): array
+    {
+        return [
+            'sale:id,invoice_number,sale_date,total_amount,paid_amount,due_amount',
+            'purchase:id,po_number,order_date,total_amount,paid_amount,due_amount',
+            'customer',
+            'supplier',
+            'creator',
+        ];
     }
 }

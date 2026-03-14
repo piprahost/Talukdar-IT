@@ -223,27 +223,45 @@
             </div>
         </div>
 
-        {{-- Quick Stock Adjustment --}}
+        {{-- Quick Stock Adjustment (1 barcode = 1 unit) --}}
         @can('adjust stock')
-        <div class="table-card mb-3">
+        <div class="table-card mb-3" id="adjustStockCard">
             <div class="table-card-header">
                 <h6><i class="fas fa-warehouse me-2"></i>Adjust Stock</h6>
             </div>
             <div class="p-4">
-                <form action="{{ route('products.adjust-stock', $product) }}" method="POST">
+                <p class="small text-muted mb-3"><i class="fas fa-barcode me-1"></i> 1 barcode = 1 stock unit. Current: <strong>{{ $product->stock_quantity }}</strong> {{ $product->unit }}@if($product->getBarcodesCount() > 0) ({{ $product->getBarcodesCount() }} barcode(s))@endif.</p>
+                <form action="{{ route('products.adjust-stock', $product) }}" method="POST" id="adjustStockForm">
                     @csrf
                     <div class="mb-3">
                         <label class="form-label fw-semibold">Movement Type</label>
-                        <select class="form-select" name="type" required>
-                            <option value="in">📦 Stock In (add)</option>
-                            <option value="out">📤 Stock Out (remove)</option>
-                            <option value="adjustment">🔧 Manual Adjustment</option>
+                        <select class="form-select" name="type" id="adjustType" required>
+                            <option value="in">📦 Stock In (add barcodes)</option>
+                            <option value="out">📤 Stock Out (remove barcodes/units)</option>
+                            <option value="adjustment">🔧 Set stock to target</option>
                         </select>
                     </div>
-                    <div class="mb-3">
-                        <label class="form-label fw-semibold">Quantity <span class="text-danger">*</span></label>
-                        <input type="number" class="form-control" name="quantity" placeholder="Enter quantity" required min="1">
-                        <div class="form-text">Current stock: <strong>{{ $product->stock_quantity }}</strong> {{ $product->unit }}</div>
+                    <div class="mb-3" id="wrapBarcodes">
+                        <label class="form-label fw-semibold" id="adjustBarcodesLabel">Barcodes to add <span class="text-danger">*</span></label>
+                        <div class="input-group mb-2">
+                            <span class="input-group-text"><i class="fas fa-barcode"></i></span>
+                            <input type="text" class="form-control form-control-lg font-monospace" id="adjustStockScan" placeholder="Scan barcode here — each scan adds one line" autocomplete="off">
+                            <button type="button" class="btn btn-outline-primary" id="adjustStockScanFocus" title="Focus for barcode scanner (Ctrl+B)">
+                                <i class="fas fa-crosshairs me-1"></i>Scan
+                            </button>
+                        </div>
+                        <div id="adjustStockScanMessage" class="small mb-1" style="min-height:1.25em;" aria-live="polite"></div>
+                        <textarea class="form-control font-monospace" name="barcodes" id="adjustBarcodes" rows="3" placeholder="One barcode per line or comma-separated. You can also scan above."></textarea>
+                        <div class="form-text" id="adjustBarcodesHint">Each barcode = 1 unit. Duplicates are skipped.</div>
+                    </div>
+                    <div class="mb-3 d-none" id="wrapQuantityOut">
+                        <label class="form-label fw-semibold">Quantity to remove</label>
+                        <input type="number" class="form-control" name="quantity" id="adjustQuantity" min="0" placeholder="e.g. 5 (removes last N units if barcodes not entered)">
+                    </div>
+                    <div class="mb-3 d-none" id="wrapTarget">
+                        <label class="form-label fw-semibold">Target stock quantity <span class="text-danger">*</span></label>
+                        <input type="number" class="form-control" name="target_stock" id="adjustTarget" min="0" value="{{ $product->stock_quantity }}" placeholder="e.g. 20">
+                        <div class="form-text" id="adjustTargetHint">Enter target; then add or remove barcodes as needed.</div>
                     </div>
                     <div class="mb-3">
                         <label class="form-label fw-semibold">Notes</label>
@@ -255,6 +273,155 @@
                 </form>
             </div>
         </div>
+        @push('scripts')
+        <script>
+        (function() {
+            var type = document.getElementById('adjustType');
+            var wrapBarcodes = document.getElementById('wrapBarcodes');
+            var wrapQuantityOut = document.getElementById('wrapQuantityOut');
+            var wrapTarget = document.getElementById('wrapTarget');
+            var barcodesLabel = document.getElementById('adjustBarcodesLabel');
+            var barcodesHint = document.getElementById('adjustBarcodesHint');
+            var barcodesInput = document.getElementById('adjustBarcodes');
+            var targetInput = document.getElementById('adjustTarget');
+            var targetHint = document.getElementById('adjustTargetHint');
+            var scanInput = document.getElementById('adjustStockScan');
+            var scanFocusBtn = document.getElementById('adjustStockScanFocus');
+            var currentStock = {{ (int) $product->stock_quantity }};
+            var productBarcodes = @json($product->barcodes ?? []);
+
+            function focusAdjustScan() {
+                if (scanInput && !wrapBarcodes.classList.contains('d-none')) {
+                    scanInput.focus();
+                }
+            }
+
+            function isAddMode() {
+                var v = type.value;
+                if (v === 'in') return true;
+                if (v === 'adjustment') {
+                    var t = parseInt(targetInput.value, 10) || 0;
+                    return t > currentStock;
+                }
+                return false;
+            }
+
+            function appendScannedBarcode(value) {
+                var raw = (value || '').trim();
+                if (!raw) return;
+                var parts = raw.split(/[\r\n,]+/).map(function(s) { return s.trim(); }).filter(Boolean);
+                if (parts.length === 0) return;
+                var currentLines = (barcodesInput.value || '').split(/[\r\n,]+/).map(function(s) { return s.trim(); }).filter(Boolean);
+                var existingSet = new Set(currentLines);
+                if (isAddMode() && productBarcodes.length) {
+                    productBarcodes.forEach(function(b) { existingSet.add(b); });
+                }
+                var newParts = [];
+                var duplicateCount = 0;
+                for (var i = 0; i < parts.length; i++) {
+                    if (existingSet.has(parts[i])) {
+                        duplicateCount++;
+                    } else {
+                        newParts.push(parts[i]);
+                        existingSet.add(parts[i]);
+                    }
+                }
+                if (scanInput) scanInput.value = '';
+                if (newParts.length > 0) {
+                    var current = (barcodesInput.value || '').trim();
+                    var toAdd = newParts.join('\n');
+                    barcodesInput.value = current ? current + '\n' + toAdd : toAdd;
+                    if (scanInput) {
+                        scanInput.style.backgroundColor = '#d4edda';
+                        setTimeout(function() { scanInput.style.backgroundColor = ''; }, 250);
+                    }
+                }
+                if (duplicateCount > 0) {
+                    if (scanInput) {
+                        scanInput.style.backgroundColor = '#fef2f2';
+                        setTimeout(function() { scanInput.style.backgroundColor = ''; }, 400);
+                    }
+                    var msg = duplicateCount === 1 ? 'Barcode already added or already on product.' : duplicateCount + ' barcode(s) already added or on product.';
+                    var el = document.getElementById('adjustStockScanMessage');
+                    if (el) {
+                        el.textContent = msg;
+                        el.className = 'small mb-1 text-danger';
+                        setTimeout(function() { el.textContent = ''; el.className = 'small mb-1'; }, 4000);
+                    }
+                } else {
+                    var el = document.getElementById('adjustStockScanMessage');
+                    if (el) { el.textContent = ''; el.className = 'small mb-1'; }
+                }
+            }
+
+            function updateVisibility() {
+                var v = type.value;
+                wrapBarcodes.classList.remove('d-none');
+                wrapQuantityOut.classList.toggle('d-none', v !== 'out');
+                wrapTarget.classList.toggle('d-none', v !== 'adjustment');
+                barcodesInput.required = (v === 'in');
+                targetInput.required = (v === 'adjustment');
+                if (v === 'in') {
+                    barcodesLabel.innerHTML = 'Barcodes to add <span class="text-danger">*</span>';
+                    barcodesHint.textContent = 'Each barcode = 1 unit. Duplicates are skipped.';
+                } else if (v === 'out') {
+                    barcodesLabel.textContent = 'Barcodes to remove (optional)';
+                    barcodesHint.textContent = 'One per line, or leave blank and enter quantity below to remove last N units.';
+                } else {
+                    var t = parseInt(targetInput.value, 10) || 0;
+                    var diff = t - currentStock;
+                    if (diff > 0) {
+                        barcodesLabel.innerHTML = 'Barcodes to add <span class="text-danger">*</span>';
+                        barcodesHint.textContent = 'Enter ' + diff + ' barcode(s) (one per line).';
+                    } else if (diff < 0) {
+                        barcodesLabel.textContent = 'Barcodes to remove (optional)';
+                        barcodesHint.textContent = 'Enter ' + Math.abs(diff) + ' barcode(s) to remove, or leave blank to remove last ' + Math.abs(diff) + ' units.';
+                    } else {
+                        barcodesLabel.textContent = 'Barcodes (if changing stock)';
+                        barcodesHint.textContent = 'Target equals current. Change target above to add or remove units.';
+                    }
+                }
+                if (v === 'adjustment') {
+                    var t = parseInt(targetInput.value, 10) || 0;
+                    var diff = t - currentStock;
+                    if (diff > 0) {
+                        targetHint.textContent = 'Add ' + diff + ' unit(s): enter ' + diff + ' barcode(s) above.';
+                    } else if (diff < 0) {
+                        targetHint.textContent = 'Remove ' + Math.abs(diff) + ' unit(s): enter barcodes above or leave blank to remove last ' + Math.abs(diff) + '.';
+                    } else {
+                        targetHint.textContent = 'Target equals current stock.';
+                    }
+                }
+            }
+            type.addEventListener('change', updateVisibility);
+            if (targetInput) targetInput.addEventListener('input', updateVisibility);
+            updateVisibility();
+
+            if (scanInput) {
+                scanInput.addEventListener('keydown', function(e) {
+                    if (e.key === 'Enter' && this.value.trim()) {
+                        e.preventDefault();
+                        appendScannedBarcode(this.value);
+                    }
+                });
+                scanInput.addEventListener('paste', function() {
+                    var self = this;
+                    setTimeout(function() {
+                        appendScannedBarcode(self.value);
+                        self.value = '';
+                    }, 10);
+                });
+            }
+            if (scanFocusBtn) scanFocusBtn.addEventListener('click', focusAdjustScan);
+            document.addEventListener('keydown', function(e) {
+                if ((e.ctrlKey || e.metaKey) && e.key === 'b') {
+                    e.preventDefault();
+                    focusAdjustScan();
+                }
+            });
+        })();
+        </script>
+        @endpush
         @endcan
 
         {{-- Internal Notes --}}

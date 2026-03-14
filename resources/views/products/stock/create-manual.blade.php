@@ -1,14 +1,14 @@
 @extends('layouts.dashboard')
 
-@section('title', 'Manual Stock Entry')
-@section('page-title', 'Manual Stock Entry')
+@section('title', 'Add Stock by Barcode')
+@section('page-title', 'Add Stock by Barcode')
 
 @section('content')
 <div class="row">
     <div class="col-md-12">
         <div class="table-card">
             <div class="table-card-header">
-                <h6><i class="fas fa-box me-2"></i>Manual Stock Entry</h6>
+                <h6><i class="fas fa-barcode me-2"></i>Add Stock by Barcode</h6>
                 <a href="{{ route('stock.index') }}" class="btn btn-sm btn-outline-secondary">Back</a>
             </div>
             

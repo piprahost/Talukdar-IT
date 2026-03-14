@@ -39,29 +39,108 @@ class StockController extends Controller
     {
         $this->authorizePermission('adjust stock');
         $validated = $request->validate([
-            'quantity' => ['required', 'integer'],
             'type' => ['required', 'in:in,out,adjustment'],
-            'notes' => ['nullable', 'string'],
+            'barcodes' => ['nullable', 'string'],
+            'quantity' => ['nullable', 'integer', 'min:0'],
+            'target_stock' => ['nullable', 'integer', 'min:0'],
+            'notes' => ['nullable', 'string', 'max:500'],
         ]);
 
-        if ($validated['type'] === 'in') {
-            $product->addStock($validated['quantity'], 'in', $validated['notes'] ?? null);
-        } elseif ($validated['type'] === 'out') {
-            if ($product->stock_quantity < $validated['quantity']) {
-                return back()->with('error', 'Insufficient stock. Available: ' . $product->stock_quantity);
+        $notes = $validated['notes'] ?? null;
+        $type = $validated['type'];
+
+        $parseBarcodes = function ($input) {
+            if (empty(trim((string) $input))) {
+                return [];
             }
-            $product->reduceStock($validated['quantity'], 'out', $validated['notes'] ?? null);
-        } else {
-            // Adjustment
-            $difference = $validated['quantity'] - $product->stock_quantity;
-            if ($difference > 0) {
-                $product->addStock($difference, 'adjustment', $validated['notes'] ?? null);
-            } elseif ($difference < 0) {
-                $product->reduceStock(abs($difference), 'adjustment', $validated['notes'] ?? null);
+            $parts = preg_split('/[\r\n,]+/', $input, -1, PREG_SPLIT_NO_EMPTY);
+            return array_values(array_unique(array_map('trim', array_filter($parts))));
+        };
+
+        if ($type === 'in') {
+            $barcodes = $parseBarcodes($validated['barcodes'] ?? '');
+            if (count($barcodes) === 0) {
+                return back()->with('error', 'Enter at least one barcode. Each barcode = 1 stock unit.');
             }
+            $added = $product->addBarcodes($barcodes, true, $notes);
+            $skipped = count($barcodes) - $added;
+            $message = $added > 0
+                ? "Added {$added} unit(s) with barcode(s)."
+                : "No new units added.";
+            if ($skipped > 0) {
+                $message .= " {$skipped} barcode(s) already exist and were skipped.";
+            }
+            return back()->with('success', $message);
         }
 
-        return back()->with('success', 'Stock updated successfully.');
+        if ($type === 'out') {
+            $barcodes = $parseBarcodes($validated['barcodes'] ?? '');
+            $quantity = isset($validated['quantity']) ? (int) $validated['quantity'] : null;
+            $currentStock = $product->stock_quantity;
+            $barcodeCount = $product->getBarcodesCount();
+
+            if ($barcodeCount > 0) {
+                if (count($barcodes) > 0) {
+                    $removed = $product->removeBarcodes($barcodes, $notes);
+                    if ($removed === 0) {
+                        return back()->with('error', 'None of the entered barcodes belong to this product.');
+                    }
+                    return back()->with('success', "Removed {$removed} unit(s) (barcodes).");
+                }
+                if ($quantity !== null && $quantity > 0) {
+                    if ($quantity > $barcodeCount) {
+                        return back()->with('error', "Insufficient barcodes. Product has {$barcodeCount} barcode(s).");
+                    }
+                    $toRemove = array_slice($product->barcodes ?? [], -$quantity);
+                    $product->removeBarcodes($toRemove, $notes ?: "Removed last {$quantity} unit(s).");
+                    return back()->with('success', "Removed {$quantity} unit(s).");
+                }
+                return back()->with('error', 'Enter barcodes to remove (one per line) or quantity to remove.');
+            }
+
+            if ($quantity !== null && $quantity > 0) {
+                if ($quantity > $currentStock) {
+                    return back()->with('error', "Insufficient stock. Available: {$currentStock}");
+                }
+                $product->reduceStock($quantity, 'out', $notes);
+                return back()->with('success', "Removed {$quantity} unit(s).");
+            }
+            return back()->with('error', 'Enter quantity to remove.');
+        }
+
+        // adjustment: set stock to target (1 barcode = 1 unit)
+        $target = isset($validated['target_stock']) ? (int) $validated['target_stock'] : null;
+        if ($target === null) {
+            return back()->with('error', 'Enter target stock quantity.');
+        }
+        $current = $product->stock_quantity;
+        $diff = $target - $current;
+        if ($diff === 0) {
+            return back()->with('info', 'Stock is already at target.');
+        }
+        if ($diff > 0) {
+            $barcodes = $parseBarcodes($validated['barcodes'] ?? '');
+            if (count($barcodes) < $diff) {
+                return back()->with('error', "Target is {$diff} unit(s) higher. Enter {$diff} barcode(s) (one per line).");
+            }
+            $barcodes = array_slice($barcodes, 0, $diff);
+            $product->addBarcodes($barcodes, true, $notes ?: 'Manual adjustment');
+            return back()->with('success', "Stock adjusted: added " . count($barcodes) . " unit(s).");
+        }
+        $toRemoveCount = abs($diff);
+        $barcodeCount = $product->getBarcodesCount();
+        if ($barcodeCount > 0) {
+            $barcodes = $parseBarcodes($validated['barcodes'] ?? '');
+            if (count($barcodes) >= $toRemoveCount) {
+                $product->removeBarcodes(array_slice($barcodes, 0, $toRemoveCount), $notes ?: 'Manual adjustment');
+            } else {
+                $toRemove = array_slice($product->barcodes ?? [], -$toRemoveCount);
+                $product->removeBarcodes($toRemove, $notes ?: 'Manual adjustment');
+            }
+        } else {
+            $product->reduceStock($toRemoveCount, 'adjustment', $notes);
+        }
+        return back()->with('success', "Stock adjusted: removed {$toRemoveCount} unit(s).");
     }
 
     public function lowStock()

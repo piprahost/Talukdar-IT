@@ -1,7 +1,12 @@
 @extends('layouts.dashboard')
 
-@section('title', 'Sales / Invoices')
-@section('page-title', 'Sales / Invoices')
+@section('title', 'Invoices')
+@section('page-title', 'Invoices')
+
+@section('breadcrumbs')
+<li class="breadcrumb-item"><a href="{{ route('dashboard') }}">Home</a></li>
+<li class="breadcrumb-item active" aria-current="page">Invoices</li>
+@endsection
 
 @section('content')
 
@@ -47,52 +52,47 @@
 
 <div class="table-card">
     <div class="table-card-header">
-        <h6><i class="fas fa-file-invoice-dollar me-2"></i>All Sales / Invoices</h6>
+        <h6><i class="fas fa-file-invoice-dollar me-2"></i>All Invoices</h6>
         @can('create sales')
-        <a href="{{ route('sales.create') }}" class="btn btn-primary">
-            <i class="fas fa-plus me-2"></i>Create Sale / Invoice
+        <a href="{{ route('sales.create') }}" class="btn btn-primary btn-sm">
+            <i class="fas fa-plus me-1"></i>New Invoice
         </a>
         @endcan
     </div>
-    
+
     <div class="filter-wrapper">
         <form method="GET" id="salesFilterForm">
             <div class="row g-2 align-items-end">
-                <div class="col-md-3">
+                <div class="col-md-4">
+                    <label class="form-label small text-muted mb-0">Search</label>
                     <div class="input-group input-group-sm">
                         <span class="input-group-text"><i class="fas fa-search"></i></span>
-                        <input type="text" class="form-control" name="search" value="{{ request('search') }}" placeholder="Invoice #, customer name...">
+                        <input type="text" class="form-control" name="search" value="{{ request('search') }}" placeholder="Invoice # or customer...">
                     </div>
                 </div>
                 <div class="col-md-2">
-                    <select class="form-select form-select-sm" name="customer_id" onchange="this.form.submit()">
-                        <option value="">All Customers</option>
-                        @foreach($customers as $c)
-                            <option value="{{ $c->id }}" {{ request('customer_id')==$c->id?'selected':'' }}>{{ $c->name }}</option>
-                        @endforeach
-                    </select>
-                </div>
-                <div class="col-md-2">
+                    <label class="form-label small text-muted mb-0">Status</label>
                     <select class="form-select form-select-sm" name="status" onchange="this.form.submit()">
-                        <option value="">All Status</option>
-                        <option value="draft"     {{ request('status')=='draft'     ?'selected':'' }}>Draft</option>
+                        <option value="">All</option>
                         <option value="completed" {{ request('status')=='completed' ?'selected':'' }}>Completed</option>
+                        <option value="draft" {{ request('status')=='draft' ?'selected':'' }}>Draft</option>
                         <option value="cancelled" {{ request('status')=='cancelled' ?'selected':'' }}>Cancelled</option>
                     </select>
                 </div>
                 <div class="col-md-2">
+                    <label class="form-label small text-muted mb-0">Payment</label>
                     <select class="form-select form-select-sm" name="payment_status" onchange="this.form.submit()">
-                        <option value="">Payment Status</option>
-                        <option value="unpaid"  {{ request('payment_status')=='unpaid'  ?'selected':'' }}>Unpaid</option>
+                        <option value="">All</option>
+                        <option value="unpaid" {{ request('payment_status')=='unpaid' ?'selected':'' }}>Unpaid</option>
                         <option value="partial" {{ request('payment_status')=='partial' ?'selected':'' }}>Partial</option>
-                        <option value="paid"    {{ request('payment_status')=='paid'    ?'selected':'' }}>Paid</option>
+                        <option value="paid" {{ request('payment_status')=='paid' ?'selected':'' }}>Paid</option>
                     </select>
                 </div>
-                <div class="col-md-3 d-flex gap-2">
-                    <button type="submit" class="btn btn-sm btn-outline-primary flex-grow-1">Search</button>
+                <div class="col-auto">
                     @if(request()->anyFilled(['search','customer_id','status','payment_status']))
                     <a href="{{ route('sales.index') }}" class="btn btn-sm btn-outline-secondary">Clear</a>
                     @endif
+                    <button type="submit" class="btn btn-sm btn-primary">Apply</button>
                 </div>
             </div>
         </form>
@@ -114,24 +114,19 @@
             </thead>
             <tbody>
                 @forelse($sales as $sale)
-                    <tr>
+                    <tr class="table-row-clickable" data-href="{{ route('sales.show', $sale) }}">
                         <td><strong>{{ $sale->invoice_number }}</strong></td>
                         <td>{{ $sale->customer ? $sale->customer->name : ($sale->customer_name ?? 'Walk-in') }}</td>
                         <td>{{ $sale->sale_date->format('d M Y') }}</td>
-                        <td><span class="badge bg-info">{{ $sale->items()->count() }}</span></td>
+                        <td><span class="badge bg-secondary">{{ $sale->items()->count() }}</span></td>
                         <td><strong>৳{{ number_format($sale->total_amount, 2) }}</strong></td>
                         <td>
                             @if($sale->payment_status === 'paid')
-                                <span class="badge bg-success">✓ Paid</span>
+                                <span class="badge bg-success">Paid</span>
                             @elseif($sale->payment_status === 'partial')
                                 <span class="badge bg-warning text-dark">Partial</span>
                             @else
-                                <span class="badge bg-danger">Unpaid</span>
-                            @endif
-                            <br>
-                            <small class="text-muted">Paid: ৳{{ number_format($sale->paid_amount, 2) }}</small><br>
-                            @if($sale->due_amount > 0)
-                                <small class="text-danger fw-semibold">Due: ৳{{ number_format($sale->due_amount, 2) }}</small>
+                                <span class="badge bg-danger">Due ৳{{ number_format($sale->due_amount, 0) }}</span>
                             @endif
                         </td>
                         <td>
@@ -139,16 +134,21 @@
                                 {{ ucfirst($sale->status) }}
                             </span>
                         </td>
-                        <td>
+                        <td class="text-end" onclick="event.stopPropagation();">
                             <div class="btn-group btn-group-sm">
-                                <a href="{{ route('sales.show', $sale) }}" class="btn btn-outline-primary" title="View"><i class="fas fa-eye"></i></a>
                                 @if($sale->status === 'completed' && $sale->due_amount > 0)
-                                    <a href="{{ route('sales.show', $sale) }}#collectPayment" class="btn btn-success" title="Collect Payment"><i class="fas fa-hand-holding-usd"></i></a>
+                                    <a href="{{ route('sales.show', $sale) }}#collectPayment" class="btn btn-success btn-sm" title="Collect Payment"><i class="fas fa-hand-holding-usd"></i></a>
                                 @endif
-                                <a href="{{ route('sales.print', $sale) }}" class="btn btn-outline-secondary" title="Print" target="_blank"><i class="fas fa-print"></i></a>
-                                @if($sale->status !== 'completed')
-                                    <a href="{{ route('sales.edit', $sale) }}" class="btn btn-outline-warning" title="Edit"><i class="fas fa-edit"></i></a>
-                                @endif
+                                <div class="dropdown">
+                                    <button class="btn btn-outline-secondary btn-sm dropdown-toggle" type="button" data-bs-toggle="dropdown" aria-expanded="false">Actions</button>
+                                    <ul class="dropdown-menu dropdown-menu-end">
+                                        <li><a class="dropdown-item" href="{{ route('sales.show', $sale) }}"><i class="fas fa-eye me-2"></i>View</a></li>
+                                        @if($sale->status !== 'completed' && $sale->status !== 'cancelled')
+                                        <li><a class="dropdown-item" href="{{ route('sales.edit', $sale) }}"><i class="fas fa-edit me-2"></i>Edit</a></li>
+                                        @endif
+                                        <li><a class="dropdown-item" href="{{ route('sales.print', $sale) }}" target="_blank"><i class="fas fa-print me-2"></i>Print</a></li>
+                                    </ul>
+                                </div>
                             </div>
                         </td>
                     </tr>
@@ -166,5 +166,17 @@
         </div>
     @endif
 </div>
+
+@push('scripts')
+<script>
+document.querySelectorAll('.table-row-clickable').forEach(function(row) {
+    row.style.cursor = 'pointer';
+    row.addEventListener('click', function() {
+        var href = row.getAttribute('data-href');
+        if (href) window.location.href = href;
+    });
+});
+</script>
+@endpush
 @endsection
 

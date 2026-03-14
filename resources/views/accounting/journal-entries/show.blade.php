@@ -38,7 +38,14 @@
                             <tr><th width="40%">Entry Number:</th><td><strong>{{ $journalEntry->entry_number }}</strong></td></tr>
                             <tr><th>Entry Date:</th><td>{{ $journalEntry->entry_date->format('d M Y') }}</td></tr>
                             <tr><th>Description:</th><td>{{ $journalEntry->description }}</td></tr>
-                            <tr><th>Reference:</th><td>{{ $journalEntry->reference ?? '-' }}</td></tr>
+                            <tr><th>Reference:</th><td>
+                                @if($journalEntry->getSourceUrl())
+                                    <a href="{{ $journalEntry->getSourceUrl() }}" class="text-primary">{{ $journalEntry->getSourceLabel() ?? $journalEntry->reference }}</a>
+                                    <span class="text-muted small">(from transaction)</span>
+                                @else
+                                    {{ $journalEntry->reference ?? '-' }}
+                                @endif
+                            </td></tr>
                             <tr><th>Status:</th><td>
                                 <span class="badge {{ $journalEntry->status === 'posted' ? 'bg-success' : 'bg-warning text-dark' }}">
                                     {{ ucfirst($journalEntry->status) }}

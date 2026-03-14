@@ -4,248 +4,171 @@
 @section('page-title', 'Dashboard')
 
 @section('content')
-    <!-- Stats Overview -->
-    <div class="row g-4 mb-4">
-        <div class="col-lg-3 col-sm-6">
-            <div class="stat-card success">
-                <div class="stat-icon">
-                    <i class="fas fa-dollar-sign"></i>
-                </div>
-                <div class="stat-value">৳{{ number_format($monthSales, 2) }}</div>
-                <div class="stat-label">Monthly Revenue</div>
-                <div class="mt-2">
-                    <small class="{{ $salesGrowth >= 0 ? 'text-success' : 'text-danger' }}">
-                        <i class="fas fa-arrow-{{ $salesGrowth >= 0 ? 'up' : 'down' }}"></i> 
-                        {{ number_format(abs($salesGrowth), 1) }}% from last month
-                    </small>
-                </div>
+<div class="dashboard-wrap">
+    <div class="d-flex flex-column flex-md-row align-items-start align-items-md-center justify-content-between gap-3 mb-4 pb-3 border-bottom">
+        <div>
+            <h5 class="mb-1 fw-bold">Dashboard</h5>
+            <p class="text-muted small mb-0">Overview of your business · {{ \Carbon\Carbon::today()->format('M d, Y') }}</p>
+        </div>
+    </div>
+
+    <div class="row g-3 mb-4">
+        <div class="col-6 col-lg-3">
+            <div class="table-card p-3 h-100 border-start border-3 border-success">
+                <div class="small text-uppercase text-muted fw-semibold mb-1">Monthly revenue</div>
+                <div class="fw-bold fs-5 text-success">৳{{ number_format($monthSales, 2) }}</div>
+                <small class="{{ $salesGrowth >= 0 ? 'text-success' : 'text-danger' }}"><i class="fas fa-arrow-{{ $salesGrowth >= 0 ? 'up' : 'down' }}"></i> {{ number_format(abs($salesGrowth), 1) }}% vs last month</small>
             </div>
         </div>
-        
-        <div class="col-lg-3 col-sm-6">
-            <div class="stat-card primary">
-                <div class="stat-icon">
-                    <i class="fas fa-shopping-cart"></i>
-                </div>
-                <div class="stat-value">৳{{ number_format($monthPurchases, 2) }}</div>
-                <div class="stat-label">Monthly Purchases</div>
-                <div class="mt-2">
-                    <small class="{{ $purchaseGrowth >= 0 ? 'text-success' : 'text-danger' }}">
-                        <i class="fas fa-arrow-{{ $purchaseGrowth >= 0 ? 'up' : 'down' }}"></i> 
-                        {{ number_format(abs($purchaseGrowth), 1) }}% from last month
-                    </small>
-                </div>
+        <div class="col-6 col-lg-3">
+            <div class="table-card p-3 h-100 border-start border-3 border-primary">
+                <div class="small text-uppercase text-muted fw-semibold mb-1">Monthly purchases</div>
+                <div class="fw-bold fs-5">৳{{ number_format($monthPurchases, 2) }}</div>
+                <small class="{{ $purchaseGrowth >= 0 ? 'text-success' : 'text-danger' }}"><i class="fas fa-arrow-{{ $purchaseGrowth >= 0 ? 'up' : 'down' }}"></i> {{ number_format(abs($purchaseGrowth), 1) }}% vs last month</small>
             </div>
         </div>
-        
-        <div class="col-lg-3 col-sm-6">
-            <div class="stat-card info">
-                <div class="stat-icon">
-                    <i class="fas fa-chart-line"></i>
-                </div>
-                <div class="stat-value">৳{{ number_format($monthProfit, 2) }}</div>
-                <div class="stat-label">Monthly Profit</div>
-                <div class="mt-2">
-                    <small class="{{ $profitMargin >= 0 ? 'text-success' : 'text-danger' }}">
-                        Margin: {{ number_format($profitMargin, 1) }}%
-                    </small>
-                </div>
+        <div class="col-6 col-lg-3">
+            <div class="table-card p-3 h-100 border-start border-3 border-info">
+                <div class="small text-uppercase text-muted fw-semibold mb-1">Monthly profit</div>
+                <div class="fw-bold fs-5 {{ $monthProfit >= 0 ? 'text-success' : 'text-danger' }}">৳{{ number_format($monthProfit, 2) }}</div>
+                <small class="{{ $profitMargin >= 0 ? 'text-success' : 'text-danger' }}">Margin {{ number_format($profitMargin, 1) }}%</small>
             </div>
         </div>
-        
-        <div class="col-lg-3 col-sm-6">
-            <div class="stat-card warning">
-                <div class="stat-icon">
-                    <i class="fas fa-box"></i>
-                </div>
-                <div class="stat-value">{{ number_format($totalProducts) }}</div>
-                <div class="stat-label">Total Products</div>
-                <div class="mt-2">
-                    <small class="text-muted">
-                        {{ $activeProducts }} active | {{ $lowStockProducts }} low stock
-                    </small>
-                </div>
+        <div class="col-6 col-lg-3">
+            <div class="table-card p-3 h-100 border-start border-3 border-secondary">
+                <div class="small text-uppercase text-muted fw-semibold mb-1">Today's sales</div>
+                <div class="fw-bold fs-5">৳{{ number_format($todaySales, 2) }}</div>
+                <small class="text-muted">{{ \Carbon\Carbon::today()->format('M d') }}</small>
+            </div>
+        </div>
+    </div>
+
+    <div class="row g-3 mb-4">
+        <div class="col-6 col-md-4 col-lg-2">
+            <div class="table-card p-3 h-100">
+                <div class="small text-uppercase text-muted fw-semibold mb-1">Products</div>
+                <div class="fw-bold fs-5">{{ number_format($totalProducts) }}</div>
+                <small class="text-muted">{{ $activeProducts }} active</small>
+            </div>
+        </div>
+        <div class="col-6 col-md-4 col-lg-2">
+            <div class="table-card p-3 h-100 border-start border-3 {{ $lowStockProducts > 0 ? 'border-danger' : 'border-success' }}">
+                <div class="small text-uppercase text-muted fw-semibold mb-1">Low stock</div>
+                <div class="fw-bold fs-5 {{ $lowStockProducts > 0 ? 'text-danger' : 'text-success' }}">{{ $lowStockProducts }}</div>
+                @if($lowStockProducts > 0)<a href="{{ route('stock.low-stock') }}" class="btn btn-sm btn-outline-danger mt-1 py-0">View</a>@else<small class="text-success">OK</small>@endif
+            </div>
+        </div>
+        <div class="col-6 col-md-4 col-lg-2">
+            <div class="table-card p-3 h-100 border-start border-3 border-primary">
+                <div class="small text-uppercase text-muted fw-semibold mb-1">Customers</div>
+                <div class="fw-bold fs-5">{{ number_format($totalCustomers) }}</div>
+                <small class="text-muted">৳{{ number_format($customerDues, 0) }} due</small>
+            </div>
+        </div>
+        <div class="col-6 col-md-4 col-lg-2">
+            <div class="table-card p-3 h-100 border-start border-3 border-info">
+                <div class="small text-uppercase text-muted fw-semibold mb-1">Suppliers</div>
+                <div class="fw-bold fs-5">{{ number_format($totalSuppliers) }}</div>
+                <small class="text-muted">৳{{ number_format($supplierDues, 0) }} due</small>
+            </div>
+        </div>
+        <div class="col-6 col-md-4 col-lg-2">
+            <div class="table-card p-3 h-100 border-start border-3 border-warning">
+                <div class="small text-uppercase text-muted fw-semibold mb-1">Pending services</div>
+                <div class="fw-bold fs-5 text-warning">{{ $pendingServices }}</div>
+                @if($pendingServices > 0)<a href="{{ route('services.index', ['status'=>'pending']) }}" class="btn btn-sm btn-outline-warning mt-1 py-0">View</a>@endif
+            </div>
+        </div>
+        <div class="col-6 col-md-4 col-lg-2">
+            <div class="table-card p-3 h-100">
+                <div class="small text-uppercase text-muted fw-semibold mb-1">Warranties</div>
+                <div class="fw-bold fs-5">{{ $pendingWarranties }}</div>
+                <small class="text-muted">pending</small>
             </div>
         </div>
     </div>
     
-    <div class="row g-4 mb-4">
-        <div class="col-lg-3 col-sm-6">
-            <div class="stat-card danger">
-                <div class="stat-icon">
-                    <i class="fas fa-exclamation-triangle"></i>
-                </div>
-                <div class="stat-value">{{ number_format($lowStockProducts) }}</div>
-                <div class="stat-label">Low Stock Alert</div>
-                <div class="mt-2">
-                    @if($lowStockProducts > 0)
-                        <a href="{{ route('stock.low-stock') }}" class="btn btn-sm btn-danger">
-                            View Details
-                        </a>
-                    @else
-                        <small class="text-success">All products in stock</small>
-                    @endif
-                </div>
-            </div>
-        </div>
-        
-        <div class="col-lg-3 col-sm-6">
-            <div class="stat-card primary">
-                <div class="stat-icon">
-                    <i class="fas fa-users"></i>
-                </div>
-                <div class="stat-value">{{ number_format($totalCustomers) }}</div>
-                <div class="stat-label">Total Customers</div>
-                <div class="mt-2">
-                    <small class="text-muted">৳{{ number_format($customerDues, 2) }} due</small>
-                </div>
-            </div>
-        </div>
-        
-        <div class="col-lg-3 col-sm-6">
-            <div class="stat-card secondary">
-                <div class="stat-icon">
-                    <i class="fas fa-truck"></i>
-                </div>
-                <div class="stat-value">{{ number_format($totalSuppliers) }}</div>
-                <div class="stat-label">Total Suppliers</div>
-                <div class="mt-2">
-                    <small class="text-muted">৳{{ number_format($supplierDues, 2) }} due</small>
-                </div>
-            </div>
-        </div>
-        
-        <div class="col-lg-3 col-sm-6">
-            <div class="stat-card info">
-                <div class="stat-icon">
-                    <i class="fas fa-calendar-day"></i>
-                </div>
-                <div class="stat-value">৳{{ number_format($todaySales, 2) }}</div>
-                <div class="stat-label">Today's Sales</div>
-                <div class="mt-2">
-                    <small class="text-muted">{{ \Carbon\Carbon::today()->format('M d, Y') }}</small>
-                </div>
-            </div>
-        </div>
-    </div>
-    
-    <!-- Charts Row -->
     <div class="row g-4 mb-4">
         <div class="col-xl-8">
             <div class="table-card">
-                <div class="table-card-header">
-                    <h6><i class="fas fa-chart-line me-2"></i>Sales Trend (Last 30 Days)</h6>
+                <div class="table-card-header bg-light border-0 py-3">
+                    <h6 class="mb-0 fw-semibold text-dark"><i class="fas fa-chart-line me-2 text-primary"></i>Sales trend (last 30 days)</h6>
                 </div>
                 <div class="p-4">
                     <canvas id="salesChart" height="80"></canvas>
                 </div>
             </div>
         </div>
-        
         <div class="col-xl-4">
+            @php
+                $paid = $salesPaymentStatus->get('paid')->total ?? 0;
+                $partial = $salesPaymentStatus->get('partial')->total ?? 0;
+                $unpaid = $salesPaymentStatus->get('unpaid')->total ?? 0;
+            @endphp
             <div class="table-card">
-                <div class="table-card-header">
-                    <h6><i class="fas fa-chart-pie me-2"></i>Payment Status</h6>
+                <div class="table-card-header bg-light border-0 py-3">
+                    <h6 class="mb-0 fw-semibold text-dark"><i class="fas fa-chart-pie me-2 text-primary"></i>Payment status</h6>
                 </div>
                 <div class="p-4">
                     <canvas id="paymentChart" height="200"></canvas>
-                    <div class="mt-3">
-                        @php
-                            $paid = $salesPaymentStatus->get('paid')->total ?? 0;
-                            $partial = $salesPaymentStatus->get('partial')->total ?? 0;
-                            $unpaid = $salesPaymentStatus->get('unpaid')->total ?? 0;
-                        @endphp
-                        <div class="d-flex justify-content-between mb-2">
-                            <span><i class="fas fa-circle text-success"></i> Paid:</span>
-                            <strong>৳{{ number_format($paid, 2) }}</strong>
-                        </div>
-                        <div class="d-flex justify-content-between mb-2">
-                            <span><i class="fas fa-circle text-warning"></i> Partial:</span>
-                            <strong>৳{{ number_format($partial, 2) }}</strong>
-                        </div>
-                        <div class="d-flex justify-content-between">
-                            <span><i class="fas fa-circle text-danger"></i> Unpaid:</span>
-                            <strong>৳{{ number_format($unpaid, 2) }}</strong>
-                        </div>
+                    <div class="mt-3 small">
+                        <div class="d-flex justify-content-between py-2 border-bottom"><span class="text-muted"><i class="fas fa-circle text-success me-1" style="font-size:6px;vertical-align:middle;"></i> Paid</span><strong>৳{{ number_format($paid, 2) }}</strong></div>
+                        <div class="d-flex justify-content-between py-2 border-bottom"><span class="text-muted"><i class="fas fa-circle text-warning me-1" style="font-size:6px;vertical-align:middle;"></i> Partial</span><strong>৳{{ number_format($partial, 2) }}</strong></div>
+                        <div class="d-flex justify-content-between py-2"><span class="text-muted"><i class="fas fa-circle text-danger me-1" style="font-size:6px;vertical-align:middle;"></i> Unpaid</span><strong>৳{{ number_format($unpaid, 2) }}</strong></div>
                     </div>
                 </div>
             </div>
         </div>
     </div>
     
-    <!-- Top Products & Recent Sales -->
     <div class="row g-4 mb-4">
         <div class="col-xl-6">
             <div class="table-card">
-                <div class="table-card-header">
-                    <h6><i class="fas fa-star me-2"></i>Top Selling Products (Last 30 Days)</h6>
+                <div class="table-card-header bg-light border-0 py-3">
+                    <h6 class="mb-0 fw-semibold text-dark"><i class="fas fa-star me-2 text-primary"></i>Top selling products (last 30 days)</h6>
                 </div>
                 <div class="table-responsive">
-                    <table class="table table-hover">
-                        <thead>
-                            <tr>
-                                <th>Product</th>
-                                <th>Qty Sold</th>
-                                <th>Revenue</th>
-                            </tr>
+                    <table class="table table-sm table-hover mb-0">
+                        <thead class="table-light">
+                            <tr><th>Product</th><th>Qty</th><th>Revenue</th></tr>
                         </thead>
                         <tbody>
                             @forelse($topProducts->take(5) as $product)
                                 <tr>
-                                    <td>
-                                        <strong>{{ $product->name }}</strong>
-                                        <br><small class="text-muted">{{ $product->sku }}</small>
-                                    </td>
+                                    <td><strong>{{ $product->name }}</strong><br><small class="text-muted">{{ $product->sku }}</small></td>
                                     <td><span class="badge bg-primary">{{ $product->total_qty }}</span></td>
-                                    <td><strong>৳{{ number_format($product->total_revenue, 2) }}</strong></td>
+                                    <td class="fw-semibold">৳{{ number_format($product->total_revenue, 2) }}</td>
                                 </tr>
                             @empty
-                                <tr><td colspan="3" class="text-center">No sales data available</td></tr>
+                                <tr><td colspan="3" class="text-center text-muted py-3">No sales data</td></tr>
                             @endforelse
                         </tbody>
                     </table>
                 </div>
             </div>
         </div>
-        
         <div class="col-xl-6">
             <div class="table-card">
-                <div class="table-card-header">
-                    <h6><i class="fas fa-clock me-2"></i>Recent Sales</h6>
-                    <a href="{{ route('sales.index') }}" class="btn btn-sm btn-outline-primary">View All</a>
+                <div class="table-card-header bg-light border-0 py-3 d-flex align-items-center justify-content-between">
+                    <h6 class="mb-0 fw-semibold text-dark"><i class="fas fa-clock me-2 text-primary"></i>Recent sales</h6>
+                    <a href="{{ route('sales.index') }}" class="btn btn-sm btn-outline-primary">View all</a>
                 </div>
                 <div class="table-responsive">
-                    <table class="table table-hover">
-                        <thead>
-                            <tr>
-                                <th>Invoice</th>
-                                <th>Customer</th>
-                                <th>Amount</th>
-                                <th>Date</th>
-                                <th>Status</th>
-                            </tr>
+                    <table class="table table-sm table-hover mb-0">
+                        <thead class="table-light">
+                            <tr><th>Invoice</th><th>Customer</th><th>Amount</th><th>Date</th><th>Status</th></tr>
                         </thead>
                         <tbody>
                             @forelse($recentSales->take(7) as $sale)
                                 <tr>
-                                    <td>
-                                        <a href="{{ route('sales.show', $sale) }}" class="text-primary">
-                                            {{ $sale->invoice_number }}
-                                        </a>
-                                    </td>
+                                    <td><a href="{{ route('sales.show', $sale) }}" class="text-decoration-none fw-semibold">{{ $sale->invoice_number }}</a></td>
                                     <td>{{ $sale->customer_name ?? ($sale->customer->name ?? 'Walk-in') }}</td>
-                                    <td><strong>৳{{ number_format($sale->total_amount, 2) }}</strong></td>
+                                    <td class="fw-semibold">৳{{ number_format($sale->total_amount, 2) }}</td>
                                     <td>{{ $sale->sale_date->format('M d, Y') }}</td>
-                                    <td>
-                                        <span class="badge 
-                                            {{ $sale->payment_status === 'paid' ? 'bg-success' : 
-                                               ($sale->payment_status === 'partial' ? 'bg-warning' : 'bg-danger') }}">
-                                            {{ ucfirst($sale->payment_status) }}
-                                        </span>
-                                    </td>
+                                    <td><span class="badge {{ $sale->payment_status === 'paid' ? 'bg-success' : ($sale->payment_status === 'partial' ? 'bg-warning text-dark' : 'bg-danger') }}">{{ ucfirst($sale->payment_status) }}</span></td>
                                 </tr>
                             @empty
-                                <tr><td colspan="5" class="text-center">No recent sales</td></tr>
+                                <tr><td colspan="5" class="text-center text-muted py-3">No recent sales</td></tr>
                             @endforelse
                         </tbody>
                     </table>
@@ -254,83 +177,51 @@
         </div>
     </div>
     
-    <!-- Alerts & Quick Actions -->
     <div class="row g-4">
-        {{-- Alerts --}}
         @if($lowStockProducts > 0 || $customerDues > 0 || $supplierDues > 0 || $pendingServices > 0 || $pendingWarranties > 0)
         <div class="col-xl-8">
             <div class="table-card">
-                <div class="table-card-header">
-                    <h6><i class="fas fa-bell me-2"></i>Alerts Requiring Attention</h6>
+                <div class="table-card-header bg-light border-0 py-3">
+                    <h6 class="mb-0 fw-semibold text-dark"><i class="fas fa-bell me-2 text-primary"></i>Alerts</h6>
                 </div>
-                <div class="p-3">
+                <div class="p-4">
                     <div class="row g-3">
                         @if($lowStockProducts > 0)
                         <div class="col-sm-6">
-                            <div class="d-flex align-items-center gap-3 p-3 rounded" style="background:#fff7ed;border-left:4px solid #f97316;">
-                                <div style="width:40px;height:40px;background:#fed7aa;border-radius:10px;display:flex;align-items:center;justify-content:center;flex-shrink:0;">
-                                    <i class="fas fa-exclamation-triangle" style="color:#c2410c;"></i>
-                                </div>
-                                <div class="flex-grow-1">
-                                    <div style="font-size:11px;color:#9a3412;font-weight:700;text-transform:uppercase;">Low Stock</div>
-                                    <div style="font-size:18px;font-weight:800;color:#111;">{{ $lowStockProducts }} Products</div>
-                                </div>
+                            <div class="table-card p-3 d-flex align-items-center justify-content-between border-start border-3 border-warning">
+                                <div><div class="small text-uppercase text-muted fw-semibold">Low stock</div><div class="fw-bold">{{ $lowStockProducts }} products</div></div>
                                 <a href="{{ route('stock.low-stock') }}" class="btn btn-sm btn-outline-warning">View</a>
                             </div>
                         </div>
                         @endif
                         @if($customerDues > 0)
                         <div class="col-sm-6">
-                            <div class="d-flex align-items-center gap-3 p-3 rounded" style="background:#fef2f2;border-left:4px solid #ef4444;">
-                                <div style="width:40px;height:40px;background:#fecaca;border-radius:10px;display:flex;align-items:center;justify-content:center;flex-shrink:0;">
-                                    <i class="fas fa-users" style="color:#b91c1c;"></i>
-                                </div>
-                                <div class="flex-grow-1">
-                                    <div style="font-size:11px;color:#991b1b;font-weight:700;text-transform:uppercase;">Customer Dues</div>
-                                    <div style="font-size:18px;font-weight:800;color:#111;">৳{{ number_format($customerDues, 2) }}</div>
-                                </div>
+                            <div class="table-card p-3 d-flex align-items-center justify-content-between border-start border-3 border-danger">
+                                <div><div class="small text-uppercase text-muted fw-semibold">Customer dues</div><div class="fw-bold text-danger">৳{{ number_format($customerDues, 2) }}</div></div>
                                 <a href="{{ route('sales.index', ['payment_status'=>'unpaid']) }}" class="btn btn-sm btn-outline-danger">View</a>
                             </div>
                         </div>
                         @endif
                         @if($supplierDues > 0)
                         <div class="col-sm-6">
-                            <div class="d-flex align-items-center gap-3 p-3 rounded" style="background:#eff6ff;border-left:4px solid #3b82f6;">
-                                <div style="width:40px;height:40px;background:#bfdbfe;border-radius:10px;display:flex;align-items:center;justify-content:center;flex-shrink:0;">
-                                    <i class="fas fa-truck" style="color:#1d4ed8;"></i>
-                                </div>
-                                <div class="flex-grow-1">
-                                    <div style="font-size:11px;color:#1e40af;font-weight:700;text-transform:uppercase;">Supplier Dues</div>
-                                    <div style="font-size:18px;font-weight:800;color:#111;">৳{{ number_format($supplierDues, 2) }}</div>
-                                </div>
+                            <div class="table-card p-3 d-flex align-items-center justify-content-between border-start border-3 border-primary">
+                                <div><div class="small text-uppercase text-muted fw-semibold">Supplier dues</div><div class="fw-bold">৳{{ number_format($supplierDues, 2) }}</div></div>
                                 <a href="{{ route('purchases.index', ['payment_status'=>'unpaid']) }}" class="btn btn-sm btn-outline-primary">View</a>
                             </div>
                         </div>
                         @endif
                         @if($pendingServices > 0)
                         <div class="col-sm-6">
-                            <div class="d-flex align-items-center gap-3 p-3 rounded" style="background:#f0fdf4;border-left:4px solid #16a34a;">
-                                <div style="width:40px;height:40px;background:#bbf7d0;border-radius:10px;display:flex;align-items:center;justify-content:center;flex-shrink:0;">
-                                    <i class="fas fa-laptop-medical" style="color:#15803d;"></i>
-                                </div>
-                                <div class="flex-grow-1">
-                                    <div style="font-size:11px;color:#166534;font-weight:700;text-transform:uppercase;">Pending Services</div>
-                                    <div style="font-size:18px;font-weight:800;color:#111;">{{ $pendingServices }} Orders</div>
-                                </div>
+                            <div class="table-card p-3 d-flex align-items-center justify-content-between border-start border-3 border-success">
+                                <div><div class="small text-uppercase text-muted fw-semibold">Pending services</div><div class="fw-bold">{{ $pendingServices }} orders</div></div>
                                 <a href="{{ route('services.index', ['status'=>'pending']) }}" class="btn btn-sm btn-outline-success">View</a>
                             </div>
                         </div>
                         @endif
                         @if($pendingWarranties > 0)
                         <div class="col-sm-6">
-                            <div class="d-flex align-items-center gap-3 p-3 rounded" style="background:#f5f3ff;border-left:4px solid #8b5cf6;">
-                                <div style="width:40px;height:40px;background:#ddd6fe;border-radius:10px;display:flex;align-items:center;justify-content:center;flex-shrink:0;">
-                                    <i class="fas fa-shield-alt" style="color:#6d28d9;"></i>
-                                </div>
-                                <div class="flex-grow-1">
-                                    <div style="font-size:11px;color:#5b21b6;font-weight:700;text-transform:uppercase;">Warranty Submissions</div>
-                                    <div style="font-size:18px;font-weight:800;color:#111;">{{ $pendingWarranties }} Pending</div>
-                                </div>
+                            <div class="table-card p-3 d-flex align-items-center justify-content-between border-start border-3 border-secondary">
+                                <div><div class="small text-uppercase text-muted fw-semibold">Warranty submissions</div><div class="fw-bold">{{ $pendingWarranties }} pending</div></div>
                                 <a href="{{ route('warranty-submissions.index') }}" class="btn btn-sm btn-outline-secondary">View</a>
                             </div>
                         </div>
@@ -341,55 +232,42 @@
         </div>
         @endif
 
-        {{-- Quick Actions (mandatory daily ops) --}}
         <div class="col-xl-4">
             <div class="table-card h-100">
-                <div class="table-card-header">
-                    <h6><i class="fas fa-bolt me-2"></i>Quick Actions</h6>
+                <div class="table-card-header bg-light border-0 py-3">
+                    <h6 class="mb-0 fw-semibold text-dark"><i class="fas fa-bolt me-2 text-primary"></i>Quick actions</h6>
                 </div>
-                <div class="p-3 d-flex flex-column gap-2">
+                <div class="p-4 d-flex flex-column gap-2">
                     @can('create sales')
-                    <a href="{{ route('sales.create') }}" class="btn btn-primary w-100 text-start">
-                        <i class="fas fa-file-invoice-dollar me-2"></i>New Sale / Invoice
-                    </a>
+                    <a href="{{ route('sales.create') }}" class="btn btn-primary btn-sm w-100 text-start"><i class="fas fa-file-invoice-dollar me-2"></i>New sale / invoice</a>
                     @endcan
                     @can('create purchases')
-                    <a href="{{ route('purchases.create') }}" class="btn btn-outline-primary w-100 text-start">
-                        <i class="fas fa-shopping-cart me-2"></i>New Purchase Order
-                    </a>
+                    <a href="{{ route('purchases.create') }}" class="btn btn-outline-primary btn-sm w-100 text-start"><i class="fas fa-shopping-cart me-2"></i>New purchase order</a>
                     @endcan
                     @can('create services')
-                    <a href="{{ route('services.create') }}" class="btn btn-outline-primary w-100 text-start">
-                        <i class="fas fa-laptop-medical me-2"></i>New Service Order
-                    </a>
+                    <a href="{{ route('services.create') }}" class="btn btn-outline-primary btn-sm w-100 text-start"><i class="fas fa-laptop-medical me-2"></i>New service order</a>
                     @endcan
                     @can('create expenses')
-                    <a href="{{ route('expenses.create') }}" class="btn btn-outline-success w-100 text-start">
-                        <i class="fas fa-receipt me-2"></i>Add Expense
-                    </a>
+                    <a href="{{ route('expenses.create') }}" class="btn btn-outline-success btn-sm w-100 text-start"><i class="fas fa-receipt me-2"></i>Add expense</a>
                     @endcan
                     @can('view payments')
-                    <a href="{{ route('payments.index') }}" class="btn btn-outline-secondary w-100 text-start">
-                        <i class="fas fa-money-bill-wave me-2"></i>Payments
-                    </a>
+                    <a href="{{ route('payments.index') }}" class="btn btn-outline-secondary btn-sm w-100 text-start"><i class="fas fa-money-bill-wave me-2"></i>Payments</a>
                     @endcan
                     @can('view stock')
-                    <a href="{{ route('stock.low-stock') }}" class="btn btn-outline-warning w-100 text-start">
-                        <i class="fas fa-exclamation-triangle me-2"></i>Low Stock
-                    </a>
-                    <a href="{{ route('stock.index') }}" class="btn btn-outline-secondary w-100 text-start">
-                        <i class="fas fa-warehouse me-2"></i>Stock & Movement
-                    </a>
+                    <a href="{{ route('stock.low-stock') }}" class="btn btn-outline-warning btn-sm w-100 text-start"><i class="fas fa-exclamation-triangle me-2"></i>Low stock</a>
+                    <a href="{{ route('stock.index') }}" class="btn btn-outline-secondary btn-sm w-100 text-start"><i class="fas fa-warehouse me-2"></i>Stock & barcode</a>
+                    @can('create stock')
+                    <a href="{{ route('stock.create-manual') }}" class="btn btn-outline-secondary btn-sm w-100 text-start"><i class="fas fa-barcode me-2"></i>Add stock by barcode</a>
+                    @endcan
                     @endcan
                     @can('view sales-reports')
-                    <a href="{{ route('reports.sales.index') }}" class="btn btn-outline-secondary w-100 text-start">
-                        <i class="fas fa-chart-bar me-2"></i>Sales Report
-                    </a>
+                    <a href="{{ route('reports.sales.index') }}" class="btn btn-outline-secondary btn-sm w-100 text-start"><i class="fas fa-chart-bar me-2"></i>Sales report</a>
                     @endcan
                 </div>
             </div>
         </div>
     </div>
+</div>
 @endsection
 
 @push('scripts')

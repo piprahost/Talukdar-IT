@@ -71,6 +71,12 @@ class JournalEntry extends Model
         return $query->where('status', 'draft');
     }
 
+    /** Relation names for show/detail (connected data). */
+    public static function getStandardRelations(): array
+    {
+        return ['items.account', 'creator', 'poster'];
+    }
+
     // Helper Methods
     public function getTotalDebitAttribute()
     {
@@ -105,5 +111,61 @@ class JournalEntry extends Model
         $this->posted_by = null;
         $this->posted_at = null;
         $this->save();
+    }
+
+    /**
+     * Get URL to the source document (invoice, PO, service, payment, expense, return) when this entry was auto-created.
+     * Returns null for manual entries or unknown reference types.
+     */
+    public function getSourceUrl(): ?string
+    {
+        if (empty($this->reference_type) || empty($this->reference_id)) {
+            return null;
+        }
+        $type = $this->reference_type;
+        $id = $this->reference_id;
+        $routes = [
+            'sale' => ['route' => 'sales.show', 'param' => 'sale'],
+            'purchase' => ['route' => 'purchases.show', 'param' => 'purchase'],
+            'payment' => ['route' => 'payments.show', 'param' => 'payment'],
+            'service' => ['route' => 'services.show', 'param' => 'service'],
+            'sale_return' => ['route' => 'sale-returns.show', 'param' => 'sale_return'],
+            'purchase_return' => ['route' => 'purchase-returns.show', 'param' => 'purchase_return'],
+            'service_return' => ['route' => 'service-returns.show', 'param' => 'service_return'],
+            \App\Models\Expense::class => ['route' => 'expenses.show', 'param' => 'expense'],
+        ];
+        if (!isset($routes[$type])) {
+            return null;
+        }
+        try {
+            return route($routes[$type]['route'], [$routes[$type]['param'] => $id]);
+        } catch (\Throwable $e) {
+            return null;
+        }
+    }
+
+    /**
+     * Human-readable label for the source document (e.g. "Invoice INV-001").
+     */
+    public function getSourceLabel(): ?string
+    {
+        if (empty($this->reference_type) || empty($this->reference_id)) {
+            return null;
+        }
+        $labels = [
+            'sale' => 'Invoice',
+            'purchase' => 'Purchase Order',
+            'payment' => 'Payment',
+            'service' => 'Service',
+            'sale_return' => 'Sale Return',
+            'purchase_return' => 'Purchase Return',
+            'service_return' => 'Service Return',
+            \App\Models\Expense::class => 'Expense',
+        ];
+        $label = $labels[$this->reference_type] ?? null;
+        if (!$label) {
+            return null;
+        }
+        return $label . ($this->reference ? ' ' . $this->reference : ' #' . $this->reference_id);
     }
 }

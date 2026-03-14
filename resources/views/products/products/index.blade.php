@@ -33,6 +33,7 @@
 <div class="table-card">
     <div class="table-card-header">
         <h6><i class="fas fa-box me-2"></i>All Products</h6>
+        <small class="text-muted d-none d-md-inline">1 barcode = 1 unit</small>
         <div class="d-flex gap-2">
             @can('view stock')
             <a href="{{ route('stock.low-stock') }}" class="btn btn-sm btn-outline-warning">
@@ -145,16 +146,18 @@
                         <div style="font-size:11px;color:#9ca3af;">{{ $product->brand->name ?? '' }}</div>
                     </td>
                     <td class="text-center">
-                        @if($product->stock_quantity <= 0)
-                            <span class="badge bg-danger">0 {{ $product->unit }}</span>
-                        @elseif($product->stock_quantity <= ($product->min_stock ?? 0))
-                            <span class="badge bg-warning text-dark">{{ $product->stock_quantity }} {{ $product->unit }}</span>
-                        @elseif($product->stock_quantity <= ($product->reorder_level ?? 0))
-                            <span class="badge bg-warning text-dark">{{ $product->stock_quantity }} {{ $product->unit }}</span>
+                        @php $disp = $product->display_stock; $reorder = $product->reorder_level ?? 0; @endphp
+                        @if($disp <= 0)
+                            <span class="badge bg-danger">0</span>
+                        @elseif($disp <= ($product->min_stock ?? 0) || $disp <= $reorder)
+                            <span class="badge bg-warning text-dark">{{ $disp }}</span>
                         @else
-                            <span class="badge bg-success">{{ $product->stock_quantity }} {{ $product->unit }}</span>
+                            <span class="badge bg-success">{{ $disp }}</span>
                         @endif
-                        @if($product->stock_quantity > 0 && $product->stock_quantity <= ($product->min_stock ?? 0))
+                        @if($product->uses_barcode_stock && $disp > 0)
+                            <div style="font-size:10px;color:#6b7280;" title="1 barcode = 1 unit">barcode</div>
+                        @endif
+                        @if($disp > 0 && ($disp <= ($product->min_stock ?? 0) || $disp <= $reorder))
                             <div style="font-size:10px;color:#ef4444;">Low Stock!</div>
                         @endif
                     </td>
@@ -185,7 +188,7 @@
                             <a href="{{ route('products.show', $product) }}" class="btn btn-outline-primary" title="View"><i class="fas fa-eye"></i></a>
                             <a href="{{ route('products.edit', $product) }}" class="btn btn-outline-warning" title="Edit"><i class="fas fa-edit"></i></a>
                             @can('adjust stock')
-                            <a href="{{ route('products.adjust-stock', $product) }}" class="btn btn-outline-info" title="Adjust Stock"><i class="fas fa-warehouse"></i></a>
+                            <a href="{{ route('products.show', $product) }}#adjustStockCard" class="btn btn-outline-info" title="Adjust Stock"><i class="fas fa-warehouse"></i></a>
                             @endcan
                             <form action="{{ route('products.destroy', $product) }}" method="POST" class="d-inline" onsubmit="return confirm('Delete {{ addslashes($product->name) }}?')">
                                 @csrf @method('DELETE')

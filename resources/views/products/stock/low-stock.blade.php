@@ -102,7 +102,7 @@
                         <div class="btn-group btn-group-sm">
                             <a href="{{ route('products.show', $product) }}" class="btn btn-outline-primary" title="View Product"><i class="fas fa-eye"></i></a>
                             @can('adjust stock')
-                            <a href="{{ route('products.show', $product) }}#adjustStock" class="btn btn-success" title="Adjust Stock"><i class="fas fa-plus"></i></a>
+                            <a href="{{ route('products.show', $product) }}#adjustStockCard" class="btn btn-success" title="Adjust Stock"><i class="fas fa-plus"></i></a>
                             @endcan
                             @can('create purchases')
                             <a href="{{ route('purchases.create') }}" class="btn btn-outline-warning" title="Create Purchase Order"><i class="fas fa-shopping-cart"></i></a>

@@ -119,6 +119,17 @@ class Expense extends Model
         return $query->where('status', $status);
     }
 
+    public function scopeWithStandardRelations($query)
+    {
+        return $query->with(static::getStandardRelations());
+    }
+
+    /** Relation names for show/detail (connected data). */
+    public static function getStandardRelations(): array
+    {
+        return ['account', 'bankAccount', 'creator', 'approver'];
+    }
+
     // Helper Methods
     public function approve()
     {

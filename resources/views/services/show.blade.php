@@ -4,119 +4,87 @@
 @section('page-title', 'Service Order Details')
 
 @section('content')
-<div class="row g-3">
+<div class="service-orders-wrap">
+    @php
+        $statusColors = [
+            'pending'     => ['bg'=>'warning','color'=>'text-dark'],
+            'in_progress' => ['bg'=>'info','color'=>'text-white'],
+            'completed'   => ['bg'=>'success','color'=>'text-white'],
+            'delivered'   => ['bg'=>'primary','color'=>'text-white'],
+            'cancelled'   => ['bg'=>'danger','color'=>'text-white'],
+        ];
+        $sc = $statusColors[$service->status] ?? ['bg'=>'secondary','color'=>'text-white'];
+        $statusLabels = ['pending'=>'Pending','in_progress'=>'In Progress','completed'=>'Completed','delivered'=>'Delivered','cancelled'=>'Cancelled'];
+    @endphp
+    <div class="d-flex flex-column flex-md-row align-items-start align-items-md-center justify-content-between gap-3 mb-4 pb-3 border-bottom">
+        <div>
+            <h5 class="mb-1 fw-bold">Service order <code class="bg-light px-2 py-1 rounded">{{ $service->service_number }}</code></h5>
+            <p class="text-muted small mb-0">Received {{ $service->receive_date->format('d M Y') }} · <span class="badge bg-{{ $sc['bg'] }} {{ $sc['color'] }}">{{ $statusLabels[$service->status] ?? ucfirst($service->status) }}</span></p>
+        </div>
+        <div class="d-flex gap-2 flex-wrap">
+            @if(in_array($service->status, ['completed', 'delivered']))
+                <a href="{{ route('service-returns.create', ['service_id' => $service->id]) }}" class="btn btn-sm btn-outline-danger"><i class="fas fa-undo me-1"></i>Return Service</a>
+            @endif
+            @if($service->due_amount > 0)
+                <button type="button" class="btn btn-sm btn-success" data-bs-toggle="modal" data-bs-target="#collectPaymentModal"><i class="fas fa-hand-holding-usd me-1"></i>Collect Payment</button>
+            @endif
+            <a href="{{ route('services.print', $service) }}" class="btn btn-sm btn-outline-secondary" target="_blank"><i class="fas fa-print me-1"></i>Print</a>
+            <a href="{{ route('services.edit', $service) }}" class="btn btn-sm btn-warning"><i class="fas fa-edit me-1"></i>Edit</a>
+            <a href="{{ route('services.index') }}" class="btn btn-sm btn-outline-secondary"><i class="fas fa-arrow-left me-1"></i>Back</a>
+        </div>
+    </div>
 
-    {{-- ── Top Action Bar ── --}}
-    <div class="col-12">
-        <div class="table-card p-3 d-flex align-items-center justify-content-between flex-wrap gap-2">
-            <div class="d-flex align-items-center gap-2">
-                <span class="fw-bold text-muted" style="font-size:13px;">
-                    <i class="fas fa-hashtag me-1"></i>{{ $service->service_number }}
-                </span>
-                @php
-                    $statusColors = [
-                        'pending'     => ['bg'=>'#fff7ed','color'=>'#c2410c','dot'=>'#f97316'],
-                        'in_progress' => ['bg'=>'#eff6ff','color'=>'#1d4ed8','dot'=>'#3b82f6'],
-                        'completed'   => ['bg'=>'#f0fdf4','color'=>'#166534','dot'=>'#22c55e'],
-                        'delivered'   => ['bg'=>'#f5f3ff','color'=>'#5b21b6','dot'=>'#8b5cf6'],
-                        'cancelled'   => ['bg'=>'#fef2f2','color'=>'#991b1b','dot'=>'#ef4444'],
-                    ];
-                    $sc = $statusColors[$service->status] ?? ['bg'=>'#f3f4f6','color'=>'#374151','dot'=>'#9ca3af'];
-                    $statusLabels = ['pending'=>'Pending','in_progress'=>'In Progress','completed'=>'Completed','delivered'=>'Delivered','cancelled'=>'Cancelled'];
-                @endphp
-                <span style="display:inline-flex;align-items:center;gap:6px;background:{{ $sc['bg'] }};color:{{ $sc['color'] }};padding:5px 12px;border-radius:20px;font-size:12px;font-weight:700;">
-                    <span style="width:7px;height:7px;border-radius:50%;background:{{ $sc['dot'] }};display:inline-block;"></span>
-                    {{ $statusLabels[$service->status] ?? ucfirst($service->status) }}
-                </span>
+    <div class="row g-3 mb-4">
+        <div class="col-6 col-md-3">
+            <div class="table-card p-3 h-100 border-start border-3 border-secondary">
+                <div class="small text-uppercase text-muted fw-semibold mb-1">Service cost</div>
+                <div class="fw-bold fs-5">৳{{ number_format($service->service_cost, 2) }}</div>
             </div>
-            <div class="d-flex gap-2 flex-wrap">
-                @if(in_array($service->status, ['completed', 'delivered']))
-                    <a href="{{ route('service-returns.create', ['service_id' => $service->id]) }}" class="btn btn-sm btn-outline-danger">
-                        <i class="fas fa-undo me-1"></i>Return Service
-                    </a>
+        </div>
+        <div class="col-6 col-md-3">
+            <div class="table-card p-3 h-100 border-start border-3 border-success">
+                <div class="small text-uppercase text-muted fw-semibold mb-1">Paid</div>
+                <div class="fw-bold fs-5 text-success">৳{{ number_format($service->paid_amount, 2) }}</div>
+            </div>
+        </div>
+        <div class="col-6 col-md-3">
+            <div class="table-card p-3 h-100 border-start border-3 {{ $service->due_amount > 0 ? 'border-danger' : 'border-success' }}">
+                <div class="small text-uppercase text-muted fw-semibold mb-1">Due</div>
+                <div class="fw-bold fs-5 {{ $service->due_amount > 0 ? 'text-danger' : 'text-success' }}">৳{{ number_format($service->due_amount, 2) }}</div>
+            </div>
+        </div>
+        <div class="col-6 col-md-3">
+            <div class="table-card p-3 h-100">
+                <div class="small text-uppercase text-muted fw-semibold mb-1">Payment status</div>
+                @if($service->payment_status === 'fully_paid')
+                    <span class="badge bg-success"><i class="fas fa-check-circle me-1"></i>Fully Paid</span>
+                @elseif($service->payment_status === 'partial')
+                    <span class="badge bg-warning text-dark"><i class="fas fa-clock me-1"></i>Partial</span>
+                @else
+                    <span class="badge bg-danger"><i class="fas fa-times-circle me-1"></i>Unpaid</span>
                 @endif
-                @if($service->due_amount > 0)
-                    <button type="button" class="btn btn-sm btn-success" data-bs-toggle="modal" data-bs-target="#collectPaymentModal">
-                        <i class="fas fa-hand-holding-usd me-1"></i>Collect Payment
-                    </button>
-                @endif
-                <a href="{{ route('services.print', $service) }}" class="btn btn-sm btn-outline-secondary" target="_blank">
-                    <i class="fas fa-print me-1"></i>Print Memo
-                </a>
-                <a href="{{ route('services.edit', $service) }}" class="btn btn-sm btn-warning">
-                    <i class="fas fa-edit me-1"></i>Edit
-                </a>
-                <a href="{{ route('services.index') }}" class="btn btn-sm btn-outline-secondary">
-                    <i class="fas fa-arrow-left me-1"></i>Back
-                </a>
             </div>
         </div>
     </div>
 
-    {{-- ── Payment Summary Cards ── --}}
-    <div class="col-12">
-        <div class="row g-3">
-            <div class="col-6 col-md-3">
-                <div class="table-card p-3 text-center h-100">
-                    <div style="font-size:11px;font-weight:600;text-transform:uppercase;letter-spacing:.5px;color:#6b7280;margin-bottom:6px;">Service Cost</div>
-                    <div style="font-size:22px;font-weight:800;color:#111;">৳{{ number_format($service->service_cost, 2) }}</div>
-                </div>
-            </div>
-            <div class="col-6 col-md-3">
-                <div class="table-card p-3 text-center h-100" style="border-left:3px solid #16a34a;">
-                    <div style="font-size:11px;font-weight:600;text-transform:uppercase;letter-spacing:.5px;color:#6b7280;margin-bottom:6px;">Paid Amount</div>
-                    <div style="font-size:22px;font-weight:800;color:#16a34a;">৳{{ number_format($service->paid_amount, 2) }}</div>
-                </div>
-            </div>
-            <div class="col-6 col-md-3">
-                <div class="table-card p-3 text-center h-100" style="border-left:3px solid {{ $service->due_amount > 0 ? '#ef4444' : '#16a34a' }};">
-                    <div style="font-size:11px;font-weight:600;text-transform:uppercase;letter-spacing:.5px;color:#6b7280;margin-bottom:6px;">Due Amount</div>
-                    <div style="font-size:22px;font-weight:800;color:{{ $service->due_amount > 0 ? '#ef4444' : '#16a34a' }};">৳{{ number_format($service->due_amount, 2) }}</div>
-                </div>
-            </div>
-            <div class="col-6 col-md-3">
-                <div class="table-card p-3 text-center h-100">
-                    <div style="font-size:11px;font-weight:600;text-transform:uppercase;letter-spacing:.5px;color:#6b7280;margin-bottom:6px;">Payment Status</div>
-                    @if($service->payment_status === 'fully_paid')
-                        <span class="badge bg-success" style="font-size:13px;padding:7px 14px;">
-                            <i class="fas fa-check-circle me-1"></i>Fully Paid
-                        </span>
-                    @elseif($service->payment_status === 'partial')
-                        <span class="badge bg-warning text-dark" style="font-size:13px;padding:7px 14px;">
-                            <i class="fas fa-clock me-1"></i>Partial
-                        </span>
-                    @else
-                        <span class="badge bg-danger" style="font-size:13px;padding:7px 14px;">
-                            <i class="fas fa-times-circle me-1"></i>Unpaid
-                        </span>
-                    @endif
-                </div>
-            </div>
-        </div>
-    </div>
-
-    {{-- ── Main Detail Card ── --}}
     <div class="col-md-8">
         <div class="table-card h-100">
-            <div class="table-card-header">
-                <h6><i class="fas fa-laptop-medical me-2"></i>Product & Customer Details</h6>
+            <div class="table-card-header bg-light border-0 py-3">
+                <h6 class="mb-0 fw-semibold text-dark"><i class="fas fa-laptop-medical me-2 text-primary"></i>Product & Customer</h6>
             </div>
             <div class="p-4">
                 <div class="row">
-                    {{-- Product Info --}}
                     <div class="col-md-6 mb-4">
-                        <h6 style="font-size:11px;font-weight:700;text-transform:uppercase;letter-spacing:.6px;color:#6b7280;margin-bottom:12px;">
-                            <i class="fas fa-box me-1"></i>Product Information
-                        </h6>
-                        <table class="table table-sm table-borderless mb-0" style="font-size:14px;">
+                        <h6 class="small text-uppercase text-muted fw-semibold mb-2"><i class="fas fa-box me-1"></i>Product</h6>
+                        <table class="table table-sm table-borderless mb-0">
                             <tr>
-                                <td class="text-muted ps-0" style="width:40%;white-space:nowrap;">Product</td>
-                                <td class="fw-600 pe-0">{{ $service->product_name }}</td>
+                                <td class="text-muted ps-0" style="width:38%;">Product</td>
+                                <td class="fw-semibold pe-0">{{ $service->product_name }}</td>
                             </tr>
                             @if($service->serial_number)
                             <tr>
-                                <td class="text-muted ps-0">Serial No.</td>
-                                <td class="pe-0"><code style="background:#f3f4f6;padding:2px 6px;border-radius:4px;font-size:12px;">{{ $service->serial_number }}</code></td>
+                                <td class="text-muted ps-0">Serial</td>
+                                <td class="pe-0"><code class="bg-light px-2 py-1 rounded small">{{ $service->serial_number }}</code></td>
                             </tr>
                             @endif
                             @if($service->problem_notes)
@@ -127,30 +95,22 @@
                             @endif
                             @if($service->service_notes)
                             <tr>
-                                <td class="text-muted ps-0 align-top">Technician Notes</td>
+                                <td class="text-muted ps-0 align-top">Technician</td>
                                 <td class="pe-0" style="white-space:pre-line;">{{ $service->service_notes }}</td>
                             </tr>
                             @endif
                         </table>
                     </div>
-
-                    {{-- Customer Info --}}
                     <div class="col-md-6 mb-4">
-                        <h6 style="font-size:11px;font-weight:700;text-transform:uppercase;letter-spacing:.6px;color:#6b7280;margin-bottom:12px;">
-                            <i class="fas fa-user me-1"></i>Customer Information
-                        </h6>
-                        <table class="table table-sm table-borderless mb-0" style="font-size:14px;">
+                        <h6 class="small text-uppercase text-muted fw-semibold mb-2"><i class="fas fa-user me-1"></i>Customer</h6>
+                        <table class="table table-sm table-borderless mb-0">
                             <tr>
-                                <td class="text-muted ps-0" style="width:40%;white-space:nowrap;">Name</td>
+                                <td class="text-muted ps-0" style="width:38%;">Name</td>
                                 <td class="fw-semibold pe-0">{{ $service->customer_name }}</td>
                             </tr>
                             <tr>
                                 <td class="text-muted ps-0">Phone</td>
-                                <td class="pe-0">
-                                    <a href="tel:{{ $service->customer_phone }}" style="color:inherit;text-decoration:none;">
-                                        <i class="fas fa-phone fa-xs me-1 text-muted"></i>{{ $service->customer_phone }}
-                                    </a>
-                                </td>
+                                <td class="pe-0"><a href="tel:{{ $service->customer_phone }}" class="text-decoration-none"><i class="fas fa-phone fa-xs me-1 text-muted"></i>{{ $service->customer_phone }}</a></td>
                             </tr>
                             @if($service->customer_address)
                             <tr>
@@ -161,31 +121,23 @@
                         </table>
                     </div>
                 </div>
-
                 <hr class="my-3">
-
                 <div class="row">
-                    {{-- Dates --}}
                     <div class="col-md-6 mb-3">
-                        <h6 style="font-size:11px;font-weight:700;text-transform:uppercase;letter-spacing:.6px;color:#6b7280;margin-bottom:12px;">
-                            <i class="fas fa-calendar me-1"></i>Dates
-                        </h6>
-                        <table class="table table-sm table-borderless mb-0" style="font-size:14px;">
+                        <h6 class="small text-uppercase text-muted fw-semibold mb-2"><i class="fas fa-calendar me-1"></i>Dates</h6>
+                        <table class="table table-sm table-borderless mb-0">
                             <tr>
                                 <td class="text-muted ps-0" style="width:45%;">Received</td>
                                 <td class="fw-semibold pe-0">{{ $service->receive_date->format('d M Y') }}</td>
                             </tr>
                             <tr>
-                                <td class="text-muted ps-0">Expected Delivery</td>
+                                <td class="text-muted ps-0">Delivery</td>
                                 <td class="pe-0">
                                     @if($service->delivery_date)
                                         @php $overdue = $service->delivery_date->isPast() && !in_array($service->status, ['delivered','cancelled']); @endphp
-                                        <span class="{{ $overdue ? 'text-danger fw-semibold' : '' }}">
-                                            {{ $service->delivery_date->format('d M Y') }}
-                                            @if($overdue) <small><i class="fas fa-exclamation-circle ms-1"></i>Overdue</small> @endif
-                                        </span>
+                                        <span class="{{ $overdue ? 'text-danger fw-semibold' : '' }}">{{ $service->delivery_date->format('d M Y') }}@if($overdue) <small><i class="fas fa-exclamation-circle ms-1"></i>Overdue</small>@endif</span>
                                     @else
-                                        <span class="text-muted">Not set</span>
+                                        <span class="text-muted">—</span>
                                     @endif
                                 </td>
                             </tr>
@@ -195,106 +147,85 @@
                             </tr>
                         </table>
                     </div>
-
-                    {{-- Payment Details --}}
                     <div class="col-md-6 mb-3">
-                        <h6 style="font-size:11px;font-weight:700;text-transform:uppercase;letter-spacing:.6px;color:#6b7280;margin-bottom:12px;">
-                            <i class="fas fa-credit-card me-1"></i>Payment Details
-                        </h6>
-                        <table class="table table-sm table-borderless mb-0" style="font-size:14px;">
+                        <h6 class="small text-uppercase text-muted fw-semibold mb-2"><i class="fas fa-credit-card me-1"></i>Payment</h6>
+                        <table class="table table-sm table-borderless mb-0">
                             <tr>
                                 <td class="text-muted ps-0" style="width:45%;">Method</td>
-                                <td class="pe-0">
-                                    <span class="badge" style="background:#f3f4f6;color:#374151;font-weight:600;">
-                                        {{ $service->payment_method_label }}
-                                    </span>
-                                </td>
+                                <td class="pe-0"><span class="badge bg-light text-dark fw-semibold">{{ $service->payment_method_label }}</span></td>
                             </tr>
                             @if($service->bankAccount)
                             <tr>
-                                <td class="text-muted ps-0">Bank Account</td>
+                                <td class="text-muted ps-0">Bank</td>
                                 <td class="pe-0">{{ $service->bankAccount->account_name }} — {{ $service->bankAccount->bank_name }}</td>
                             </tr>
                             @endif
                             @if($service->created_by)
                             <tr>
-                                <td class="text-muted ps-0">Created By</td>
+                                <td class="text-muted ps-0">Created by</td>
                                 <td class="pe-0">{{ $service->creator->name ?? 'N/A' }}</td>
                             </tr>
                             @endif
                         </table>
                     </div>
                 </div>
-
                 @if($service->internal_notes)
                 <hr class="my-3">
-                <div>
-                    <h6 style="font-size:11px;font-weight:700;text-transform:uppercase;letter-spacing:.6px;color:#6b7280;margin-bottom:8px;">
-                        <i class="fas fa-sticky-note me-1"></i>Internal Notes
-                    </h6>
-                    <p class="text-muted mb-0" style="font-size:14px;white-space:pre-line;">{{ $service->internal_notes }}</p>
-                </div>
+                <h6 class="small text-uppercase text-muted fw-semibold mb-2"><i class="fas fa-sticky-note me-1"></i>Internal notes</h6>
+                <p class="text-muted mb-0 small" style="white-space:pre-line;">{{ $service->internal_notes }}</p>
                 @endif
             </div>
         </div>
     </div>
 
-    {{-- ── Sidebar: Payment History & Actions ── --}}
     <div class="col-md-4">
-        {{-- Payment Breakdown --}}
-        <div class="table-card mb-3">
-            <div class="table-card-header">
-                <h6><i class="fas fa-receipt me-2"></i>Invoice Summary</h6>
+        <div class="table-card mb-4">
+            <div class="table-card-header bg-light border-0 py-3">
+                <h6 class="mb-0 fw-semibold text-dark"><i class="fas fa-receipt me-2 text-primary"></i>Invoice summary</h6>
             </div>
-            <div class="p-3">
-                <div style="display:flex;justify-content:space-between;padding:10px 0;border-bottom:1px solid #f3f4f6;">
-                    <span style="font-size:13px;color:#6b7280;">Service Cost</span>
-                    <span style="font-size:14px;font-weight:700;">৳{{ number_format($service->service_cost, 2) }}</span>
+            <div class="p-4 pt-3">
+                <div class="d-flex justify-content-between py-2 border-bottom">
+                    <span class="text-muted small">Service cost</span>
+                    <span class="fw-semibold">৳{{ number_format($service->service_cost, 2) }}</span>
                 </div>
-                <div style="display:flex;justify-content:space-between;padding:10px 0;border-bottom:1px solid #f3f4f6;">
-                    <span style="font-size:13px;color:#6b7280;">Paid</span>
-                    <span style="font-size:14px;font-weight:700;color:#16a34a;">৳{{ number_format($service->paid_amount, 2) }}</span>
+                <div class="d-flex justify-content-between py-2 border-bottom">
+                    <span class="text-muted small">Paid</span>
+                    <span class="fw-semibold text-success">৳{{ number_format($service->paid_amount, 2) }}</span>
                 </div>
-                <div style="display:flex;justify-content:space-between;padding:12px 0;background:{{ $service->due_amount > 0 ? '#fef2f2' : '#f0fdf4' }};margin:0 -12px;padding-left:12px;padding-right:12px;border-radius:0 0 8px 8px;">
-                    <span style="font-size:13px;font-weight:700;color:{{ $service->due_amount > 0 ? '#991b1b' : '#166534' }};">Balance Due</span>
-                    <span style="font-size:16px;font-weight:800;color:{{ $service->due_amount > 0 ? '#ef4444' : '#16a34a' }};">৳{{ number_format($service->due_amount, 2) }}</span>
+                <div class="d-flex justify-content-between py-3 mt-2 rounded {{ $service->due_amount > 0 ? 'bg-danger bg-opacity-10' : 'bg-success bg-opacity-10' }}">
+                    <span class="fw-semibold {{ $service->due_amount > 0 ? 'text-danger' : 'text-success' }}">Balance due</span>
+                    <span class="fw-bold {{ $service->due_amount > 0 ? 'text-danger' : 'text-success' }}">৳{{ number_format($service->due_amount, 2) }}</span>
                 </div>
-
                 @if($service->due_amount > 0)
-                <div class="mt-3">
-                    <button type="button" class="btn btn-success w-100" data-bs-toggle="modal" data-bs-target="#collectPaymentModal">
-                        <i class="fas fa-hand-holding-usd me-2"></i>Collect ৳{{ number_format($service->due_amount, 2) }} Due
-                    </button>
-                </div>
+                <button type="button" class="btn btn-success btn-sm w-100 mt-3" data-bs-toggle="modal" data-bs-target="#collectPaymentModal">
+                    <i class="fas fa-hand-holding-usd me-1"></i>Collect ৳{{ number_format($service->due_amount, 2) }}
+                </button>
                 @endif
             </div>
         </div>
 
-        {{-- Service Returns --}}
         @if($service->returns->count() > 0)
-        <div class="table-card mb-3">
-            <div class="table-card-header">
-                <h6><i class="fas fa-undo me-2"></i>Service Returns</h6>
+        <div class="table-card mb-4">
+            <div class="table-card-header bg-light border-0 py-3">
+                <h6 class="mb-0 fw-semibold text-dark"><i class="fas fa-undo me-2 text-primary"></i>Service returns</h6>
             </div>
-            <div class="p-3">
+            <div class="p-4 pt-3">
                 @foreach($service->returns as $return)
-                <div class="d-flex justify-content-between align-items-center mb-2 p-2" style="background:#f9fafb;border-radius:8px;">
+                <div class="d-flex justify-content-between align-items-center mb-2 p-2 rounded bg-light">
                     <div>
-                        <div style="font-size:12px;font-weight:700;">{{ $return->return_number }}</div>
-                        <div style="font-size:11px;color:#6b7280;">{{ $return->return_date->format('d M Y') }}</div>
+                        <span class="fw-semibold small">{{ $return->return_number }}</span>
+                        <span class="text-muted small d-block">{{ $return->return_date->format('d M Y') }}</span>
                     </div>
                     <div class="text-end">
-                        <div>
-                            @if($return->status === 'completed')
-                                <span class="badge bg-success" style="font-size:10px;">Completed</span>
-                            @elseif($return->status === 'approved')
-                                <span class="badge bg-info" style="font-size:10px;">Approved</span>
-                            @else
-                                <span class="badge bg-warning text-dark" style="font-size:10px;">Pending</span>
-                            @endif
-                        </div>
+                        @if($return->status === 'completed')
+                            <span class="badge bg-success small">Completed</span>
+                        @elseif($return->status === 'approved')
+                            <span class="badge bg-info small">Approved</span>
+                        @else
+                            <span class="badge bg-warning text-dark small">Pending</span>
+                        @endif
                         @if($return->refund_amount > 0)
-                        <div style="font-size:11px;color:#ef4444;font-weight:600;">-৳{{ number_format($return->refund_amount, 2) }}</div>
+                        <div class="small text-danger fw-semibold">-৳{{ number_format($return->refund_amount, 2) }}</div>
                         @endif
                     </div>
                 </div>
@@ -303,26 +234,23 @@
         </div>
         @endif
 
-        {{-- Danger Zone --}}
         <div class="table-card">
-            <div class="table-card-header">
-                <h6 class="text-danger"><i class="fas fa-exclamation-triangle me-2"></i>Danger Zone</h6>
+            <div class="table-card-header bg-light border-0 py-3">
+                <h6 class="mb-0 fw-semibold text-danger"><i class="fas fa-exclamation-triangle me-2"></i>Danger zone</h6>
             </div>
-            <div class="p-3">
+            <div class="p-4 pt-3">
                 <form action="{{ route('services.destroy', $service) }}" method="POST" onsubmit="return confirm('Are you sure? This action cannot be undone.');">
                     @csrf
                     @method('DELETE')
-                    <button type="submit" class="btn btn-outline-danger w-100">
-                        <i class="fas fa-trash me-2"></i>Delete Service Order
-                    </button>
+                    <button type="submit" class="btn btn-outline-danger btn-sm w-100"><i class="fas fa-trash me-1"></i>Delete service order</button>
                 </form>
             </div>
         </div>
     </div>
-
+</div>
 </div>
 
-{{-- ── Collect Payment Modal ── --}}
+{{-- Collect Payment Modal --}}
 @if($service->due_amount > 0)
 <div class="modal fade" id="collectPaymentModal" tabindex="-1" aria-labelledby="collectPaymentModalLabel" aria-hidden="true">
     <div class="modal-dialog modal-dialog-centered">

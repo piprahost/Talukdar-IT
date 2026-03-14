@@ -10,14 +10,8 @@
         <h5>@yield('page-title', 'Dashboard')</h5>
     </div>
     <div class="nav-right">
-        <div class="nav-icon" data-bs-toggle="tooltip" title="Calculator" onclick="openCalculator()" style="cursor: pointer;">
+        <div class="nav-icon no-print" data-bs-toggle="tooltip" title="Calculator" onclick="openCalculator()" style="cursor: pointer;">
             <i class="fas fa-calculator"></i>
-        </div>
-        <div class="nav-icon" data-bs-toggle="tooltip" title="Notifications">
-            <i class="fas fa-bell"></i>
-        </div>
-        <div class="nav-icon" data-bs-toggle="tooltip" title="Messages">
-            <i class="fas fa-envelope"></i>
         </div>
         <div class="user-profile dropdown">
             <div class="user-avatar" data-bs-toggle="dropdown" aria-expanded="false">

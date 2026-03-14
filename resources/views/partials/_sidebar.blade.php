@@ -1,8 +1,11 @@
 <!-- Sidebar: Ordered for daily operations first, admin last -->
 <div class="sidebar" id="sidebar">
     <div class="sidebar-brand">
-        <i class="fas fa-building" style="font-size: 28px; color: #ffffff;"></i>
-        <h4>ERP System</h4>
+        <i class="fas fa-store" style="font-size: 28px; color: #ffffff;"></i>
+        <h4 class="mb-0">{{ isset($companySettings) && $companySettings ? $companySettings->company_name : 'Shop' }}</h4>
+        @if(isset($companySettings) && $companySettings && !empty($companySettings->tagline))
+        <p class="small mb-0 mt-1 opacity-75" style="font-size: 11px; line-height: 1.3;">{{ $companySettings->tagline }}</p>
+        @endif
     </div>
 
     <nav class="sidebar-menu">
@@ -38,7 +41,15 @@
         </div>
         @endcanany
 
-        {{-- 2. Purchases (daily ops) --}}
+        {{-- 2. Service (laptop / repair) — "Sales & Service" --}}
+        @can('view services')
+        <a href="{{ route('services.index') }}" class="sidebar-menu-item {{ request()->routeIs('services.*') ? 'active' : '' }}">
+            <i class="fas fa-laptop-medical"></i>
+            <span>Laptop Service</span>
+        </a>
+        @endcan
+
+        {{-- 3. Purchases (stock in) --}}
         @canany(['view purchases', 'view suppliers'])
         <div class="sidebar-menu-group {{ request()->routeIs('purchases.*') || request()->routeIs('suppliers.*') ? 'active' : '' }}">
             <div class="sidebar-menu-item sidebar-menu-parent" onclick="toggleSubmenu(event, 'purchase-management')">
@@ -62,14 +73,6 @@
             </div>
         </div>
         @endcanany
-
-        {{-- 3. Service Orders --}}
-        @can('view services')
-        <a href="{{ route('services.index') }}" class="sidebar-menu-item {{ request()->routeIs('services.*') ? 'active' : '' }}">
-            <i class="fas fa-laptop-medical"></i>
-            <span>Service Orders</span>
-        </a>
-        @endcan
 
         {{-- 4. Payments --}}
         @can('view payments')
@@ -105,7 +108,7 @@
                 @can('view stock-movements')
                 <a href="{{ route('stock.index') }}" class="sidebar-submenu-item {{ request()->routeIs('stock.index') || request()->routeIs('stock.low-stock') || request()->routeIs('stock.create-manual') ? 'active' : '' }}">
                     <i class="fas fa-warehouse"></i>
-                    <span>Stock & Movement</span>
+                    <span>Stock & Barcode</span>
                 </a>
                 @endcan
                 @can('view categories')
@@ -241,108 +244,18 @@
         </div>
         @endcanany
 
-        {{-- 10. Reports --}}
+        {{-- 10. Reports (hub + daily Sales Report only in sidebar) --}}
         @canany(['view sales-reports', 'view purchase-reports', 'view financial-reports', 'view inventory-reports'])
-        <div class="sidebar-menu-group {{ request()->routeIs('reports.*') ? 'active' : '' }}">
-            <div class="sidebar-menu-item sidebar-menu-parent" onclick="toggleSubmenu(event, 'reports')">
-                <i class="fas fa-chart-bar"></i>
-                <span>Reports</span>
-                <i class="fas fa-chevron-{{ request()->routeIs('reports.*') ? 'up' : 'down' }} ms-auto submenu-icon" id="icon-reports"></i>
-            </div>
-            <div class="sidebar-submenu {{ request()->routeIs('reports.*') ? 'show' : '' }}" id="submenu-reports">
-                @can('view sales-reports')
-                <div class="sidebar-submenu-header">Sales</div>
-                <a href="{{ route('reports.sales.index') }}" class="sidebar-submenu-item {{ request()->routeIs('reports.sales.index') ? 'active' : '' }}">
-                    <i class="fas fa-chart-line"></i>
-                    <span>Sales Report</span>
-                </a>
-                <a href="{{ route('reports.sales.by-product') }}" class="sidebar-submenu-item {{ request()->routeIs('reports.sales.by-product') ? 'active' : '' }}">
-                    <i class="fas fa-box"></i>
-                    <span>By Product</span>
-                </a>
-                <a href="{{ route('reports.sales.by-customer') }}" class="sidebar-submenu-item {{ request()->routeIs('reports.sales.by-customer') ? 'active' : '' }}">
-                    <i class="fas fa-users"></i>
-                    <span>By Customer</span>
-                </a>
-                <a href="{{ route('reports.sales.top-products') }}" class="sidebar-submenu-item {{ request()->routeIs('reports.sales.top-products') ? 'active' : '' }}">
-                    <i class="fas fa-star"></i>
-                    <span>Top Products</span>
-                </a>
-                <a href="{{ route('reports.sales.by-category') }}" class="sidebar-submenu-item {{ request()->routeIs('reports.sales.by-category') ? 'active' : '' }}">
-                    <i class="fas fa-tags"></i>
-                    <span>By Category</span>
-                </a>
-                <a href="{{ route('reports.sales.by-brand') }}" class="sidebar-submenu-item {{ request()->routeIs('reports.sales.by-brand') ? 'active' : '' }}">
-                    <i class="fas fa-certificate"></i>
-                    <span>By Brand</span>
-                </a>
-                @endcan
-
-                @can('view purchase-reports')
-                <div class="sidebar-submenu-header">Purchases</div>
-                <a href="{{ route('reports.purchases.index') }}" class="sidebar-submenu-item {{ request()->routeIs('reports.purchases.index') ? 'active' : '' }}">
-                    <i class="fas fa-shopping-bag"></i>
-                    <span>Purchase Report</span>
-                </a>
-                <a href="{{ route('reports.purchases.by-supplier') }}" class="sidebar-submenu-item {{ request()->routeIs('reports.purchases.by-supplier') ? 'active' : '' }}">
-                    <i class="fas fa-truck"></i>
-                    <span>By Supplier</span>
-                </a>
-                <a href="{{ route('reports.purchases.cost-analysis') }}" class="sidebar-submenu-item {{ request()->routeIs('reports.purchases.cost-analysis') ? 'active' : '' }}">
-                    <i class="fas fa-dollar-sign"></i>
-                    <span>Cost Analysis</span>
-                </a>
-                @endcan
-
-                @can('view financial-reports')
-                <div class="sidebar-submenu-header">Financial</div>
-                <a href="{{ route('reports.financial.profit-loss') }}" class="sidebar-submenu-item {{ request()->routeIs('reports.financial.profit-loss') ? 'active' : '' }}">
-                    <i class="fas fa-file-invoice-dollar"></i>
-                    <span>P&L Summary</span>
-                </a>
-                <a href="{{ route('reports.financial.accounts-receivable') }}" class="sidebar-submenu-item {{ request()->routeIs('reports.financial.accounts-receivable') ? 'active' : '' }}">
-                    <i class="fas fa-hand-holding-usd"></i>
-                    <span>Receivable</span>
-                </a>
-                <a href="{{ route('reports.financial.accounts-payable') }}" class="sidebar-submenu-item {{ request()->routeIs('reports.financial.accounts-payable') ? 'active' : '' }}">
-                    <i class="fas fa-credit-card"></i>
-                    <span>Payable</span>
-                </a>
-                <a href="{{ route('reports.financial.cash-flow') }}" class="sidebar-submenu-item {{ request()->routeIs('reports.financial.cash-flow') ? 'active' : '' }}">
-                    <i class="fas fa-exchange-alt"></i>
-                    <span>Cash Flow</span>
-                </a>
-                <a href="{{ route('reports.financial.gross-margin-product') }}" class="sidebar-submenu-item {{ request()->routeIs('reports.financial.gross-margin-product') ? 'active' : '' }}">
-                    <i class="fas fa-percentage"></i>
-                    <span>Margin (Product)</span>
-                </a>
-                <a href="{{ route('reports.financial.gross-margin-category') }}" class="sidebar-submenu-item {{ request()->routeIs('reports.financial.gross-margin-category') ? 'active' : '' }}">
-                    <i class="fas fa-percentage"></i>
-                    <span>Margin (Category)</span>
-                </a>
-                @endcan
-
-                @can('view inventory-reports')
-                <div class="sidebar-submenu-header">Inventory</div>
-                <a href="{{ route('reports.inventory.stock-valuation') }}" class="sidebar-submenu-item {{ request()->routeIs('reports.inventory.stock-valuation') ? 'active' : '' }}">
-                    <i class="fas fa-calculator"></i>
-                    <span>Stock Valuation</span>
-                </a>
-                <a href="{{ route('reports.inventory.slow-moving') }}" class="sidebar-submenu-item {{ request()->routeIs('reports.inventory.slow-moving') ? 'active' : '' }}">
-                    <i class="fas fa-hourglass-half"></i>
-                    <span>Slow Moving</span>
-                </a>
-                <a href="{{ route('reports.inventory.fast-moving') }}" class="sidebar-submenu-item {{ request()->routeIs('reports.inventory.fast-moving') ? 'active' : '' }}">
-                    <i class="fas fa-rocket"></i>
-                    <span>Fast Moving</span>
-                </a>
-                <a href="{{ route('reports.inventory.stock-turnover') }}" class="sidebar-submenu-item {{ request()->routeIs('reports.inventory.stock-turnover') ? 'active' : '' }}">
-                    <i class="fas fa-sync-alt"></i>
-                    <span>Stock Turnover</span>
-                </a>
-                @endcan
-            </div>
-        </div>
+        <a href="{{ route('reports.index') }}" class="sidebar-menu-item {{ request()->routeIs('reports.index') ? 'active' : '' }}">
+            <i class="fas fa-chart-bar"></i>
+            <span>Reports</span>
+        </a>
+        @can('view sales-reports')
+        <a href="{{ route('reports.sales.index') }}" class="sidebar-menu-item {{ request()->routeIs('reports.sales.index') ? 'active' : '' }}">
+            <i class="fas fa-chart-line"></i>
+            <span>Sales Report</span>
+        </a>
+        @endcan
         @endcanany
 
         {{-- 11. Settings --}}

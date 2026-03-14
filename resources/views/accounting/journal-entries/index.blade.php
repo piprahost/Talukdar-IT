@@ -70,7 +70,13 @@
                     <td style="max-width:200px;font-size:13px;">
                         {{ \Illuminate\Support\Str::limit($entry->description, 50) }}
                     </td>
-                    <td style="font-size:12px;color:#9ca3af;">{{ $entry->reference ?? '—' }}</td>
+                    <td style="font-size:12px;">
+                        @if($entry->getSourceUrl())
+                            <a href="{{ $entry->getSourceUrl() }}" class="text-primary text-decoration-none">{{ $entry->getSourceLabel() ?? $entry->reference }}</a>
+                        @else
+                            <span class="text-muted">{{ $entry->reference ?? '—' }}</span>
+                        @endif
+                    </td>
                     <td class="text-end fw-semibold" style="color:#ef4444;">৳{{ number_format($entry->total_debit, 2) }}</td>
                     <td class="text-end fw-semibold" style="color:#16a34a;">৳{{ number_format($entry->total_credit, 2) }}</td>
                     <td class="text-center">

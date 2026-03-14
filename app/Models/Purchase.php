@@ -91,6 +91,11 @@ class Purchase extends Model
         return $this->hasMany(PurchaseItem::class, 'purchase_order_id');
     }
 
+    public function payments()
+    {
+        return $this->hasMany(Payment::class);
+    }
+
     public function creator()
     {
         return $this->belongsTo(User::class, 'created_by');
@@ -120,6 +125,26 @@ class Purchase extends Model
     public function scopeReceived($query)
     {
         return $query->where('status', 'received');
+    }
+
+    /** Eager-load relations needed for list/detail views (connected data). */
+    public function scopeWithStandardRelations($query)
+    {
+        return $query->with(self::getStandardRelations());
+    }
+
+    /** Relation names for list/detail (single source of truth). */
+    public static function getStandardRelations(): array
+    {
+        return [
+            'supplier',
+            'items.product',
+            'creator',
+            'receiver',
+            'returns',
+            'payments',
+            'bankAccount',
+        ];
     }
 
     // Helper Methods

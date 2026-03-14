@@ -16,6 +16,7 @@ class Service extends Model
         'service_cost',
         'receive_date',
         'delivery_date',
+        'customer_id',
         'customer_name',
         'customer_phone',
         'customer_address',
@@ -52,6 +53,26 @@ class Service extends Model
     public function bankAccount()
     {
         return $this->belongsTo(BankAccount::class);
+    }
+
+    /** Relation names for show/detail (connected data). */
+    public static function getStandardRelations(): array
+    {
+        return ['creator', 'customer', 'returns', 'bankAccount'];
+    }
+
+    /** Eager-load relations for list/detail views. */
+    public function scopeWithStandardRelations($query)
+    {
+        return $query->with(self::getStandardRelations());
+    }
+
+    /** Display name: from customer relation when linked, else snapshot. */
+    public function getDisplayCustomerNameAttribute(): string
+    {
+        return $this->customer_id && $this->relationLoaded('customer') && $this->customer
+            ? $this->customer->name
+            : (string) $this->customer_name;
     }
 
     /**

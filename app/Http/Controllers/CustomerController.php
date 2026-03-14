@@ -25,10 +25,7 @@ class CustomerController extends Controller
             $query->where('is_active', $request->status === 'active');
         }
 
-        $customers = $query->withCount('sales')
-            ->withSum('sales', 'total_amount')
-            ->withSum('sales', 'due_amount')
-            ->paginate(15)->appends($request->query());
+        $customers = $query->withStandardRelations()->paginate(15)->appends($request->query());
 
         $stats = [
             'total'       => Customer::count(),
