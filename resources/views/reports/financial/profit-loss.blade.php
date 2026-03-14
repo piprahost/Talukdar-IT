@@ -12,14 +12,15 @@
                 <i class="fas fa-download me-1"></i>Export
             </button>
             <ul class="dropdown-menu">
-                <li><a class="dropdown-item" href="#"><i class="fas fa-file-csv me-2"></i>CSV</a></li>
-                <li><a class="dropdown-item" href="#"><i class="fas fa-file-excel me-2"></i>Excel</a></li>
-                <li><a class="dropdown-item" href="#"><i class="fas fa-file-pdf me-2"></i>PDF</a></li>
+                <li><a class="dropdown-item" href="{{ route('reports.financial.profit-loss', array_merge(request()->query(), ['export' => 'csv'])) }}"><i class="fas fa-file-csv me-2"></i>CSV</a></li>
+                <li><a class="dropdown-item" href="{{ route('reports.financial.profit-loss', array_merge(request()->query(), ['export' => 'xlsx'])) }}"><i class="fas fa-file-excel me-2"></i>Excel</a></li>
+                <li><a class="dropdown-item" href="{{ route('reports.financial.profit-loss', array_merge(request()->query(), ['export' => 'pdf'])) }}"><i class="fas fa-file-pdf me-2"></i>PDF</a></li>
             </ul>
         </div>
     </div>
-    
-    <form method="GET" class="p-4 border-bottom">
+
+    <div class="filter-wrapper">
+    <form method="GET">
         <div class="row g-2">
             <div class="col-md-4">
                 <label class="form-label">From Date</label>
@@ -34,61 +35,46 @@
             </div>
         </div>
     </form>
-    
-    <!-- Summary Cards -->
+    </div>
+
+    <!-- Summary Cards (module-stat-card style) -->
     <div class="p-4 border-bottom">
-        <div class="row g-3">
+        <div class="row g-3 module-stats">
             <div class="col-md-4">
-                <div class="stat-card success">
-                    <div class="stat-icon"><i class="fas fa-arrow-up"></i></div>
-                    <div class="stat-content">
-                        <div class="stat-label">Total Revenue</div>
-                        <div class="stat-value">৳{{ number_format($totalRevenue, 2) }}</div>
-                    </div>
+                <div class="module-stat-card rounded-3 p-3" style="background:linear-gradient(135deg,#f0fdf4,#dcfce7);border-left:4px solid #16a34a;">
+                    <div class="small text-muted text-uppercase fw-bold">Total Revenue</div>
+                    <div class="fw-bold fs-5" style="color:#166534;">৳{{ number_format($totalRevenue, 2) }}</div>
                 </div>
             </div>
             <div class="col-md-4">
-                <div class="stat-card warning">
-                    <div class="stat-icon"><i class="fas fa-arrow-down"></i></div>
-                    <div class="stat-content">
-                        <div class="stat-label">Cost of Goods Sold</div>
-                        <div class="stat-value">৳{{ number_format($cogs, 2) }}</div>
-                    </div>
+                <div class="module-stat-card rounded-3 p-3" style="background:linear-gradient(135deg,#fefce8,#fef9c3);border-left:4px solid #ca8a04;">
+                    <div class="small text-muted text-uppercase fw-bold">Cost of Goods Sold</div>
+                    <div class="fw-bold fs-5" style="color:#854d0e;">৳{{ number_format($cogs, 2) }}</div>
                 </div>
             </div>
             <div class="col-md-4">
-                <div class="stat-card info">
-                    <div class="stat-icon"><i class="fas fa-percentage"></i></div>
-                    <div class="stat-content">
-                        <div class="stat-label">Gross Profit Margin</div>
-                        <div class="stat-value">{{ number_format($grossProfitMargin, 1) }}%</div>
-                    </div>
+                <div class="module-stat-card rounded-3 p-3" style="background:linear-gradient(135deg,#eff6ff,#dbeafe);border-left:4px solid #3b82f6;">
+                    <div class="small text-muted text-uppercase fw-bold">Gross Profit Margin</div>
+                    <div class="fw-bold fs-5" style="color:#1d4ed8;">{{ number_format($grossProfitMargin, 1) }}%</div>
                 </div>
             </div>
         </div>
-        
-        <div class="row g-3 mt-2">
+        <div class="row g-3 mt-2 module-stats">
             <div class="col-md-6">
-                <div class="stat-card {{ $grossProfit >= 0 ? 'success' : 'danger' }}">
-                    <div class="stat-icon"><i class="fas fa-calculator"></i></div>
-                    <div class="stat-content">
-                        <div class="stat-label">Gross Profit</div>
-                        <div class="stat-value">৳{{ number_format($grossProfit, 2) }}</div>
-                    </div>
+                <div class="module-stat-card rounded-3 p-3" style="background:{{ $grossProfit >= 0 ? 'linear-gradient(135deg,#f0fdf4,#dcfce7)' : 'linear-gradient(135deg,#fef2f2,#fee2e2)' }};border-left:4px solid {{ $grossProfit >= 0 ? '#16a34a' : '#ef4444' }};">
+                    <div class="small text-muted text-uppercase fw-bold">Gross Profit</div>
+                    <div class="fw-bold fs-5" style="color:{{ $grossProfit >= 0 ? '#166534' : '#991b1b' }};">৳{{ number_format($grossProfit, 2) }}</div>
                 </div>
             </div>
             <div class="col-md-6">
-                <div class="stat-card {{ $netProfit >= 0 ? 'success' : 'danger' }}">
-                    <div class="stat-icon"><i class="fas fa-money-bill-wave"></i></div>
-                    <div class="stat-content">
-                        <div class="stat-label">Net Profit</div>
-                        <div class="stat-value">৳{{ number_format($netProfit, 2) }}</div>
-                    </div>
+                <div class="module-stat-card rounded-3 p-3" style="background:{{ $netProfit >= 0 ? 'linear-gradient(135deg,#f0fdf4,#dcfce7)' : 'linear-gradient(135deg,#fef2f2,#fee2e2)' }};border-left:4px solid {{ $netProfit >= 0 ? '#16a34a' : '#ef4444' }};">
+                    <div class="small text-muted text-uppercase fw-bold">Net Profit</div>
+                    <div class="fw-bold fs-5" style="color:{{ $netProfit >= 0 ? '#166534' : '#991b1b' }};">৳{{ number_format($netProfit, 2) }}</div>
                 </div>
             </div>
         </div>
     </div>
-    
+
     <!-- Detailed Breakdown -->
     <div class="p-4">
         <div class="row">

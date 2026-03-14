@@ -8,9 +8,10 @@
     <div class="table-card-header">
         <h6><i class="fas fa-file-alt me-2"></i>General Ledger</h6>
     </div>
-    
-    <form method="GET" class="p-4 border-bottom">
-        <div class="row">
+
+    <div class="filter-wrapper">
+    <form method="GET">
+        <div class="row g-2 align-items-end">
             <div class="col-md-4 mb-3">
                 <label for="account_id" class="form-label">Select Account <span class="text-danger">*</span></label>
                 <select class="form-select" id="account_id" name="account_id" onchange="this.form.submit()" required>
@@ -35,7 +36,8 @@
             </div>
         </div>
     </form>
-    
+    </div>
+
     @if($account)
     <div class="p-4">
         <div class="row mb-4">

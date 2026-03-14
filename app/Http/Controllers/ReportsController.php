@@ -216,7 +216,19 @@ class ReportsController extends Controller
             'total_due' => $purchases->sum('due_amount'),
             'average_purchase' => $purchases->count() > 0 ? $purchases->avg('total_amount') : 0,
         ];
-        
+
+        $export = $request->get('export');
+        if ($export === 'csv') {
+            $csv = "PO Number,Date,Supplier,Total,Paid,Due\n";
+            foreach ($purchases as $p) {
+                $csv .= '"' . $p->po_number . '","' . $p->order_date->format('Y-m-d') . '","' . str_replace('"', '""', $p->supplier->name ?? '') . '",৳' . number_format($p->total_amount, 2) . ',৳' . number_format($p->paid_amount, 2) . ',৳' . number_format($p->due_amount, 2) . "\n";
+            }
+            return Response::make($csv, 200, ['Content-Type' => 'text/csv', 'Content-Disposition' => 'attachment; filename="purchases-' . $dateFrom . '-to-' . $dateTo . '.csv"']);
+        }
+        if (in_array($export, ['pdf', 'xlsx'])) {
+            return redirect()->route('reports.purchases.index', $request->only(['period', 'date_from', 'date_to']))->with('info', 'PDF/Excel export will be available in a future update.');
+        }
+
         return view('reports.purchases.index', compact('period', 'dateFrom', 'dateTo', 'stats', 'purchases'));
     }
     
@@ -300,6 +312,22 @@ class ReportsController extends Controller
         $totalExpenses = $expenses->sum('amount');
         $netProfit = $grossProfit - $totalExpenses;
         $netProfitMargin = $totalRevenue > 0 ? ($netProfit / $totalRevenue) * 100 : 0;
+
+        $export = $request->get('export');
+        if ($export === 'csv') {
+            $csv = "Profit & Loss Report\nFrom,$dateFrom\nTo,$dateTo\n\n";
+            $csv .= "Total Revenue,৳" . number_format($totalRevenue, 2) . "\n";
+            $csv .= "Cost of Goods Sold,৳" . number_format($cogs, 2) . "\n";
+            $csv .= "Gross Profit,৳" . number_format($grossProfit, 2) . "\n";
+            $csv .= "Gross Profit Margin %," . number_format($grossProfitMargin, 2) . "\n";
+            $csv .= "Total Expenses,৳" . number_format($totalExpenses, 2) . "\n";
+            $csv .= "Net Profit/Loss,৳" . number_format($netProfit, 2) . "\n";
+            $csv .= "Net Profit Margin %," . number_format($netProfitMargin, 2) . "\n";
+            return Response::make($csv, 200, ['Content-Type' => 'text/csv', 'Content-Disposition' => 'attachment; filename="profit-loss-' . $dateFrom . '-to-' . $dateTo . '.csv"']);
+        }
+        if (in_array($export, ['pdf', 'xlsx'])) {
+            return redirect()->route('reports.financial.profit-loss', $request->only(['date_from', 'date_to']))->with('info', 'PDF/Excel export will be available in a future update.');
+        }
         
         return view('reports.financial.profit-loss', compact('dateFrom', 'dateTo', 'totalRevenue', 'cogs', 'grossProfit', 'grossProfitMargin', 'totalExpenses', 'netProfit', 'netProfitMargin', 'expenses'));
     }
@@ -342,6 +370,18 @@ class ReportsController extends Controller
             ->filter()
             ->sortByDesc('gross_profit')
             ->values();
+
+        $export = $request->get('export');
+        if ($export === 'csv') {
+            $csv = "Product,Gross Margin %\n";
+            foreach ($marginAnalysis as $item) {
+                $csv .= '"' . str_replace('"', '""', $item['product']->name) . '",' . number_format($item['margin'], 2) . "\n";
+            }
+            return Response::make($csv, 200, ['Content-Type' => 'text/csv', 'Content-Disposition' => 'attachment; filename="gross-margin-product-' . $dateFrom . '-to-' . $dateTo . '.csv"']);
+        }
+        if (in_array($export, ['pdf', 'xlsx'])) {
+            return redirect()->route('reports.financial.gross-margin-product', $request->only(['date_from', 'date_to']))->with('info', 'PDF/Excel export will be available in a future update.');
+        }
         
         return view('reports.financial.gross-margin', compact('dateFrom', 'dateTo', 'marginAnalysis'));
     }
@@ -455,6 +495,15 @@ class ReportsController extends Controller
             $currentDate->addDay();
         }
         
+        $export = $request->get('export');
+        if ($export === 'csv') {
+            $csv = "Cash Flow Report\nFrom,$dateFrom\nTo,$dateTo\n\nTotal Cash In,৳" . number_format($totalCashIn, 2) . "\nTotal Cash Out,৳" . number_format($totalCashOut, 2) . "\nNet Cash Flow,৳" . number_format($netCashFlow, 2) . "\n";
+            return Response::make($csv, 200, ['Content-Type' => 'text/csv', 'Content-Disposition' => 'attachment; filename="cash-flow-' . $dateFrom . '-to-' . $dateTo . '.csv"']);
+        }
+        if (in_array($export, ['pdf', 'xlsx'])) {
+            return redirect()->route('reports.financial.cash-flow', $request->only(['date_from', 'date_to']))->with('info', 'PDF/Excel export will be available in a future update.');
+        }
+
         return view('reports.financial.cash-flow', compact('dateFrom', 'dateTo', 'totalCashIn', 'totalCashOut', 'netCashFlow', 'dailyFlow', 'customerPayments', 'directSales', 'supplierPayments', 'expenses'));
     }
     
@@ -499,6 +548,19 @@ class ReportsController extends Controller
                     $agingAnalysis['over_90'] += $sale->due_amount;
                 }
             }
+        }
+
+        $export = $request->get('export');
+        if ($export === 'csv') {
+            $csv = "Customer,Total Due\n";
+            foreach ($customers as $c) {
+                $csv .= '"' . str_replace('"', '""', $c->name) . '",৳' . number_format($c->sales_sum_due_amount ?? 0, 2) . "\n";
+            }
+            $csv .= "\nTotal Receivable,৳" . number_format($totalReceivable, 2) . "\n";
+            return Response::make($csv, 200, ['Content-Type' => 'text/csv', 'Content-Disposition' => 'attachment; filename="accounts-receivable.csv"']);
+        }
+        if (in_array($export, ['pdf', 'xlsx'])) {
+            return redirect()->route('reports.financial.accounts-receivable')->with('info', 'PDF/Excel export will be available in a future update.');
         }
         
         return view('reports.financial.accounts-receivable', compact('customers', 'totalReceivable', 'agingAnalysis'));

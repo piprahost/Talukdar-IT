@@ -12,14 +12,15 @@
                 <i class="fas fa-download me-1"></i>Export
             </button>
             <ul class="dropdown-menu">
-                <li><a class="dropdown-item" href="#"><i class="fas fa-file-csv me-2"></i>CSV</a></li>
-                <li><a class="dropdown-item" href="#"><i class="fas fa-file-excel me-2"></i>Excel</a></li>
-                <li><a class="dropdown-item" href="#"><i class="fas fa-file-pdf me-2"></i>PDF</a></li>
+                <li><a class="dropdown-item" href="{{ route('reports.financial.gross-margin-product', array_merge(request()->query(), ['export' => 'csv'])) }}"><i class="fas fa-file-csv me-2"></i>CSV</a></li>
+                <li><a class="dropdown-item" href="{{ route('reports.financial.gross-margin-product', array_merge(request()->query(), ['export' => 'xlsx'])) }}"><i class="fas fa-file-excel me-2"></i>Excel</a></li>
+                <li><a class="dropdown-item" href="{{ route('reports.financial.gross-margin-product', array_merge(request()->query(), ['export' => 'pdf'])) }}"><i class="fas fa-file-pdf me-2"></i>PDF</a></li>
             </ul>
         </div>
     </div>
-    
-    <form method="GET" class="p-4 border-bottom">
+
+    <div class="filter-wrapper">
+    <form method="GET">
         <div class="row g-2">
             <div class="col-md-4">
                 <label class="form-label">From Date</label>
@@ -34,7 +35,8 @@
             </div>
         </div>
     </form>
-    
+    </div>
+
     <div class="table-responsive p-4">
         <table class="table table-hover">
             <thead>

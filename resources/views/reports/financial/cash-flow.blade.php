@@ -12,14 +12,15 @@
                 <i class="fas fa-download me-1"></i>Export
             </button>
             <ul class="dropdown-menu">
-                <li><a class="dropdown-item" href="#"><i class="fas fa-file-csv me-2"></i>CSV</a></li>
-                <li><a class="dropdown-item" href="#"><i class="fas fa-file-excel me-2"></i>Excel</a></li>
-                <li><a class="dropdown-item" href="#"><i class="fas fa-file-pdf me-2"></i>PDF</a></li>
+                <li><a class="dropdown-item" href="{{ route('reports.financial.cash-flow', array_merge(request()->query(), ['export' => 'csv'])) }}"><i class="fas fa-file-csv me-2"></i>CSV</a></li>
+                <li><a class="dropdown-item" href="{{ route('reports.financial.cash-flow', array_merge(request()->query(), ['export' => 'xlsx'])) }}"><i class="fas fa-file-excel me-2"></i>Excel</a></li>
+                <li><a class="dropdown-item" href="{{ route('reports.financial.cash-flow', array_merge(request()->query(), ['export' => 'pdf'])) }}"><i class="fas fa-file-pdf me-2"></i>PDF</a></li>
             </ul>
         </div>
     </div>
-    
-    <form method="GET" class="p-4 border-bottom">
+
+    <div class="filter-wrapper">
+    <form method="GET">
         <div class="row g-2">
             <div class="col-md-4">
                 <label class="form-label">From Date</label>
@@ -34,35 +35,27 @@
             </div>
         </div>
     </form>
-    
-    <!-- Summary -->
+    </div>
+
+    <!-- Summary (module-stat-card) -->
     <div class="p-4 border-bottom">
-        <div class="row g-3">
+        <div class="row g-3 module-stats">
             <div class="col-md-4">
-                <div class="stat-card success">
-                    <div class="stat-icon"><i class="fas fa-arrow-down"></i></div>
-                    <div class="stat-content">
-                        <div class="stat-label">Total Cash In</div>
-                        <div class="stat-value">৳{{ number_format($totalCashIn, 2) }}</div>
-                    </div>
+                <div class="module-stat-card rounded-3 p-3" style="background:linear-gradient(135deg,#f0fdf4,#dcfce7);border-left:4px solid #16a34a;">
+                    <div class="small text-muted text-uppercase fw-bold">Total Cash In</div>
+                    <div class="fw-bold fs-5" style="color:#166534;">৳{{ number_format($totalCashIn, 2) }}</div>
                 </div>
             </div>
             <div class="col-md-4">
-                <div class="stat-card danger">
-                    <div class="stat-icon"><i class="fas fa-arrow-up"></i></div>
-                    <div class="stat-content">
-                        <div class="stat-label">Total Cash Out</div>
-                        <div class="stat-value">৳{{ number_format($totalCashOut, 2) }}</div>
-                    </div>
+                <div class="module-stat-card rounded-3 p-3" style="background:linear-gradient(135deg,#fef2f2,#fee2e2);border-left:4px solid #ef4444;">
+                    <div class="small text-muted text-uppercase fw-bold">Total Cash Out</div>
+                    <div class="fw-bold fs-5" style="color:#991b1b;">৳{{ number_format($totalCashOut, 2) }}</div>
                 </div>
             </div>
             <div class="col-md-4">
-                <div class="stat-card {{ $netCashFlow >= 0 ? 'info' : 'warning' }}">
-                    <div class="stat-icon"><i class="fas fa-balance-scale"></i></div>
-                    <div class="stat-content">
-                        <div class="stat-label">Net Cash Flow</div>
-                        <div class="stat-value">৳{{ number_format($netCashFlow, 2) }}</div>
-                    </div>
+                <div class="module-stat-card rounded-3 p-3" style="background:{{ $netCashFlow >= 0 ? 'linear-gradient(135deg,#eff6ff,#dbeafe)' : 'linear-gradient(135deg,#fefce8,#fef9c3)' }};border-left:4px solid {{ $netCashFlow >= 0 ? '#3b82f6' : '#ca8a04' }};">
+                    <div class="small text-muted text-uppercase fw-bold">Net Cash Flow</div>
+                    <div class="fw-bold fs-5" style="color:{{ $netCashFlow >= 0 ? '#1d4ed8' : '#854d0e' }};">৳{{ number_format($netCashFlow, 2) }}</div>
                 </div>
             </div>
         </div>

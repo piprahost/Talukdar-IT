@@ -12,10 +12,14 @@ class RoleManagementController extends Controller
     /**
      * Display a listing of roles.
      */
-    public function index()
+    public function index(Request $request)
     {
         $this->authorizePermission('view roles');
-        $roles = Role::withCount('users')->with('permissions')->latest()->paginate(10);
+        $query = Role::withCount('users')->with('permissions')->latest();
+        if ($request->filled('search')) {
+            $query->where('name', 'like', '%' . $request->search . '%');
+        }
+        $roles = $query->paginate(10)->withQueryString();
         return view('role-management.index', compact('roles'));
     }
 

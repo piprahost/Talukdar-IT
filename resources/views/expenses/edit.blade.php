@@ -4,20 +4,18 @@
 @section('page-title', 'Edit Expense')
 
 @section('content')
+<form action="{{ route('expenses.update', $expense) }}" method="POST" enctype="multipart/form-data">
+@csrf
+@method('PUT')
 <div class="row">
-    <div class="col-md-10 mx-auto">
+    <div class="col-md-8">
         <div class="table-card">
             <div class="table-card-header">
                 <h6><i class="fas fa-edit me-2"></i>Edit Expense: {{ $expense->expense_number }}</h6>
                 <a href="{{ route('expenses.show', $expense) }}" class="btn btn-sm btn-outline-secondary">Back</a>
             </div>
-            
-            <form action="{{ route('expenses.update', $expense) }}" method="POST" enctype="multipart/form-data">
-                @csrf
-                @method('PUT')
-                
-                <div class="p-4">
-                    <!-- Expense Details -->
+            <div class="p-4">
+                <!-- Expense Details -->
                     <div class="mb-4">
                         <h6 class="border-bottom pb-2 mb-3">Expense Details</h6>
                         
@@ -129,7 +127,8 @@
                                 @enderror
                             </div>
                             
-                            <div class="col-md-6 mb-3" id="bankAccountField" style="display: {{ in_array(old('payment_method', $expense->payment_method), ['card', 'bank_transfer']) ? 'block' : 'none' }};">
+                            @php $showBank = in_array(old('payment_method', $expense->payment_method), ['card', 'bank_transfer', 'mobile_banking', 'cheque']); @endphp
+                            <div class="col-md-6 mb-3" id="bankAccountField" style="display: {{ $showBank ? 'block' : 'none' }};">
                                 <label for="bank_account_id" class="form-label">Bank Account</label>
                                 <select class="form-select @error('bank_account_id') is-invalid @enderror" 
                                         id="bank_account_id" name="bank_account_id">
@@ -156,85 +155,61 @@
                             </div>
                         </div>
                     </div>
-                    
-                    <!-- Vendor Information -->
-                    <div class="mb-4">
-                        <h6 class="border-bottom pb-2 mb-3">Vendor Information (Optional)</h6>
-                        
-                        <div class="row">
-                            <div class="col-md-6 mb-3">
-                                <label for="vendor_name" class="form-label">Vendor/Supplier Name</label>
-                                <input type="text" class="form-control @error('vendor_name') is-invalid @enderror" 
-                                       id="vendor_name" name="vendor_name" 
-                                       value="{{ old('vendor_name', $expense->vendor_name) }}">
-                                @error('vendor_name')
-                                    <div class="invalid-feedback">{{ $message }}</div>
-                                @enderror
-                            </div>
-                            
-                            <div class="col-md-6 mb-3">
-                                <label for="vendor_contact" class="form-label">Vendor Contact</label>
-                                <input type="text" class="form-control @error('vendor_contact') is-invalid @enderror" 
-                                       id="vendor_contact" name="vendor_contact" 
-                                       value="{{ old('vendor_contact', $expense->vendor_contact) }}">
-                                @error('vendor_contact')
-                                    <div class="invalid-feedback">{{ $message }}</div>
-                                @enderror
-                            </div>
-                        </div>
-                        
-                        <div class="row">
-                            <div class="col-md-6 mb-3">
-                                <label for="reference_number" class="form-label">Reference Number</label>
-                                <input type="text" class="form-control @error('reference_number') is-invalid @enderror" 
-                                       id="reference_number" name="reference_number" 
-                                       value="{{ old('reference_number', $expense->reference_number) }}">
-                                @error('reference_number')
-                                    <div class="invalid-feedback">{{ $message }}</div>
-                                @enderror
-                            </div>
-                            
-                            <div class="col-md-6 mb-3">
-                                <label for="attachment" class="form-label">Attachment</label>
-                                @if($expense->attachment)
-                                    <div class="mb-2">
-                                        <a href="{{ asset('storage/' . $expense->attachment) }}" target="_blank" class="btn btn-sm btn-info">
-                                            <i class="fas fa-file-pdf me-1"></i>Current Attachment
-                                        </a>
-                                    </div>
-                                @endif
-                                <input type="file" class="form-control @error('attachment') is-invalid @enderror" 
-                                       id="attachment" name="attachment" 
-                                       accept=".pdf,.jpg,.jpeg,.png">
-                                @error('attachment')
-                                    <div class="invalid-feedback">{{ $message }}</div>
-                                @enderror
-                                <small class="text-muted">Upload new file to replace existing attachment</small>
-                            </div>
-                        </div>
-                    </div>
-                    
-                    <!-- Additional Notes -->
-                    <div class="mb-4">
-                        <label for="notes" class="form-label">Additional Notes</label>
-                        <textarea class="form-control @error('notes') is-invalid @enderror" 
-                                  id="notes" name="notes" rows="2">{{ old('notes', $expense->notes) }}</textarea>
-                        @error('notes')
-                            <div class="invalid-feedback">{{ $message }}</div>
-                        @enderror
-                    </div>
-                    
-                    <div class="d-flex justify-content-between">
-                        <a href="{{ route('expenses.show', $expense) }}" class="btn btn-secondary">Cancel</a>
-                        <button type="submit" class="btn btn-primary">
-                            <i class="fas fa-save me-2"></i>Update Expense
-                        </button>
-                    </div>
+            </div>
+        </div>
+    </div>
+    <div class="col-md-4">
+        <div class="table-card">
+            <div class="table-card-header">
+                <h6><i class="fas fa-store me-2"></i>Vendor & Notes</h6>
+            </div>
+            <div class="p-4">
+                <div class="mb-3">
+                    <label for="vendor_name" class="form-label">Vendor/Supplier Name</label>
+                    <input type="text" class="form-control @error('vendor_name') is-invalid @enderror"
+                           id="vendor_name" name="vendor_name" value="{{ old('vendor_name', $expense->vendor_name) }}" placeholder="Optional">
+                    @error('vendor_name')<div class="invalid-feedback">{{ $message }}</div>@enderror
                 </div>
-            </form>
+                <div class="mb-3">
+                    <label for="vendor_contact" class="form-label">Vendor Contact</label>
+                    <input type="text" class="form-control @error('vendor_contact') is-invalid @enderror"
+                           id="vendor_contact" name="vendor_contact" value="{{ old('vendor_contact', $expense->vendor_contact) }}" placeholder="Phone or email">
+                    @error('vendor_contact')<div class="invalid-feedback">{{ $message }}</div>@enderror
+                </div>
+                <div class="mb-3">
+                    <label for="reference_number" class="form-label">Reference Number</label>
+                    <input type="text" class="form-control @error('reference_number') is-invalid @enderror"
+                           id="reference_number" name="reference_number" value="{{ old('reference_number', $expense->reference_number) }}" placeholder="Invoice/Receipt #">
+                    @error('reference_number')<div class="invalid-feedback">{{ $message }}</div>@enderror
+                </div>
+                <div class="mb-3">
+                    <label for="attachment" class="form-label">Attachment</label>
+                    @if($expense->attachment)
+                        <div class="mb-2">
+                            <a href="{{ asset('storage/' . $expense->attachment) }}" target="_blank" class="btn btn-sm btn-outline-primary">
+                                <i class="fas fa-external-link-alt me-1"></i>View Current
+                            </a>
+                        </div>
+                    @endif
+                    <input type="file" class="form-control @error('attachment') is-invalid @enderror"
+                           id="attachment" name="attachment" accept=".pdf,.jpg,.jpeg,.png">
+                    @error('attachment')<div class="invalid-feedback">{{ $message }}</div>@enderror
+                    <small class="text-muted">New file replaces existing</small>
+                </div>
+                <div class="mb-4">
+                    <label for="notes" class="form-label">Additional Notes</label>
+                    <textarea class="form-control @error('notes') is-invalid @enderror" id="notes" name="notes" rows="2">{{ old('notes', $expense->notes) }}</textarea>
+                    @error('notes')<div class="invalid-feedback">{{ $message }}</div>@enderror
+                </div>
+                <div class="d-grid gap-2">
+                    <button type="submit" class="btn btn-primary"><i class="fas fa-save me-1"></i> Update Expense</button>
+                    <a href="{{ route('expenses.show', $expense) }}" class="btn btn-outline-secondary">Cancel</a>
+                </div>
+            </div>
         </div>
     </div>
 </div>
+</form>
 @endsection
 
 @push('scripts')
@@ -245,11 +220,8 @@ function toggleBankAccount() {
     const paymentDateField = document.getElementById('paymentDateField');
     const statusField = document.getElementById('status').value;
     
-    if (paymentMethod === 'bank_transfer' || paymentMethod === 'card') {
-        bankAccountField.style.display = 'block';
-    } else {
-        bankAccountField.style.display = 'none';
-    }
+    var needsBank = ['bank_transfer', 'card', 'mobile_banking', 'cheque'].indexOf(paymentMethod) !== -1;
+    bankAccountField.style.display = needsBank ? 'block' : 'none';
     
     if (statusField === 'paid') {
         paymentDateField.style.display = 'block';

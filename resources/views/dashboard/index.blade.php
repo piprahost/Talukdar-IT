@@ -341,7 +341,7 @@
         </div>
         @endif
 
-        {{-- Quick Actions --}}
+        {{-- Quick Actions (mandatory daily ops) --}}
         <div class="col-xl-4">
             <div class="table-card h-100">
                 <div class="table-card-header">
@@ -353,26 +353,39 @@
                         <i class="fas fa-file-invoice-dollar me-2"></i>New Sale / Invoice
                     </a>
                     @endcan
-                    @can('create services')
-                    <a href="{{ route('services.create') }}" class="btn btn-outline-primary w-100 text-start">
-                        <i class="fas fa-laptop-medical me-2"></i>New Service Order
-                    </a>
-                    @endcan
                     @can('create purchases')
                     <a href="{{ route('purchases.create') }}" class="btn btn-outline-primary w-100 text-start">
                         <i class="fas fa-shopping-cart me-2"></i>New Purchase Order
                     </a>
                     @endcan
-                    @can('view stock')
-                    <a href="{{ route('stock.index') }}" class="btn btn-outline-secondary w-100 text-start">
-                        <i class="fas fa-boxes me-2"></i>View Inventory
+                    @can('create services')
+                    <a href="{{ route('services.create') }}" class="btn btn-outline-primary w-100 text-start">
+                        <i class="fas fa-laptop-medical me-2"></i>New Service Order
                     </a>
                     @endcan
-                    @canany(['view sales reports', 'view reports'])
-                    <a href="{{ route('reports.sales.index') }}" class="btn btn-outline-secondary w-100 text-start">
-                        <i class="fas fa-chart-bar me-2"></i>Sales Reports
+                    @can('create expenses')
+                    <a href="{{ route('expenses.create') }}" class="btn btn-outline-success w-100 text-start">
+                        <i class="fas fa-receipt me-2"></i>Add Expense
                     </a>
-                    @endcanany
+                    @endcan
+                    @can('view payments')
+                    <a href="{{ route('payments.index') }}" class="btn btn-outline-secondary w-100 text-start">
+                        <i class="fas fa-money-bill-wave me-2"></i>Payments
+                    </a>
+                    @endcan
+                    @can('view stock')
+                    <a href="{{ route('stock.low-stock') }}" class="btn btn-outline-warning w-100 text-start">
+                        <i class="fas fa-exclamation-triangle me-2"></i>Low Stock
+                    </a>
+                    <a href="{{ route('stock.index') }}" class="btn btn-outline-secondary w-100 text-start">
+                        <i class="fas fa-warehouse me-2"></i>Stock & Movement
+                    </a>
+                    @endcan
+                    @can('view sales-reports')
+                    <a href="{{ route('reports.sales.index') }}" class="btn btn-outline-secondary w-100 text-start">
+                        <i class="fas fa-chart-bar me-2"></i>Sales Report
+                    </a>
+                    @endcan
                 </div>
             </div>
         </div>

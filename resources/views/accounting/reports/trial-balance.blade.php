@@ -8,9 +8,10 @@
     <div class="table-card-header">
         <h6><i class="fas fa-balance-scale me-2"></i>Trial Balance</h6>
     </div>
-    
-    <form method="GET" class="p-4 border-bottom">
-        <div class="row">
+
+    <div class="filter-wrapper">
+    <form method="GET">
+        <div class="row g-2 align-items-end">
             <div class="col-md-4 mb-3">
                 <label for="date" class="form-label">As of Date</label>
                 <input type="date" class="form-control" name="date" value="{{ $date }}" onchange="this.form.submit()">
@@ -20,7 +21,8 @@
             </div>
         </div>
     </form>
-    
+    </div>
+
     <div class="p-4">
         <div class="row mb-3">
             <div class="col-md-8">
@@ -55,8 +57,8 @@
                         <tr>
                             <td><code>{{ $item['account']->code }}</code></td>
                             <td>{{ $item['account']->name }}</td>
-                            <td class="text-end">{{ $item['debit'] > 0 ? '৳' . number_format($item['debit'], 2) : '-' }}</td>
-                            <td class="text-end">{{ $item['credit'] > 0 ? '৳' . number_format($item['credit'], 2) : '-' }}</td>
+                            <td class="text-end {{ $item['debit'] > 0 ? 'text-success fw-semibold' : 'text-muted' }}">{{ $item['debit'] > 0 ? '৳' . number_format($item['debit'], 2) : '—' }}</td>
+                            <td class="text-end {{ $item['credit'] > 0 ? 'text-danger fw-semibold' : 'text-muted' }}">{{ $item['credit'] > 0 ? '৳' . number_format($item['credit'], 2) : '—' }}</td>
                         </tr>
                     @empty
                         <tr><td colspan="4" class="text-center">No accounts with balances found.</td></tr>

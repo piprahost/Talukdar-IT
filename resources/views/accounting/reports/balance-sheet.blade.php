@@ -8,9 +8,10 @@
     <div class="table-card-header">
         <h6><i class="fas fa-file-invoice-dollar me-2"></i>Balance Sheet</h6>
     </div>
-    
-    <form method="GET" class="p-4 border-bottom">
-        <div class="row">
+
+    <div class="filter-wrapper">
+    <form method="GET">
+        <div class="row g-2 align-items-end">
             <div class="col-md-4 mb-3">
                 <label for="date" class="form-label">As of Date</label>
                 <input type="date" class="form-control" name="date" value="{{ $date }}" onchange="this.form.submit()">
@@ -20,8 +21,29 @@
             </div>
         </div>
     </form>
-    
+    </div>
+
     <div class="p-4">
+        <div class="row g-3 mb-4 module-stats">
+            <div class="col-md-4">
+                <div class="module-stat-card rounded-3 p-3" style="background:linear-gradient(135deg,#eff6ff,#dbeafe);border-left:4px solid #3b82f6;">
+                    <div class="small text-muted text-uppercase fw-bold">Total Assets</div>
+                    <div class="fw-bold fs-5" style="color:#1d4ed8;">৳{{ number_format(abs($totalAssets), 2) }}</div>
+                </div>
+            </div>
+            <div class="col-md-4">
+                <div class="module-stat-card rounded-3 p-3" style="background:linear-gradient(135deg,#fef2f2,#fee2e2);border-left:4px solid #ef4444;">
+                    <div class="small text-muted text-uppercase fw-bold">Total Liabilities</div>
+                    <div class="fw-bold fs-5" style="color:#991b1b;">৳{{ number_format(abs($totalLiabilities), 2) }}</div>
+                </div>
+            </div>
+            <div class="col-md-4">
+                <div class="module-stat-card rounded-3 p-3" style="background:linear-gradient(135deg,#f0fdf4,#dcfce7);border-left:4px solid #16a34a;">
+                    <div class="small text-muted text-uppercase fw-bold">Net Position</div>
+                    <div class="fw-bold fs-5" style="color:#166534;">৳{{ number_format(abs($totalAssets - $totalLiabilities), 2) }}</div>
+                </div>
+            </div>
+        </div>
         <div class="row mb-4">
             <div class="col-md-8">
                 <h4 class="mb-2">Balance Sheet</h4>
