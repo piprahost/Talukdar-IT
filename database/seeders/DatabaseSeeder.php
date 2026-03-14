@@ -15,13 +15,14 @@ class DatabaseSeeder extends Seeder
      */
     public function run(): void
     {
-        // Seed core configuration and demo data
+        // Seed core configuration and Bangladesh-friendly demo data
         $this->call([
             RolePermissionSeeder::class,
             SuperAdminSeeder::class,
             DemoUserSeeder::class,
             ChartOfAccountsSeeder::class,
             SettingsSeeder::class,
+            CompanySeeder::class,
             ProductSeeder::class,
             DemoDataSeeder::class,
         ]);

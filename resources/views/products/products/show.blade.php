@@ -171,26 +171,28 @@
             </div>
         </div>
 
-        {{-- Barcodes --}}
-        @if($product->barcodes && count($product->barcodes) > 0)
+        {{-- Available barcodes --}}
+        @php $barcodes = $product->barcodes ?? []; @endphp
         <div class="table-card mb-3">
             <div class="table-card-header">
-                <h6><i class="fas fa-barcode me-2"></i>Product Barcodes
-                    <span class="badge bg-primary ms-1">{{ count($product->barcodes) }}</span>
-                </h6>
-                <small class="text-muted">Each barcode = 1 stock unit</small>
+                <h6 class="mb-0"><i class="fas fa-barcode me-2"></i>Available barcodes</h6>
+                <span class="badge bg-primary">{{ count($barcodes) }}</span>
             </div>
             <div class="p-4">
-                <div class="d-flex flex-wrap gap-2">
-                    @foreach($product->barcodes as $barcode)
-                    <span class="badge" style="background:#f0fdf4;color:#166534;padding:8px 14px;font-size:13px;border:1px solid #dcfce7;border-radius:8px;font-family:monospace;">
-                        <i class="fas fa-barcode me-1"></i>{{ $barcode }}
-                    </span>
-                    @endforeach
-                </div>
+                @if(count($barcodes) > 0)
+                    <p class="small text-muted mb-3">Each barcode = 1 stock unit. Shown for scanning and stock tracking.</p>
+                    <div class="d-flex flex-wrap gap-2">
+                        @foreach($barcodes as $barcode)
+                        <span class="badge" style="background:#f0fdf4;color:#166534;padding:8px 14px;font-size:13px;border:1px solid #dcfce7;border-radius:8px;font-family:monospace;">
+                            <i class="fas fa-barcode me-1"></i>{{ $barcode }}
+                        </span>
+                        @endforeach
+                    </div>
+                @else
+                    <p class="text-muted mb-0 small"><i class="fas fa-info-circle me-1"></i>No barcodes assigned yet. Add barcodes via <strong>Adjust Stock</strong> (Stock In) or when editing the product.</p>
+                @endif
             </div>
         </div>
-        @endif
     </div>
 
     {{-- Sidebar --}}

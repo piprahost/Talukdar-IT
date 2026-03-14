@@ -18,7 +18,7 @@ class DemoUserSeeder extends Seeder
         $superAdminRole = Role::where('name', 'Super Admin')->first();
 
         $user = User::firstOrCreate(
-            ['email' => 'demo@erp.com'],
+            ['email' => 'demo@talukdarit.com'],
             [
                 'name' => 'Demo Super Admin',
                 'password' => Hash::make('demo123'),
@@ -30,8 +30,8 @@ class DemoUserSeeder extends Seeder
             $user->assignRole($superAdminRole);
         }
 
-        $this->command?->info('Demo user created/updated.');
-        $this->command?->info('Email: demo@erp.com');
+        $this->command?->info('Demo user created/updated (Bangladesh demo).');
+        $this->command?->info('Email: demo@talukdarit.com');
         $this->command?->info('Password: demo123');
     }
 }
