@@ -70,6 +70,74 @@ class SaleController extends Controller
         return view('sales.sales.create', compact('customers', 'products', 'bankAccounts', 'defaultPaymentMethod', 'defaultPaymentTermsDays', 'defaultDueDate'));
     }
 
+    public function quickSell()
+    {
+        $this->authorizePermission('create sales');
+        $customers = Customer::active()->latest()->get();
+        $products = Product::active()->orderBy('name')->get();
+        $bankAccounts = BankAccount::active()->orderBy('account_name')->get();
+        $defaultPaymentMethod = function_exists('settings') ? (settings('payments.default_payment_method') ?: 'cash') : 'cash';
+        return view('sales.quick-sell', compact('customers', 'products', 'bankAccounts', 'defaultPaymentMethod'));
+    }
+
+    public function quickSellStore(Request $request)
+    {
+        $this->authorizePermission('create sales');
+        $validated = $request->validate([
+            'customer_id'      => ['nullable', 'exists:customers,id'],
+            'customer_name'    => ['nullable', 'string', 'max:255'],
+            'customer_phone'   => ['nullable', 'string', 'max:20'],
+            'customer_address' => ['nullable', 'string'],
+            'payment_method'   => ['required', 'in:cash,card,mobile_banking,bank_transfer,cheque,other'],
+            'bank_account_id'  => ['nullable', 'exists:bank_accounts,id', 'required_if:payment_method,card,mobile_banking,bank_transfer,cheque'],
+            'items'            => ['required', 'array', 'min:1'],
+            'items.*.product_id' => ['required', 'exists:products,id'],
+            'items.*.barcode'    => ['nullable', 'string'],
+            'items.*.unit_price' => ['required', 'numeric', 'min:0'],
+            'items.*.discount'   => ['nullable', 'numeric', 'min:0'],
+            'items.*.quantity'   => ['required', 'integer', 'min:1'],
+            'items.*.notes'      => ['nullable', 'string'],
+        ]);
+
+        $sale = DB::transaction(function () use ($validated) {
+            $sale = Sale::create([
+                'customer_id' => $validated['customer_id'] ?? null,
+                'customer_name' => $validated['customer_name'] ?? null,
+                'customer_phone' => $validated['customer_phone'] ?? null,
+                'customer_address' => $validated['customer_address'] ?? null,
+                'sale_date' => now()->toDateString(),
+                'due_date' => null,
+                'tax_amount' => 0,
+                'discount_amount' => 0,
+                'paid_amount' => 0,
+                'payment_method' => $validated['payment_method'],
+                'bank_account_id' => $validated['bank_account_id'] ?? null,
+                'notes' => null,
+                'internal_notes' => 'Quick sell',
+                'status' => 'completed',
+            ]);
+
+            foreach ($validated['items'] as $itemData) {
+                SaleItem::create([
+                    'sale_id' => $sale->id,
+                    'product_id' => $itemData['product_id'],
+                    'barcode' => $itemData['barcode'] ?? null,
+                    'unit_price' => $itemData['unit_price'],
+                    'discount' => $itemData['discount'] ?? 0,
+                    'quantity' => $itemData['quantity'],
+                    'notes' => $itemData['notes'] ?? null,
+                ]);
+            }
+
+            $sale->calculateTotals();
+            AccountingService::recordSale($sale);
+            return $sale;
+        });
+
+        return redirect()->route('sales.show', $sale)
+            ->with('success', 'Quick sell completed. Invoice ' . $sale->invoice_number);
+    }
+
     public function store(Request $request)
     {
         $this->authorizePermission('create sales');

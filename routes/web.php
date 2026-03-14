@@ -217,7 +217,9 @@ Route::middleware('auth')->group(function () {
     
     // Sales routes - specific routes before resource route
     Route::get('sales/products/by-barcode', [SaleController::class, 'getProductByBarcode'])->name('sales.products-by-barcode');
-    
+    Route::get('quick-sell', [SaleController::class, 'quickSell'])->name('quick-sell.index');
+    Route::post('quick-sell', [SaleController::class, 'quickSellStore'])->name('quick-sell.store');
+
     Route::resource('sales', SaleController::class)->names([
         'index' => 'sales.index',
         'create' => 'sales.create',

@@ -10,6 +10,12 @@
         <h5>@yield('page-title', 'Dashboard')</h5>
     </div>
     <div class="nav-right">
+        @can('create sales')
+        <a href="{{ route('quick-sell.index') }}" class="quick-sell-btn no-print" data-bs-toggle="tooltip" title="Quick Sell">
+            <i class="fas fa-bolt"></i>
+            <span>Quick Sell</span>
+        </a>
+        @endcan
         <div class="nav-icon no-print" data-bs-toggle="tooltip" title="Calculator" onclick="openCalculator()" style="cursor: pointer;">
             <i class="fas fa-calculator"></i>
         </div>

@@ -361,6 +361,35 @@
         transform: scale(1.05);
         box-shadow: 0 0 0 1px rgba(20, 184, 166, 0.4), 0 10px 22px rgba(15, 23, 42, 0.18);
     }
+
+    .quick-sell-btn {
+        display: inline-flex;
+        align-items: center;
+        gap: 8px;
+        padding: 8px 16px;
+        border-radius: 999px;
+        font-size: 13px;
+        font-weight: 700;
+        color: #fff;
+        background: linear-gradient(135deg, #16a34a 0%, #15803d 100%);
+        border: none;
+        box-shadow: 0 4px 14px rgba(22, 163, 74, 0.4);
+        transition: transform var(--transition-fast), box-shadow var(--transition-fast), background var(--transition-fast);
+        text-decoration: none;
+    }
+    .quick-sell-btn:hover {
+        color: #fff;
+        background: linear-gradient(135deg, #15803d 0%, #166534 100%);
+        transform: translateY(-1px);
+        box-shadow: 0 6px 20px rgba(22, 163, 74, 0.45);
+    }
+    .quick-sell-btn i {
+        font-size: 14px;
+    }
+    @media (max-width: 768px) {
+        .quick-sell-btn span { display: none; }
+        .quick-sell-btn { padding: 10px 12px; }
+    }
     
     .user-profile {
         display: flex;
