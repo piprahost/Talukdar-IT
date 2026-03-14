@@ -41,7 +41,7 @@
                         </button>
                     </form>
                 </div>
-                <p class="form-text small mb-0 mt-1">Clear cache: app, config, views. Re-calculate: sales & purchase totals from line items.</p>
+                <p class="form-text small mb-0 mt-1">Clear cache: app, config, views. Re-calculate: return totals (sale/purchase returns) from line items. For sales/purchases use terminal.</p>
             </div>
         </div>
     </div>
@@ -65,8 +65,10 @@
                             $type = $def['type'] ?? 'text';
                             $value = $values[$key] ?? ($def['default'] ?? '');
                             $inputName = $key;
+                            $showFor = $def['show_for'] ?? null;
+                            $isCredentialRow = $currentCategory === 'sms' && is_array($showFor);
                         @endphp
-                        <div class="col-12">
+                        <div class="col-12 {{ $isCredentialRow ? 'sms-credential-row' : '' }}" @if($isCredentialRow) data-show-for="{{ implode(',', $showFor) }}" @endif>
                             @if($type === 'boolean')
                                 <div class="form-check form-switch">
                                     <input class="form-check-input" type="checkbox" name="{{ $inputName }}" value="1"
@@ -76,7 +78,7 @@
                             @else
                                 <label class="form-label fw-semibold" for="setting_{{ $key }}">{{ $def['label'] }}</label>
                                 @if(isset($def['options']) && is_array($def['options']))
-                                    <select class="form-select" id="setting_{{ $key }}" name="{{ $inputName }}">
+                                    <select class="form-select" id="setting_{{ $key }}" name="{{ $inputName }}" @if($currentCategory === 'sms' && $key === 'default_gateway') data-sms-gateway-select @endif>
                                         @foreach($def['options'] as $optVal => $optLabel)
                                             <option value="{{ $optVal }}" {{ (string)old($key, $value) === (string)$optVal ? 'selected' : '' }}>{{ $optLabel }}</option>
                                         @endforeach
@@ -105,4 +107,26 @@
         </form>
     </div>
 </div>
+
+@if($currentCategory === 'sms')
+<script>
+(function() {
+    var sel = document.querySelector('#setting_default_gateway');
+    var rows = document.querySelectorAll('.sms-credential-row');
+    if (!sel || !rows.length) return;
+
+    function updateCredentialVisibility() {
+        var gateway = (sel.value || '').trim();
+        rows.forEach(function(row) {
+            var showFor = (row.getAttribute('data-show-for') || '').split(',').map(function(s) { return s.trim(); });
+            var show = gateway && showFor.indexOf(gateway) !== -1;
+            row.style.display = show ? '' : 'none';
+        });
+    }
+
+    sel.addEventListener('change', updateCredentialVisibility);
+    updateCredentialVisibility();
+})();
+</script>
+@endif
 @endsection

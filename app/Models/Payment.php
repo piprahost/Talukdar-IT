@@ -38,7 +38,10 @@ class Payment extends Model
 
         static::creating(function ($payment) {
             if (empty($payment->payment_number)) {
-                $prefix = $payment->payment_type === 'customer' ? 'CP' : 'SP';
+                $isRefund = (float) ($payment->amount ?? 0) < 0;
+                $prefix = $payment->payment_type === 'customer'
+                    ? ($isRefund ? 'RCP' : 'CP')
+                    : ($isRefund ? 'RSP' : 'SP');
                 $payment->payment_number = $prefix . '-' . date('Ymd') . '-' . strtoupper(Str::random(6));
             }
             if (auth()->check() && empty($payment->created_by)) {

@@ -5,6 +5,7 @@ namespace App\Http\Controllers;
 use App\Models\Setting;
 use Illuminate\Http\Request;
 use Illuminate\Support\Facades\Artisan;
+use Illuminate\Support\Facades\DB;
 
 class SettingsController extends Controller
 {
@@ -88,13 +89,44 @@ class SettingsController extends Controller
     }
 
     /**
-     * Recalculate sales and purchase totals from line items (visible from settings UI).
+     * Recalculate return totals from line items (lightweight, no Artisan). Sales/purchase recalc via terminal.
      */
     public function recalculateTotals()
     {
         $this->authorizePermission('edit settings');
-        Artisan::call('sales:recalculate-totals');
-        Artisan::call('purchases:recalculate-totals');
-        return redirect()->back()->with('success', 'Sales and purchase totals recalculated successfully.');
+
+        // Fix sale return totals with raw SQL (no model loading = low memory)
+        $saleReturnsUpdated = DB::update('
+            UPDATE sales_returns sr
+            INNER JOIN (
+                SELECT sale_return_id, COALESCE(SUM(subtotal), 0) AS item_subtotal
+                FROM sale_return_items
+                GROUP BY sale_return_id
+            ) t ON t.sale_return_id = sr.id
+            SET sr.subtotal = t.item_subtotal,
+                sr.total_amount = t.item_subtotal + COALESCE(sr.tax_amount, 0) - COALESCE(sr.discount_amount, 0)
+            WHERE sr.total_amount <= 0
+        ');
+
+        // Fix purchase return totals with raw SQL
+        $purchaseReturnsUpdated = DB::update('
+            UPDATE purchase_returns pr
+            INNER JOIN (
+                SELECT purchase_return_id, COALESCE(SUM(subtotal), 0) AS item_subtotal
+                FROM purchase_return_items
+                GROUP BY purchase_return_id
+            ) t ON t.purchase_return_id = pr.id
+            SET pr.subtotal = t.item_subtotal,
+                pr.total_amount = t.item_subtotal + COALESCE(pr.tax_amount, 0) - COALESCE(pr.discount_amount, 0)
+            WHERE pr.total_amount <= 0
+        ');
+
+        $message = 'Return totals recalculated.';
+        if ($saleReturnsUpdated > 0 || $purchaseReturnsUpdated > 0) {
+            $message .= " Updated {$saleReturnsUpdated} sale return(s), {$purchaseReturnsUpdated} purchase return(s).";
+        }
+        $message .= ' For sales/purchases recalc run in terminal: php artisan sales:recalculate-totals && php artisan purchases:recalculate-totals';
+
+        return redirect()->back()->with('success', $message);
     }
 }

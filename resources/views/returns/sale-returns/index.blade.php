@@ -76,7 +76,7 @@
                         {{ $return->sale->customer_name ?? ($return->customer?->name ?? 'Walk-in') }}
                     </td>
                     <td style="font-size:13px;">{{ $return->return_date->format('d M Y') }}</td>
-                    <td class="text-end fw-bold">৳{{ number_format($return->total_amount, 2) }}</td>
+                    <td class="text-end fw-bold">৳{{ number_format($return->getDisplayTotalAmount(), 2) }}</td>
                     <td class="text-center">
                         <span style="background:{{ $statusColors['bg'] }};color:{{ $statusColors['color'] }};padding:4px 10px;border-radius:20px;font-size:11px;font-weight:700;">
                             {{ ucfirst($return->status) }}

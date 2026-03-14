@@ -2719,6 +2719,7 @@ namespace App\Models {
     /**
      * App\Models\Payment
      *
+     * @property mixed $bank_account_id
      * @property \Illuminate\Support\Carbon|null $deleted_at
      * @property \Illuminate\Support\Carbon|null $updated_at
      * @property \Illuminate\Support\Carbon|null $created_at
@@ -2761,6 +2762,7 @@ namespace App\Models {
      * @method static \Illuminate\Database\Eloquent\Builder<Payment>|Payment whereCreatedAt($value)
      * @method static \Illuminate\Database\Eloquent\Builder<Payment>|Payment whereUpdatedAt($value)
      * @method static \Illuminate\Database\Eloquent\Builder<Payment>|Payment whereDeletedAt($value)
+     * @method static \Illuminate\Database\Eloquent\Builder<Payment>|Payment whereBankAccountId($value)
      * @method static \Illuminate\Database\Eloquent\Builder<Payment>|Payment newModelQuery()
      * @method static \Illuminate\Database\Eloquent\Builder<Payment>|Payment newQuery()
      * @method static \Illuminate\Database\Eloquent\Builder<Payment>|Payment query()

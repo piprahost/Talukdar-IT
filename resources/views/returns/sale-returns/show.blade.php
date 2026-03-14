@@ -57,7 +57,7 @@
                             <tr><th width="40%">Subtotal:</th><td><strong>৳{{ number_format($saleReturn->subtotal, 2) }}</strong></td></tr>
                             <tr><th>Tax:</th><td>৳{{ number_format($saleReturn->tax_amount, 2) }}</td></tr>
                             <tr><th>Discount:</th><td>৳{{ number_format($saleReturn->discount_amount, 2) }}</td></tr>
-                            <tr><th>Total Amount:</th><td><strong class="fs-5">৳{{ number_format($saleReturn->total_amount, 2) }}</strong></td></tr>
+                            <tr><th>Total Amount:</th><td><strong class="fs-5">৳{{ number_format($saleReturn->getDisplayTotalAmount(), 2) }}</strong></td></tr>
                         </table>
                     </div>
                 </div>

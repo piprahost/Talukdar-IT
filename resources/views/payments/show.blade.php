@@ -9,15 +9,24 @@
 
         {{-- Amount Banner --}}
         <div class="table-card mb-3 p-4 text-center" style="background:{{ $payment->payment_type === 'customer' ? 'linear-gradient(135deg,#f0fdf4,#dcfce7)' : 'linear-gradient(135deg,#eff6ff,#dbeafe)' }};border-left:5px solid {{ $payment->payment_type === 'customer' ? '#16a34a' : '#3b82f6' }};">
+            @php $isRefund = (float)$payment->amount < 0; @endphp
             <div style="font-size:12px;font-weight:700;text-transform:uppercase;letter-spacing:.6px;color:{{ $payment->payment_type === 'customer' ? '#166534' : '#1d4ed8' }};margin-bottom:8px;">
                 @if($payment->payment_type === 'customer')
-                    <i class="fas fa-arrow-down me-1"></i>Customer Payment Received
+                    @if($isRefund)
+                        <i class="fas fa-undo me-1"></i>Customer Refund (Sale Return)
+                    @else
+                        <i class="fas fa-arrow-down me-1"></i>Customer Payment Received
+                    @endif
                 @else
-                    <i class="fas fa-arrow-up me-1"></i>Supplier Payment Made
+                    @if($isRefund)
+                        <i class="fas fa-undo me-1"></i>Supplier Credit (Purchase Return)
+                    @else
+                        <i class="fas fa-arrow-up me-1"></i>Supplier Payment Made
+                    @endif
                 @endif
             </div>
-            <div style="font-size:40px;font-weight:800;color:{{ $payment->payment_type === 'customer' ? '#16a34a' : '#1d4ed8' }};">
-                ৳{{ number_format($payment->amount, 2) }}
+            <div style="font-size:40px;font-weight:800;color:{{ $isRefund ? '#dc2626' : ($payment->payment_type === 'customer' ? '#16a34a' : '#1d4ed8') }};">
+                {{ $isRefund ? '-' : '' }}৳{{ number_format(abs($payment->amount), 2) }}
             </div>
             <div style="font-size:14px;color:#6b7280;margin-top:4px;">
                 {{ $payment->payment_date->format('d M Y') }} · {{ $payment->payment_method_name }}
@@ -52,7 +61,7 @@
                             </tr>
                             <tr>
                                 <td class="text-muted ps-0">Amount</td>
-                                <td class="pe-0 fw-bold" style="font-size:16px;">৳{{ number_format($payment->amount, 2) }}</td>
+                                <td class="pe-0 fw-bold" style="font-size:16px;">{{ (float)$payment->amount < 0 ? '-' : '' }}৳{{ number_format(abs($payment->amount), 2) }}</td>
                             </tr>
                             <tr>
                                 <td class="text-muted ps-0">Date</td>

@@ -341,7 +341,11 @@
                         <div style="font-size:11px;color:#6b7280;">{{ $payment->payment_date->format('d M Y') }} · {{ ucfirst(str_replace('_', ' ', $payment->payment_method ?? 'cash')) }}</div>
                     </div>
                     <div class="text-end">
-                        <span style="font-size:14px;font-weight:700;color:#16a34a;">৳{{ number_format($payment->amount, 2) }}</span>
+                        @if((float)$payment->amount < 0)
+                            <span style="font-size:14px;font-weight:700;color:#dc2626;">Refund ৳{{ number_format(abs($payment->amount), 2) }}</span>
+                        @else
+                            <span style="font-size:14px;font-weight:700;color:#16a34a;">৳{{ number_format($payment->amount, 2) }}</span>
+                        @endif
                         <a href="{{ route('payments.show', $payment) }}" class="btn btn-sm btn-link p-0 ms-1" title="View payment">View</a>
                     </div>
                 </div>
@@ -372,8 +376,8 @@
                         @else
                             <span class="badge bg-warning text-dark" style="font-size:10px;">Pending</span>
                         @endif
-                        @if($return->total_amount > 0)
-                        <div style="font-size:11px;color:#ef4444;font-weight:600;">-৳{{ number_format($return->total_amount, 2) }}</div>
+                        @if($return->getDisplayTotalAmount() > 0)
+                        <div style="font-size:11px;color:#ef4444;font-weight:600;">-৳{{ number_format($return->getDisplayTotalAmount(), 2) }}</div>
                         @endif
                     </div>
                 </div>

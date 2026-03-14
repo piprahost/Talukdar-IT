@@ -185,6 +185,10 @@ class AccountingService
      */
     public static function recordPayment(Payment $payment)
     {
+        // Refund payments (negative amount) are created by sale/purchase return complete; accounting is in recordSaleReturn/recordPurchaseReturn
+        if ((float) $payment->amount < 0) {
+            return;
+        }
         // Service payments are reflected in the service journal entry (recordService), not a separate payment entry
         if ($payment->payment_type === 'customer' && $payment->service_id) {
             return;

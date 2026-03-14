@@ -104,9 +104,26 @@ class SaleReturn extends Model
     // Helper Methods
     public function calculateTotals()
     {
-        $this->subtotal = $this->items()->sum('subtotal');
-        $this->total_amount = $this->subtotal + $this->tax_amount - $this->discount_amount;
-        $this->save();
+        $subtotal = $this->items()->sum('subtotal');
+        $tax = (float) ($this->tax_amount ?? 0);
+        $discount = (float) ($this->discount_amount ?? 0);
+        $this->subtotal = $subtotal;
+        $this->total_amount = $subtotal + $tax - $discount;
+        $this->saveQuietly();
+    }
+
+    /** Return amount for display; recalculates from items if stored total is 0 but items exist. */
+    public function getDisplayTotalAmount(): float
+    {
+        if ((float) $this->total_amount > 0) {
+            return (float) $this->total_amount;
+        }
+        $sub = $this->relationLoaded('items')
+            ? (float) $this->items->sum('subtotal')
+            : (float) $this->items()->sum('subtotal');
+        $tax = (float) ($this->tax_amount ?? 0);
+        $discount = (float) ($this->discount_amount ?? 0);
+        return $sub + $tax - $discount;
     }
 
     public function updateStock()

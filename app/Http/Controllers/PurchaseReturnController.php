@@ -2,6 +2,7 @@
 
 namespace App\Http\Controllers;
 
+use App\Models\Payment;
 use App\Models\PurchaseReturn;
 use App\Models\Purchase;
 use App\Services\AccountingService;
@@ -215,10 +216,27 @@ class PurchaseReturnController extends Controller
         }
 
         try {
-            $purchaseReturn->complete();
-            // Create journal entry for completed return
-            AccountingService::recordPurchaseReturn($purchaseReturn);
-            return back()->with('success', 'Purchase return completed. Stock updated.');
+            DB::transaction(function () use ($purchaseReturn) {
+                $purchaseReturn->complete();
+
+                // Link to invoice & payment: create refund (credit from supplier) so purchase paid/due update
+                $purchase = $purchaseReturn->purchase;
+                $refundAmount = (float) $purchaseReturn->total_amount;
+                if ($purchase && $refundAmount > 0) {
+                    Payment::create([
+                        'payment_type' => 'supplier',
+                        'purchase_id' => $purchase->id,
+                        'supplier_id' => $purchase->supplier_id,
+                        'amount' => -$refundAmount,
+                        'payment_date' => $purchaseReturn->return_date,
+                        'payment_method' => settings('payments.default_payment_method', 'cash'),
+                        'notes' => 'Credit – Purchase Return ' . $purchaseReturn->return_number,
+                    ]);
+                }
+
+                AccountingService::recordPurchaseReturn($purchaseReturn);
+            });
+            return back()->with('success', 'Purchase return completed. Stock, invoice and accounting updated.');
         } catch (\Exception $e) {
             return back()->with('error', $e->getMessage());
         }

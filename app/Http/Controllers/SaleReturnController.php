@@ -2,6 +2,7 @@
 
 namespace App\Http\Controllers;
 
+use App\Models\Payment;
 use App\Models\SaleReturn;
 use App\Models\Sale;
 use App\Models\SaleItem;
@@ -15,15 +16,15 @@ class SaleReturnController extends Controller
     public function index(Request $request)
     {
         $this->authorizePermission('view sale-returns');
-        $query = SaleReturn::with(['sale', 'customer', 'creator'])->latest();
+        $query = SaleReturn::with(['sale', 'customer', 'creator', 'items'])->latest();
 
         if ($request->has('search') && $request->search) {
-            $query->where(function($q) use ($request) {
-                $q->where('return_number', 'like', "%{$request->search}%")
-                  ->orWhereHas('sale', function($sq) use ($request) {
-                      $sq->where('invoice_number', 'like', "%{$request->search}%");
-                  })
-                  ->orWhere('customer_name', 'like', "%{$request->search}%");
+            $term = $request->search;
+            $query->where(function($q) use ($term) {
+                $q->where('return_number', 'like', "%{$term}%")
+                  ->orWhereHas('sale', fn($sq) => $sq->where('invoice_number', 'like', "%{$term}%"))
+                  ->orWhereHas('customer', fn($sq) => $sq->where('name', 'like', "%{$term}%"))
+                  ->orWhereHas('sale', fn($sq) => $sq->where('customer_name', 'like', "%{$term}%"));
             });
         }
 
@@ -233,10 +234,27 @@ class SaleReturnController extends Controller
         }
 
         try {
-            $saleReturn->complete();
-            // Create journal entry for completed return
-            AccountingService::recordSaleReturn($saleReturn);
-            return back()->with('success', 'Sale return completed. Stock updated.');
+            DB::transaction(function () use ($saleReturn) {
+                $saleReturn->complete();
+
+                // Link to invoice & payment: create refund payment so sale paid/due update
+                $sale = $saleReturn->sale;
+                $refundAmount = (float) $saleReturn->getDisplayTotalAmount();
+                if ($sale && $refundAmount > 0) {
+                    Payment::create([
+                        'payment_type' => 'customer',
+                        'sale_id' => $sale->id,
+                        'customer_id' => $sale->customer_id,
+                        'amount' => -$refundAmount,
+                        'payment_date' => $saleReturn->return_date,
+                        'payment_method' => settings('payments.default_payment_method', 'cash'),
+                        'notes' => 'Refund – Sale Return ' . $saleReturn->return_number,
+                    ]);
+                }
+
+                AccountingService::recordSaleReturn($saleReturn);
+            });
+            return back()->with('success', 'Sale return completed. Stock, invoice and accounting updated.');
         } catch (\Exception $e) {
             return back()->with('error', $e->getMessage());
         }
