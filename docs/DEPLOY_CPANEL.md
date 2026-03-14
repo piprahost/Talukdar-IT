@@ -14,27 +14,26 @@
    php artisan view:clear
    ```
 
-## If sales (or other) amounts show as 0
+## If sales, purchases (or dashboard) amounts show as 0
 
-This can happen if the production database had sales imported/migrated without correct `sale_items.subtotal` or `sales.total_amount` (e.g. export/import, or different deploy path).
+This can happen if the production database had sales/purchases imported or restored without correct totals (e.g. export/import, or backup from before totals were set).
 
 **Fix: recalculate totals from line items**
 
 Run on the server (SSH or cPanel Terminal):
 
 ```bash
-# Recalculate all sale totals from sale_items (fixes 0 amounts)
+# Sales (invoices) – recalculate from sale_items
 php artisan sales:recalculate-totals
+
+# Purchases – recalculate from purchase_items (fixes dashboard “Purchases 0”)
+php artisan purchases:recalculate-totals
 ```
 
-- **Dry run** (see what would change without saving):
-  ```bash
-  php artisan sales:recalculate-totals --dry-run
-  ```
-- **Only fix line item subtotals** first, then run again without the flag to update sale totals:
-  ```bash
-  php artisan sales:recalculate-totals --items-only
-  php artisan sales:recalculate-totals
-  ```
+**Sales options:**
+- Dry run: `php artisan sales:recalculate-totals --dry-run`
+- Only fix line item subtotals first: `php artisan sales:recalculate-totals --items-only` then `php artisan sales:recalculate-totals`
 
-Then clear cache again and refresh the sales page.
+**Purchases:** Dry run: `php artisan purchases:recalculate-totals --dry-run`
+
+Then clear cache again and refresh the dashboard/sales/purchases pages.

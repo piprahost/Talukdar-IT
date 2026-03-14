@@ -1,10 +1,12 @@
 <!-- Sidebar: Ordered for daily operations first, admin last -->
 <div class="sidebar" id="sidebar">
     <div class="sidebar-brand">
-        <i class="fas fa-store" style="font-size: 28px; color: #ffffff;"></i>
-        <h4 class="mb-0">{{ isset($companySettings) && $companySettings ? $companySettings->company_name : 'Shop' }}</h4>
+        <div class="brand-row">
+            <div class="brand-icon"><i class="fas fa-store"></i></div>
+            <h4>{{ isset($companySettings) && $companySettings ? $companySettings->company_name : 'Shop' }}</h4>
+        </div>
         @if(isset($companySettings) && $companySettings && !empty($companySettings->tagline))
-        <p class="small mb-0 mt-1 opacity-75" style="font-size: 11px; line-height: 1.3;">{{ $companySettings->tagline }}</p>
+        <p class="small mb-0 opacity-75" style="font-size: 11px; line-height: 1.3;">{{ $companySettings->tagline }}</p>
         @endif
     </div>
 
