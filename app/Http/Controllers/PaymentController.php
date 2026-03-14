@@ -98,6 +98,8 @@ class PaymentController extends Controller
             'amount' => ['required', 'numeric', 'min:0.01'],
             'payment_date' => ['required', 'date'],
             'payment_method' => ['required', 'in:cash,card,mobile_banking,bank_transfer,cheque,other'],
+            // When recording generic payments, we infer bank account from sale/purchase;
+            // later we can expose an explicit bank account selector here.
             'reference_number' => ['nullable', 'string', 'max:255'],
             'notes' => ['nullable', 'string'],
         ]);
@@ -110,6 +112,7 @@ class PaymentController extends Controller
             }
             
             $validated['customer_id'] = $sale->customer_id;
+            $validated['bank_account_id'] = $sale->bank_account_id;
         } elseif ($validated['payment_type'] === 'supplier' && $validated['purchase_id']) {
             $purchase = Purchase::findOrFail($validated['purchase_id']);
             if ($validated['amount'] > $purchase->due_amount) {
@@ -117,6 +120,7 @@ class PaymentController extends Controller
             }
             
             $validated['supplier_id'] = $purchase->supplier_id;
+            $validated['bank_account_id'] = $purchase->bank_account_id;
         }
 
         $payment = DB::transaction(function () use ($validated) {

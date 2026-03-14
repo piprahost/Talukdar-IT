@@ -317,6 +317,7 @@ class SaleController extends Controller
                 'amount'         => $validated['payment_amount'],
                 'payment_date'   => now()->toDateString(),
                 'payment_method' => $validated['payment_method'],
+                'bank_account_id'=> $validated['bank_account_id'] ?? $sale->bank_account_id,
                 'reference_number' => null,
                 'notes'          => 'Collected from invoice ' . $sale->invoice_number,
             ]);

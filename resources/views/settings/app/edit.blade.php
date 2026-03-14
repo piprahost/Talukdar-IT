@@ -25,6 +25,24 @@
                     <i class="fas fa-building me-1"></i>Company Info
                 </a>
             </div>
+            <div class="p-2 border-top">
+                <h6 class="mb-2 small text-uppercase text-muted">Tools</h6>
+                <div class="d-flex flex-column gap-2">
+                    <form action="{{ route('settings.clear-cache') }}" method="POST" class="d-inline">
+                        @csrf
+                        <button type="submit" class="btn btn-outline-secondary btn-sm w-100 text-start">
+                            <i class="fas fa-broom me-1"></i>Clear cache
+                        </button>
+                    </form>
+                    <form action="{{ route('settings.recalculate-totals') }}" method="POST" class="d-inline">
+                        @csrf
+                        <button type="submit" class="btn btn-outline-secondary btn-sm w-100 text-start">
+                            <i class="fas fa-calculator me-1"></i>Re-calculate totals
+                        </button>
+                    </form>
+                </div>
+                <p class="form-text small mb-0 mt-1">Clear cache: app, config, views. Re-calculate: sales & purchase totals from line items.</p>
+            </div>
         </div>
     </div>
 
@@ -57,12 +75,19 @@
                                 </div>
                             @else
                                 <label class="form-label fw-semibold" for="setting_{{ $key }}">{{ $def['label'] }}</label>
-                                @if($type === 'integer')
+                                @if(isset($def['options']) && is_array($def['options']))
+                                    <select class="form-select" id="setting_{{ $key }}" name="{{ $inputName }}">
+                                        @foreach($def['options'] as $optVal => $optLabel)
+                                            <option value="{{ $optVal }}" {{ (string)old($key, $value) === (string)$optVal ? 'selected' : '' }}>{{ $optLabel }}</option>
+                                        @endforeach
+                                    </select>
+                                @elseif($type === 'integer')
                                     <input type="number" class="form-control" id="setting_{{ $key }}" name="{{ $inputName }}"
                                            value="{{ old($key, $value) }}" min="0" step="1">
                                 @else
-                                    <input type="text" class="form-control" id="setting_{{ $key }}" name="{{ $inputName }}"
-                                           value="{{ old($key, $value) }}" placeholder="{{ $def['default'] ?? '' }}">
+                                    @php $inputType = $def['input_type'] ?? 'text'; @endphp
+                                    <input type="{{ $inputType }}" class="form-control" id="setting_{{ $key }}" name="{{ $inputName }}"
+                                           value="{{ old($key, $value) }}" placeholder="{{ $def['default'] ?? '' }}" autocomplete="off">
                                 @endif
                             @endif
                             @if(!empty($def['description']))

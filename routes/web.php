@@ -124,6 +124,8 @@ Route::middleware('auth')->group(function () {
     Route::get('settings/app', [SettingsController::class, 'index'])->name('settings.app.index');
     Route::get('settings/app/{category}', [SettingsController::class, 'edit'])->name('settings.app.edit');
     Route::put('settings/app/{category}', [SettingsController::class, 'update'])->name('settings.app.update');
+    Route::post('settings/clear-cache', [SettingsController::class, 'clearCache'])->name('settings.clear-cache');
+    Route::post('settings/recalculate-totals', [SettingsController::class, 'recalculateTotals'])->name('settings.recalculate-totals');
     
     // Product Management Routes
     Route::resource('categories', CategoryController::class)->names([

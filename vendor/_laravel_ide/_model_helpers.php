@@ -2743,6 +2743,7 @@ namespace App\Models {
      * @property-read \App\Models\Customer $customer
      * @property-read \App\Models\Supplier $supplier
      * @property-read \App\Models\User $creator
+     * @property-read \App\Models\BankAccount $bankAccount
      * @method static \Illuminate\Database\Eloquent\Builder<Payment>|Payment whereId($value)
      * @method static \Illuminate\Database\Eloquent\Builder<Payment>|Payment wherePaymentNumber($value)
      * @method static \Illuminate\Database\Eloquent\Builder<Payment>|Payment wherePaymentType($value)

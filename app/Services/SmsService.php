@@ -44,6 +44,11 @@ class SmsService
         try {
             $gateway = trim((string) settings('sms.default_gateway', ''));
 
+            // Push admin-panel credentials into config so the SMS package uses them
+            if ($gateway !== '' && $gateway !== 'other') {
+                static::injectGatewayConfig($gateway);
+            }
+
             // Use helper or facade depending on availability
             $sender = function_exists('sms') ? sms() : \SMS::class;
 
@@ -52,8 +57,8 @@ class SmsService
                 $sender = $sender->gateway($gateway);
             }
 
-            // Most BD gateways ignore sender ID from code; we keep it for future use
-            $from = trim((string) settings('sms.from', ''));
+            // Sender ID / From: prefer settings, then package config
+            $from = trim((string) (settings('sms.sender_id') ?: settings('sms.from', '')));
             if ($from !== '' && method_exists($sender, 'from')) {
                 $sender = $sender->from($from);
             }
@@ -69,6 +74,37 @@ class SmsService
             ]);
             return false;
         }
+    }
+
+    /**
+     * Inject gateway credentials from admin settings into config so the SMS package uses them.
+     */
+    protected static function injectGatewayConfig(string $gateway): void
+    {
+        $apiKey = trim((string) settings('sms.api_key', ''));
+        $apiSecret = trim((string) settings('sms.api_secret', ''));
+        $senderId = trim((string) settings('sms.sender_id', ''));
+        $username = trim((string) settings('sms.username', ''));
+        $password = trim((string) settings('sms.password', ''));
+        $from = trim((string) settings('sms.from', ''));
+
+        $payload = array_filter([
+            'api_key' => $apiKey ?: null,
+            'api_secret' => $apiSecret ?: null,
+            'sender_id' => $senderId ?: $from ?: null,
+            'username' => $username ?: null,
+            'password' => $password ?: null,
+            'from' => $from ?: null,
+        ], fn ($v) => $v !== null && $v !== '');
+
+        if ($payload === []) {
+            return;
+        }
+
+        // lara-sms-bd and similar packages read config like smsbd.gateways.{name}
+        $key = 'smsbd.gateways.' . $gateway;
+        $existing = config($key, []);
+        config([$key => array_merge(is_array($existing) ? $existing : [], $payload)]);
     }
 }
 

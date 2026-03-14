@@ -21,6 +21,7 @@ class Payment extends Model
         'amount',
         'payment_date',
         'payment_method',
+        'bank_account_id',
         'reference_number',
         'notes',
         'created_by',
@@ -89,6 +90,11 @@ class Payment extends Model
     public function creator()
     {
         return $this->belongsTo(User::class, 'created_by');
+    }
+
+    public function bankAccount()
+    {
+        return $this->belongsTo(BankAccount::class);
     }
 
     // Helper Methods

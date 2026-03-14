@@ -3,6 +3,7 @@
 namespace App\Services;
 
 use App\Models\Account;
+use App\Models\BankAccount;
 use App\Models\JournalEntry;
 use App\Models\JournalEntryItem;
 use App\Models\Sale;
@@ -17,6 +18,38 @@ use Illuminate\Support\Facades\DB;
 
 class AccountingService
 {
+    /**
+     * Resolve the correct asset account (cash or bank) based on payment method and bank_account_id.
+     */
+    protected static function cashOrBankAccount(?string $paymentMethod, ?int $bankAccountId): ?Account
+    {
+        // For bank-related methods, prefer the linked bank account's COA account
+        if (in_array($paymentMethod, ['bank_transfer', 'mobile_banking', 'card', 'cheque'], true) && $bankAccountId) {
+            $bank = BankAccount::find($bankAccountId);
+            if ($bank && $bank->account) {
+                return $bank->account;
+            }
+        }
+
+        // Fallback to main cash account (code 1000)
+        return Account::where('code', '1000')->first();
+    }
+
+    /**
+     * After posting to an asset account, sync the linked bank account balance (if any).
+     */
+    protected static function syncBankBalanceForAccount(?Account $asset): void
+    {
+        if (!$asset) {
+            return;
+        }
+
+        $bank = BankAccount::where('account_id', $asset->id)->first();
+        if ($bank) {
+            $bank->updateBalance();
+        }
+    }
+
     /**
      * Create journal entry for a sale
      */
@@ -34,10 +67,11 @@ class AccountingService
         $accounts = [
             'accounts_receivable' => Account::where('code', '1200')->first(),
             'sales_revenue' => Account::where('code', '4000')->first(),
-            'cash' => Account::where('code', '1000')->first(),
         ];
 
         DB::transaction(function () use ($sale, $accounts) {
+            $assetAccount = self::cashOrBankAccount($sale->payment_method, $sale->bank_account_id);
+
             $entry = JournalEntry::create([
                 'entry_date' => $sale->sale_date,
                 'description' => "Sale - Invoice: {$sale->invoice_number}",
@@ -50,10 +84,10 @@ class AccountingService
             ]);
 
             // Accounts Receivable or Cash (if paid)
-            if ($sale->paid_amount > 0) {
+            if ($sale->paid_amount > 0 && $assetAccount) {
                 JournalEntryItem::create([
                     'journal_entry_id' => $entry->id,
-                    'account_id' => $accounts['cash']->id,
+                    'account_id' => $assetAccount->id,
                     'debit' => $sale->paid_amount,
                     'credit' => 0,
                     'description' => "Cash received for sale",
@@ -78,6 +112,8 @@ class AccountingService
                 'credit' => $sale->total_amount,
                 'description' => "Sales revenue",
             ]);
+
+            self::syncBankBalanceForAccount($assetAccount);
         });
     }
 
@@ -94,10 +130,11 @@ class AccountingService
         $accounts = [
             'inventory' => Account::where('code', '1300')->first(),
             'accounts_payable' => Account::where('code', '2000')->first(),
-            'cash' => Account::where('code', '1000')->first(),
         ];
 
         DB::transaction(function () use ($purchase, $accounts) {
+            $assetAccount = self::cashOrBankAccount($purchase->payment_method, $purchase->bank_account_id);
+
             $entry = JournalEntry::create([
                 'entry_date' => $purchase->order_date,
                 'description' => "Purchase - PO: {$purchase->po_number}",
@@ -119,10 +156,10 @@ class AccountingService
             ]);
 
             // Accounts Payable or Cash (if paid)
-            if ($purchase->paid_amount > 0) {
+            if ($purchase->paid_amount > 0 && $assetAccount) {
                 JournalEntryItem::create([
                     'journal_entry_id' => $entry->id,
-                    'account_id' => $accounts['cash']->id,
+                    'account_id' => $assetAccount->id,
                     'debit' => 0,
                     'credit' => $purchase->paid_amount,
                     'description' => "Cash paid for purchase",
@@ -138,6 +175,8 @@ class AccountingService
                     'description' => "Accounts payable for purchase",
                 ]);
             }
+
+            self::syncBankBalanceForAccount($assetAccount);
         });
     }
 
@@ -156,12 +195,16 @@ class AccountingService
             ->delete();
 
         $accounts = [
-            'cash' => Account::where('code', '1000')->first(),
             'accounts_receivable' => Account::where('code', '1200')->first(),
-            'accounts_payable' => Account::where('code', '2000')->first(),
+            'accounts_payable'    => Account::where('code', '2000')->first(),
         ];
 
         DB::transaction(function () use ($payment, $accounts) {
+            $assetAccount = self::cashOrBankAccount(
+                $payment->payment_method,
+                $payment->bank_account_id
+            );
+
             if ($payment->payment_type === 'customer') {
                 $sale = $payment->sale;
                 $entry = JournalEntry::create([
@@ -175,14 +218,16 @@ class AccountingService
                     'posted_at' => now(),
                 ]);
 
-                // Cash (debit)
-                JournalEntryItem::create([
-                    'journal_entry_id' => $entry->id,
-                    'account_id' => $accounts['cash']->id,
-                    'debit' => $payment->amount,
-                    'credit' => 0,
-                    'description' => "Cash received from customer",
-                ]);
+                // Cash/Bank (debit)
+                if ($assetAccount) {
+                    JournalEntryItem::create([
+                        'journal_entry_id' => $entry->id,
+                        'account_id' => $assetAccount->id,
+                        'debit' => $payment->amount,
+                        'credit' => 0,
+                        'description' => "Payment received from customer",
+                    ]);
+                }
 
                 // Accounts Receivable (credit)
                 JournalEntryItem::create([
@@ -215,15 +260,19 @@ class AccountingService
                     'description' => "Reduce accounts payable",
                 ]);
 
-                // Cash (credit)
-                JournalEntryItem::create([
-                    'journal_entry_id' => $entry->id,
-                    'account_id' => $accounts['cash']->id,
-                    'debit' => 0,
-                    'credit' => $payment->amount,
-                    'description' => "Cash paid to supplier",
-                ]);
+                // Cash/Bank (credit)
+                if ($assetAccount) {
+                    JournalEntryItem::create([
+                        'journal_entry_id' => $entry->id,
+                        'account_id' => $assetAccount->id,
+                        'debit' => 0,
+                        'credit' => $payment->amount,
+                        'description' => "Payment made to supplier",
+                    ]);
+                }
             }
+
+            self::syncBankBalanceForAccount($assetAccount);
         });
     }
 
@@ -386,7 +435,6 @@ class AccountingService
         $accounts = [
             'accounts_receivable' => Account::where('code', '1200')->first(),
             'service_revenue'     => Account::where('code', '4100')->first(),
-            'cash'                => Account::where('code', '1000')->first(),
         ];
 
         if (!$accounts['service_revenue']) {
@@ -394,6 +442,7 @@ class AccountingService
         }
 
         DB::transaction(function () use ($service, $accounts) {
+            $assetAccount = self::cashOrBankAccount($service->payment_method, $service->bank_account_id);
             $entry = JournalEntry::create([
                 'entry_date'   => $service->delivery_date ?? $service->receive_date ?? now(),
                 'description'  => "Service - SN: {$service->service_number}",
@@ -408,10 +457,10 @@ class AccountingService
             $paid = (float) $service->paid_amount;
             $due  = (float) $service->due_amount;
 
-            if ($paid > 0 && $accounts['cash']) {
+            if ($paid > 0 && $assetAccount) {
                 JournalEntryItem::create([
                     'journal_entry_id' => $entry->id,
-                    'account_id'       => $accounts['cash']->id,
+                    'account_id'       => $assetAccount->id,
                     'debit'            => $paid,
                     'credit'           => 0,
                     'description'      => 'Cash received for service',
@@ -435,6 +484,8 @@ class AccountingService
                 'credit'           => (float) $service->service_cost,
                 'description'      => 'Service revenue',
             ]);
+
+            self::syncBankBalanceForAccount($assetAccount);
         });
     }
 
@@ -523,26 +574,9 @@ class AccountingService
             }
 
             // Get cash or bank account based on payment method
-            $cashOrBankAccount = null;
-            if (in_array($expense->payment_method, ['bank_transfer', 'card']) && $expense->bank_account_id) {
-                // Use linked bank account's COA account
-                $cashOrBankAccount = $expense->bankAccount?->coaAccount;
-            }
-
+            $cashOrBankAccount = self::cashOrBankAccount($expense->payment_method, $expense->bank_account_id);
             if (!$cashOrBankAccount) {
-                // Default to cash account
-                $cashOrBankAccount = Account::where('code', '1000')->first(); // Cash account
-                if (!$cashOrBankAccount) {
-                    // Fallback: find any cash account
-                    $cashOrBankAccount = Account::active()
-                        ->where('type', 'asset')
-                        ->where('category', 'Cash & Bank')
-                        ->first();
-                }
-
-                if (!$cashOrBankAccount) {
-                    throw new \Exception("No cash/bank account found. Please create cash accounts in Chart of Accounts.");
-                }
+                throw new \Exception("No cash/bank account found. Please create cash accounts in Chart of Accounts.");
             }
 
             $entry = JournalEntry::create([
@@ -571,6 +605,8 @@ class AccountingService
                 'credit' => $expense->amount,
                 'description' => 'Payment for expense: ' . $expense->expense_number,
             ]);
+
+            self::syncBankBalanceForAccount($cashOrBankAccount);
         });
     }
 

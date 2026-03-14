@@ -280,6 +280,7 @@ class PurchaseController extends Controller
                 'amount'           => $validated['payment_amount'],
                 'payment_date'     => now()->toDateString(),
                 'payment_method'   => $validated['payment_method'],
+                'bank_account_id'  => $validated['bank_account_id'] ?? $purchase->bank_account_id,
                 'reference_number' => null,
                 'notes'            => 'Payment for PO ' . $purchase->po_number,
             ]);

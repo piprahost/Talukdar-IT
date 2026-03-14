@@ -4,6 +4,7 @@ namespace App\Http\Controllers;
 
 use App\Models\Setting;
 use Illuminate\Http\Request;
+use Illuminate\Support\Facades\Artisan;
 
 class SettingsController extends Controller
 {
@@ -72,5 +73,28 @@ class SettingsController extends Controller
         $label = $categories[$category]['label'] ?? $category;
         return redirect()->route('settings.app.edit', ['category' => $category])
             ->with('success', "{$label} settings saved successfully.");
+    }
+
+    /**
+     * Clear application cache (visible from settings UI).
+     */
+    public function clearCache()
+    {
+        $this->authorizePermission('edit settings');
+        Artisan::call('cache:clear');
+        Artisan::call('config:clear');
+        Artisan::call('view:clear');
+        return redirect()->back()->with('success', 'Cache cleared successfully.');
+    }
+
+    /**
+     * Recalculate sales and purchase totals from line items (visible from settings UI).
+     */
+    public function recalculateTotals()
+    {
+        $this->authorizePermission('edit settings');
+        Artisan::call('sales:recalculate-totals');
+        Artisan::call('purchases:recalculate-totals');
+        return redirect()->back()->with('success', 'Sales and purchase totals recalculated successfully.');
     }
 }
