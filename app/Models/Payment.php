@@ -15,6 +15,7 @@ class Payment extends Model
         'payment_type',
         'sale_id',
         'purchase_id',
+        'service_id',
         'customer_id',
         'supplier_id',
         'amount',
@@ -70,6 +71,11 @@ class Payment extends Model
         return $this->belongsTo(Purchase::class, 'purchase_id');
     }
 
+    public function service()
+    {
+        return $this->belongsTo(Service::class);
+    }
+
     public function customer()
     {
         return $this->belongsTo(Customer::class);
@@ -101,6 +107,17 @@ class Payment extends Model
                     ? 'paid'
                     : ($sale->paid_amount > 0 && $sale->due_amount > 0 ? 'partial' : 'unpaid');
                 $sale->save();
+            }
+        } elseif ($this->payment_type === 'customer' && $this->service_id) {
+            $service = $this->service;
+            if ($service) {
+                $paidAmount = static::where('service_id', $service->id)
+                    ->where('payment_type', 'customer')
+                    ->sum('amount');
+
+                $service->paid_amount = $paidAmount;
+                $service->due_amount = max(0, (float) $service->service_cost - $paidAmount);
+                $service->save();
             }
         } elseif ($this->payment_type === 'supplier' && $this->purchase_id) {
             $purchase = $this->purchase;
@@ -144,6 +161,7 @@ class Payment extends Model
         return [
             'sale:id,invoice_number,sale_date,total_amount,paid_amount,due_amount',
             'purchase:id,po_number,order_date,total_amount,paid_amount,due_amount',
+            'service:id,service_number,service_cost,paid_amount,due_amount',
             'customer',
             'supplier',
             'creator',

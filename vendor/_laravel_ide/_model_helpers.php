@@ -2730,6 +2730,7 @@ namespace App\Models {
      * @property float $amount
      * @property mixed $supplier_id
      * @property mixed $customer_id
+     * @property mixed $service_id
      * @property mixed $purchase_id
      * @property mixed $sale_id
      * @property mixed $payment_type
@@ -2738,6 +2739,7 @@ namespace App\Models {
      * @property-read mixed $payment_method_name
      * @property-read \App\Models\Sale $sale
      * @property-read \App\Models\Purchase $purchase
+     * @property-read \App\Models\Service $service
      * @property-read \App\Models\Customer $customer
      * @property-read \App\Models\Supplier $supplier
      * @property-read \App\Models\User $creator
@@ -2746,6 +2748,7 @@ namespace App\Models {
      * @method static \Illuminate\Database\Eloquent\Builder<Payment>|Payment wherePaymentType($value)
      * @method static \Illuminate\Database\Eloquent\Builder<Payment>|Payment whereSaleId($value)
      * @method static \Illuminate\Database\Eloquent\Builder<Payment>|Payment wherePurchaseId($value)
+     * @method static \Illuminate\Database\Eloquent\Builder<Payment>|Payment whereServiceId($value)
      * @method static \Illuminate\Database\Eloquent\Builder<Payment>|Payment whereCustomerId($value)
      * @method static \Illuminate\Database\Eloquent\Builder<Payment>|Payment whereSupplierId($value)
      * @method static \Illuminate\Database\Eloquent\Builder<Payment>|Payment whereAmount($value)

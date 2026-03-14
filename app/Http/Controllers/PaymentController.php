@@ -138,14 +138,14 @@ class PaymentController extends Controller
     public function show(Payment $payment)
     {
         $this->authorizePermission('view payments');
-        $payment->load(array_merge(Payment::getStandardRelations(), ['sale.customer', 'purchase.supplier']));
+        $payment->load(array_merge(Payment::getStandardRelations(), ['sale.customer', 'purchase.supplier', 'service']));
         return view('payments.show', compact('payment'));
     }
 
     public function edit(Payment $payment)
     {
         $this->authorizePermission('edit payments');
-        $payment->load(['sale', 'purchase']);
+        $payment->load(['sale', 'purchase', 'service']);
         return view('payments.edit', compact('payment'));
     }
 
@@ -167,7 +167,15 @@ class PaymentController extends Controller
                 ->where('id', '!=', $payment->id)
                 ->sum('amount');
             $maxAllowed = $sale->total_amount - $otherPaymentsTotal;
-            
+            if ($validated['amount'] > $maxAllowed) {
+                return back()->withErrors(['amount' => 'Payment amount cannot exceed due amount (৳' . number_format($maxAllowed, 2) . ')'])->withInput();
+            }
+        } elseif ($payment->payment_type === 'customer' && $payment->service_id) {
+            $service = \App\Models\Service::findOrFail($payment->service_id);
+            $otherPaymentsTotal = Payment::where('service_id', $service->id)
+                ->where('id', '!=', $payment->id)
+                ->sum('amount');
+            $maxAllowed = (float) $service->service_cost - $otherPaymentsTotal;
             if ($validated['amount'] > $maxAllowed) {
                 return back()->withErrors(['amount' => 'Payment amount cannot exceed due amount (৳' . number_format($maxAllowed, 2) . ')'])->withInput();
             }
@@ -185,14 +193,19 @@ class PaymentController extends Controller
 
         DB::transaction(function () use ($payment, $validated) {
             $payment->update($validated);
-            
-            // Update journal entry for payment
-            AccountingService::recordPayment($payment);
+            if ($payment->sale_id || $payment->purchase_id) {
+                AccountingService::recordPayment($payment);
+            }
+            if ($payment->service_id) {
+                AccountingService::recordService($payment->service->fresh());
+            }
         });
 
-        $redirectRoute = $payment->payment_type === 'customer' 
+        $redirectRoute = $payment->payment_type === 'customer' && $payment->sale_id
             ? route('sales.show', $payment->sale_id)
-            : route('purchases.show', $payment->purchase_id);
+            : ($payment->payment_type === 'customer' && $payment->service_id
+                ? route('services.show', $payment->service_id)
+                : ($payment->purchase_id ? route('purchases.show', $payment->purchase_id) : route('payments.index')));
 
         return redirect($redirectRoute)
             ->with('success', 'Payment updated successfully.');
@@ -203,6 +216,7 @@ class PaymentController extends Controller
         $this->authorizePermission('delete payments');
         $saleId = $payment->sale_id;
         $purchaseId = $payment->purchase_id;
+        $serviceId = $payment->service_id;
         $type = $payment->payment_type;
 
         DB::transaction(function () use ($payment) {
@@ -212,11 +226,15 @@ class PaymentController extends Controller
         if ($type === 'customer' && $saleId) {
             return redirect()->route('sales.show', $saleId)
                 ->with('success', 'Payment deleted successfully.');
-        } elseif ($type === 'supplier' && $purchaseId) {
+        }
+        if ($type === 'customer' && $serviceId) {
+            return redirect()->route('services.show', $serviceId)
+                ->with('success', 'Payment deleted successfully.');
+        }
+        if ($type === 'supplier' && $purchaseId) {
             return redirect()->route('purchases.show', $purchaseId)
                 ->with('success', 'Payment deleted successfully.');
         }
-
         return redirect()->route('payments.index')
             ->with('success', 'Payment deleted successfully.');
     }

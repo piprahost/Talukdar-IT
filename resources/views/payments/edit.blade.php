@@ -75,6 +75,15 @@
                         <div class="small mt-1">Customer: {{ $payment->sale->customer->name ?? 'N/A' }}</div>
                         <div class="small">Total: ৳{{ number_format($payment->sale->total_amount, 2) }}</div>
                     </div>
+                @elseif($payment->payment_type === 'customer' && $payment->service)
+                    <div class="p-3 rounded" style="background:linear-gradient(135deg,#f0fdf4,#dcfce7);border-left:4px solid #16a34a;">
+                        <div class="small text-muted mb-1">Service</div>
+                        <a href="{{ route('services.show', $payment->service) }}" class="fw-bold text-decoration-none" style="color:#166534;">
+                            {{ $payment->service->service_number }}
+                        </a>
+                        <div class="small mt-1">Customer: {{ $payment->service->customer_name }}</div>
+                        <div class="small">Cost: ৳{{ number_format($payment->service->service_cost, 2) }}</div>
+                    </div>
                 @elseif($payment->payment_type === 'supplier' && $payment->purchase)
                     <div class="p-3 rounded" style="background:linear-gradient(135deg,#eff6ff,#dbeafe);border-left:4px solid #3b82f6;">
                         <div class="small text-muted mb-1">Purchase Order</div>

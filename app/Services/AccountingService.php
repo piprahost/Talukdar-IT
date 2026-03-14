@@ -146,7 +146,11 @@ class AccountingService
      */
     public static function recordPayment(Payment $payment)
     {
-        // Check if journal entry already exists - delete and recreate if exists
+        // Service payments are reflected in the service journal entry (recordService), not a separate payment entry
+        if ($payment->payment_type === 'customer' && $payment->service_id) {
+            return;
+        }
+
         JournalEntry::where('reference_type', 'payment')
             ->where('reference_id', $payment->id)
             ->delete();

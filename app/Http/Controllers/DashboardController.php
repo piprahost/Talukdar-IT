@@ -11,6 +11,7 @@ use App\Models\Service;
 use App\Models\WarrantySubmission;
 use Illuminate\Http\Request;
 use Carbon\Carbon;
+use Illuminate\Support\Facades\Artisan;
 use Illuminate\Support\Facades\DB;
 
 class DashboardController extends Controller
@@ -43,15 +44,16 @@ class DashboardController extends Controller
             ? (($monthSales - $lastMonthSales) / $lastMonthSales) * 100 
             : 0;
         
-        // Purchase Statistics
-        $monthPurchases = Purchase::where('order_date', '>=', $thisMonth)
-            ->sum('total_amount') ?? 0;
-        
-        $lastMonthPurchases = Purchase::whereBetween('order_date', [$lastMonth, $lastMonthEnd])
-            ->sum('total_amount') ?? 0;
-        
-        $purchaseGrowth = $lastMonthPurchases > 0 
-            ? (($monthPurchases - $lastMonthPurchases) / $lastMonthPurchases) * 100 
+        // Purchase Statistics (self-heal: recalc when any purchases exist but all totals are 0)
+        $monthPurchases = (float) (Purchase::where('order_date', '>=', $thisMonth)->sum('total_amount') ?? 0);
+        $allPurchaseTotal = (float) (Purchase::sum('total_amount') ?? 0);
+        if ($allPurchaseTotal == 0 && Purchase::exists()) {
+            Artisan::call('purchases:recalculate-totals');
+            $monthPurchases = (float) (Purchase::where('order_date', '>=', $thisMonth)->sum('total_amount') ?? 0);
+        }
+        $lastMonthPurchases = (float) (Purchase::whereBetween('order_date', [$lastMonth, $lastMonthEnd])->sum('total_amount') ?? 0);
+        $purchaseGrowth = $lastMonthPurchases > 0
+            ? (($monthPurchases - $lastMonthPurchases) / $lastMonthPurchases) * 100
             : 0;
         
         // Product Statistics
@@ -69,7 +71,7 @@ class DashboardController extends Controller
         $customerDues = Sale::where('status', 'completed')
             ->sum('due_amount') ?? 0;
         
-        $supplierDues = Purchase::sum('due_amount') ?? 0;
+        $supplierDues = (float) (Purchase::sum('due_amount') ?? 0);
         
         // Recent Sales (Last 7 days)
         $recentSales = Sale::with(['customer'])

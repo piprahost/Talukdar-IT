@@ -2,10 +2,12 @@
 
 namespace App\Http\Controllers;
 
+use App\Models\Payment;
 use App\Models\Service;
 use App\Models\BankAccount;
 use App\Services\AccountingService;
 use Illuminate\Http\Request;
+use Illuminate\Support\Facades\DB;
 
 class ServiceController extends Controller
 {
@@ -169,10 +171,15 @@ class ServiceController extends Controller
 
     /**
      * Collect additional payment against a service order.
+     * Creates a Payment record for reporting and updates service paid/due via observer.
      */
     public function collectPayment(Request $request, Service $service)
     {
         $this->authorizePermission('edit services');
+
+        if ($service->due_amount <= 0) {
+            return back()->with('error', 'This service has no outstanding due amount.');
+        }
 
         $validated = $request->validate([
             'payment_amount'  => ['required', 'numeric', 'min:0.01', 'max:' . $service->due_amount],
@@ -182,16 +189,24 @@ class ServiceController extends Controller
             'payment_amount.max' => 'Payment amount cannot exceed the due amount (৳' . number_format($service->due_amount, 2) . ').',
         ]);
 
-        $newPaid = $service->paid_amount + $validated['payment_amount'];
-        $newDue  = max(0, $service->service_cost - $newPaid);
-
-        $service->update([
-            'paid_amount'     => $newPaid,
-            'due_amount'      => $newDue,
-            'payment_method'  => $validated['payment_method'],
-            'bank_account_id' => $validated['bank_account_id'] ?? $service->bank_account_id,
-        ]);
-        AccountingService::recordService($service->fresh());
+        DB::transaction(function () use ($service, $validated) {
+            Payment::create([
+                'payment_type'     => 'customer',
+                'service_id'       => $service->id,
+                'customer_id'      => $service->customer_id,
+                'amount'           => $validated['payment_amount'],
+                'payment_date'     => now()->toDateString(),
+                'payment_method'   => $validated['payment_method'],
+                'reference_number' => null,
+                'notes'            => 'Collected from service ' . $service->service_number,
+            ]);
+            // Observer updates service paid_amount/due_amount from sum of payments
+            $service->update([
+                'payment_method'  => $validated['payment_method'],
+                'bank_account_id' => $validated['bank_account_id'] ?? $service->bank_account_id,
+            ]);
+            AccountingService::recordService($service->fresh());
+        });
 
         return redirect()->route('services.show', $service)
             ->with('success', 'Payment of ৳' . number_format($validated['payment_amount'], 2) . ' collected successfully.');

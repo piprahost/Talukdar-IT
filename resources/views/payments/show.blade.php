@@ -87,7 +87,7 @@
                     <div class="table-card-header">
                         <h6>
                             @if($payment->payment_type === 'customer')
-                                <i class="fas fa-user me-2"></i>Customer / Invoice
+                                <i class="fas fa-user me-2"></i>Customer / Invoice / Service
                             @else
                                 <i class="fas fa-truck me-2"></i>Supplier / PO
                             @endif
@@ -121,6 +121,21 @@
                                     <td class="text-muted ps-0">Remaining Due</td>
                                     <td class="pe-0 {{ $payment->sale->due_amount > 0 ? 'text-danger fw-semibold' : 'text-success' }}">
                                         ৳{{ number_format($payment->sale->due_amount, 2) }}
+                                    </td>
+                                </tr>
+                                @elseif($payment->service)
+                                <tr>
+                                    <td class="text-muted ps-0">Service</td>
+                                    <td class="pe-0"><a href="{{ route('services.show', $payment->service) }}" class="text-primary fw-semibold">{{ $payment->service->service_number }}</a></td>
+                                </tr>
+                                <tr>
+                                    <td class="text-muted ps-0">Service Cost</td>
+                                    <td class="pe-0">৳{{ number_format($payment->service->service_cost, 2) }}</td>
+                                </tr>
+                                <tr>
+                                    <td class="text-muted ps-0">Remaining Due</td>
+                                    <td class="pe-0 {{ $payment->service->due_amount > 0 ? 'text-danger fw-semibold' : 'text-success' }}">
+                                        ৳{{ number_format($payment->service->due_amount, 2) }}
                                     </td>
                                 </tr>
                                 @endif

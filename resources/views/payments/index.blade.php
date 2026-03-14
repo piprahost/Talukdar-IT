@@ -120,10 +120,17 @@
                             <a href="{{ route('sales.show', $payment->sale) }}" class="text-primary fw-semibold" style="font-size:13px;">
                                 {{ $payment->sale->invoice_number }}
                             </a>
+                            <div class="small text-muted">Invoice</div>
+                        @elseif($payment->payment_type === 'customer' && $payment->service)
+                            <a href="{{ route('services.show', $payment->service) }}" class="text-primary fw-semibold" style="font-size:13px;">
+                                {{ $payment->service->service_number }}
+                            </a>
+                            <div class="small text-muted">Service</div>
                         @elseif($payment->payment_type === 'supplier' && $payment->purchase)
                             <a href="{{ route('purchases.show', $payment->purchase) }}" class="text-primary fw-semibold" style="font-size:13px;">
                                 {{ $payment->purchase->po_number }}
                             </a>
+                            <div class="small text-muted">PO</div>
                         @else
                             <span class="text-muted">—</span>
                         @endif
