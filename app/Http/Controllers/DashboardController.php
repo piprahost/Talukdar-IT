@@ -78,22 +78,29 @@ class DashboardController extends Controller
             ->take(10)
             ->get();
         
-        // Sales Chart Data (Last 30 days)
-        $salesChartData = Sale::select(
+        // Sales Chart Data (Last 30 days) – fill every day so chart always has data
+        $salesByDate = Sale::select(
                 DB::raw('DATE(sale_date) as date'),
                 DB::raw('SUM(total_amount) as total')
             )
-            ->where('sale_date', '>=', Carbon::now()->subDays(30))
+            ->where('sale_date', '>=', Carbon::now()->subDays(29))
             ->where('status', 'completed')
             ->groupBy('date')
             ->orderBy('date')
             ->get()
-            ->map(function ($item) {
-                return [
-                    'date' => Carbon::parse($item->date)->format('M d'),
-                    'total' => (float) $item->total
-                ];
+            ->keyBy(function ($item) {
+                return $item->date;
             });
+
+        $salesChartData = collect();
+        for ($i = 29; $i >= 0; $i--) {
+            $date = Carbon::now()->subDays($i);
+            $dateStr = $date->format('Y-m-d');
+            $salesChartData->push([
+                'date' => $date->format('M d'),
+                'total' => (float) ($salesByDate->get($dateStr)->total ?? 0),
+            ]);
+        }
         
         // Top Selling Products (Last 30 days)
         $topProducts = DB::table('sale_items')

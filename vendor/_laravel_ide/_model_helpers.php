@@ -6570,6 +6570,7 @@ namespace App\Models {
      * @property-read \Illuminate\Database\Eloquent\Collection<int, \App\Models\ServiceReturn> $returns
      * @property-read int|null $returns_count
      * @property-read \App\Models\BankAccount $bankAccount
+     * @property-read \App\Models\Customer $customer
      * @method static \Illuminate\Database\Eloquent\Builder<Service>|Service whereId($value)
      * @method static \Illuminate\Database\Eloquent\Builder<Service>|Service whereServiceNumber($value)
      * @method static \Illuminate\Database\Eloquent\Builder<Service>|Service whereProductName($value)

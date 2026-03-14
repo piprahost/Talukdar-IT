@@ -55,6 +55,14 @@ class Service extends Model
         return $this->belongsTo(BankAccount::class);
     }
 
+    /**
+     * Optional link to customer (customer_name/phone/address are still stored as snapshot).
+     */
+    public function customer()
+    {
+        return $this->belongsTo(Customer::class);
+    }
+
     /** Relation names for show/detail (connected data). */
     public static function getStandardRelations(): array
     {
