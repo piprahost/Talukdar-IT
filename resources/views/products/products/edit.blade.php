@@ -54,14 +54,19 @@
                                 @error('sku')<div class="invalid-feedback">{{ $message }}</div>@enderror
                             </div>
                             <div class="col-12 col-md-4">
-                                <label class="form-label fw-semibold">Category <span class="text-danger">*</span></label>
-                                <select class="form-select @error('category_id') is-invalid @enderror" name="category_id" required>
+                                <label class="form-label fw-semibold">Category @if($categoryRequired ?? true)<span class="text-danger">*</span>@endif</label>
+                                <select class="form-select @error('category_id') is-invalid @enderror" name="category_id" @if($categoryRequired ?? true) required @endif>
                                     <option value="">Select category</option>
                                     @foreach($categories as $cat)
                                         <option value="{{ $cat->id }}" {{ old('category_id', $product->category_id)==$cat->id?'selected':'' }}>{{ $cat->name }}</option>
                                     @endforeach
                                 </select>
                                 @error('category_id')<div class="invalid-feedback">{{ $message }}</div>@enderror
+                            </div>
+                            <div class="col-12 col-md-4">
+                                <label class="form-label fw-semibold">Primary barcode @if($requireBarcode ?? false)<span class="text-danger">*</span>@endif</label>
+                                <input type="text" class="form-control @error('barcode') is-invalid @enderror" name="barcode" value="{{ old('barcode', is_array($product->barcodes) && count($product->barcodes) ? $product->barcodes[0] : '') }}" placeholder="Scan or enter" @if($requireBarcode ?? false) required @endif>
+                                @error('barcode')<div class="invalid-feedback">{{ $message }}</div>@enderror
                             </div>
                             <div class="col-12 col-md-4">
                                 <label class="form-label fw-semibold">Brand</label>

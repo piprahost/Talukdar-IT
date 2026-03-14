@@ -15,6 +15,9 @@ class Purchase extends Model
     protected $fillable = [
         'po_number',
         'supplier_id',
+        'supplier_name',
+        'supplier_phone',
+        'supplier_address',
         'order_date',
         'expected_delivery_date',
         'received_date',
@@ -52,7 +55,8 @@ class Purchase extends Model
 
         static::creating(function ($purchase) {
             if (empty($purchase->po_number)) {
-                $purchase->po_number = 'PO-' . date('Ymd') . '-' . strtoupper(Str::random(6));
+                $prefix = function_exists('settings') ? (settings('purchases.po_prefix') ?: 'PO-') : 'PO-';
+                $purchase->po_number = $prefix . date('Ymd') . '-' . strtoupper(Str::random(6));
             }
             if (auth()->check() && empty($purchase->created_by)) {
                 $purchase->created_by = auth()->id();
@@ -84,6 +88,15 @@ class Purchase extends Model
     public function supplier()
     {
         return $this->belongsTo(Supplier::class);
+    }
+
+    /** Display name: from supplier relation when linked, else walk-in snapshot */
+    public function getDisplaySupplierNameAttribute(): string
+    {
+        if ($this->supplier_id && $this->relationLoaded('supplier') && $this->supplier) {
+            return $this->supplier->name;
+        }
+        return (string) ($this->supplier_name ?? 'Walk-in Supplier');
     }
 
     public function items()

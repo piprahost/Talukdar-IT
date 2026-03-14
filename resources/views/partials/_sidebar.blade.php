@@ -262,13 +262,17 @@
 
         {{-- 11. Settings --}}
         @can('view settings')
-        <div class="sidebar-menu-group {{ request()->routeIs('company-info.*') ? 'active' : '' }}">
+        <div class="sidebar-menu-group {{ request()->routeIs('company-info.*') || request()->routeIs('settings.app.*') ? 'active' : '' }}">
             <div class="sidebar-menu-item sidebar-menu-parent" onclick="toggleSubmenu(event, 'settings')">
                 <i class="fas fa-cog"></i>
                 <span>Settings</span>
-                <i class="fas fa-chevron-{{ request()->routeIs('company-info.*') ? 'up' : 'down' }} ms-auto submenu-icon" id="icon-settings"></i>
+                <i class="fas fa-chevron-{{ request()->routeIs('company-info.*') || request()->routeIs('settings.app.*') ? 'up' : 'down' }} ms-auto submenu-icon" id="icon-settings"></i>
             </div>
-            <div class="sidebar-submenu {{ request()->routeIs('company-info.*') ? 'show' : '' }}" id="submenu-settings">
+            <div class="sidebar-submenu {{ request()->routeIs('company-info.*') || request()->routeIs('settings.app.*') ? 'show' : '' }}" id="submenu-settings">
+                <a href="{{ route('settings.app.index') }}" class="sidebar-submenu-item {{ request()->routeIs('settings.app.*') ? 'active' : '' }}">
+                    <i class="fas fa-sliders-h"></i>
+                    <span>App Settings</span>
+                </a>
                 <a href="{{ route('company-info.edit') }}" class="sidebar-submenu-item {{ request()->routeIs('company-info.*') ? 'active' : '' }}">
                     <i class="fas fa-building"></i>
                     <span>Company Info</span>

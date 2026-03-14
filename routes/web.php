@@ -7,6 +7,7 @@ use App\Http\Controllers\UserManagementController;
 use App\Http\Controllers\RoleManagementController;
 use App\Http\Controllers\ServiceController;
 use App\Http\Controllers\CompanyInfoController;
+use App\Http\Controllers\SettingsController;
 use App\Http\Controllers\CategoryController;
 use App\Http\Controllers\BrandController;
 use App\Http\Controllers\ProductModelController;
@@ -120,6 +121,9 @@ Route::middleware('auth')->group(function () {
     // Settings Routes
     Route::get('settings/company-info', [CompanyInfoController::class, 'edit'])->name('company-info.edit');
     Route::put('settings/company-info', [CompanyInfoController::class, 'update'])->name('company-info.update');
+    Route::get('settings/app', [SettingsController::class, 'index'])->name('settings.app.index');
+    Route::get('settings/app/{category}', [SettingsController::class, 'edit'])->name('settings.app.edit');
+    Route::put('settings/app/{category}', [SettingsController::class, 'update'])->name('settings.app.update');
     
     // Product Management Routes
     Route::resource('categories', CategoryController::class)->names([

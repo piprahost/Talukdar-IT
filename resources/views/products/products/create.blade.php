@@ -47,8 +47,8 @@
                                 <div class="form-text small">Auto-generated if left blank</div>
                             </div>
                             <div class="col-12 col-md-4">
-                                <label class="form-label fw-semibold">Category <span class="text-danger">*</span></label>
-                                <select class="form-select @error('category_id') is-invalid @enderror" name="category_id" required>
+                                <label class="form-label fw-semibold">Category @if($categoryRequired ?? true)<span class="text-danger">*</span>@endif</label>
+                                <select class="form-select @error('category_id') is-invalid @enderror" name="category_id" @if($categoryRequired ?? true) required @endif>
                                     <option value="">Select category</option>
                                     @foreach($categories as $cat)
                                         <option value="{{ $cat->id }}" {{ old('category_id')==$cat->id?'selected':'' }}>{{ $cat->name }}</option>
@@ -72,6 +72,11 @@
                                     <option value="">Select model</option>
                                 </select>
                                 @error('product_model_id')<div class="invalid-feedback">{{ $message }}</div>@enderror
+                            </div>
+                            <div class="col-12 col-md-4">
+                                <label class="form-label fw-semibold">Primary barcode @if($requireBarcode ?? false)<span class="text-danger">*</span>@endif</label>
+                                <input type="text" class="form-control @error('barcode') is-invalid @enderror" name="barcode" value="{{ old('barcode') }}" placeholder="Scan or enter" @if($requireBarcode ?? false) required @endif>
+                                @error('barcode')<div class="invalid-feedback">{{ $message }}</div>@enderror
                             </div>
                             <div class="col-12 col-md-6 col-lg-2">
                                 <label class="form-label fw-semibold">Unit</label>

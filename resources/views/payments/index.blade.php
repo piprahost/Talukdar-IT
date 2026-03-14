@@ -5,57 +5,104 @@
 
 @section('content')
 
-{{-- Stats --}}
-<div class="module-stats mb-3">
-    <div class="module-stat-card" style="border-left:3px solid #16a34a;">
-        <div class="msc-label">Customer Receipts</div>
-        <div class="msc-value" style="font-size:16px;color:#16a34a;">৳{{ number_format($totalCustomerPayments, 0) }}</div>
-        <div class="msc-sub">Total received from customers</div>
+@php
+    $sym = $currencySymbol ?? '৳';
+    $customerTotal = (float) ($totalCustomerPayments ?? 0);
+    $supplierTotal = (float) ($totalSupplierPayments ?? 0);
+    $netFlow = $customerTotal - $supplierTotal;
+@endphp
+
+{{-- Top summary --}}
+<div class="d-flex flex-column flex-md-row align-items-start align-items-md-center justify-content-between gap-3 mb-3">
+    <div>
+        <h5 class="mb-1 fw-bold">Payment Management</h5>
+        <p class="text-muted small mb-0">Track customer receipts, supplier payments, and net cash/bank flow.</p>
     </div>
-    <div class="module-stat-card" style="border-left:3px solid #3b82f6;">
-        <div class="msc-label">Supplier Payments</div>
-        <div class="msc-value" style="font-size:16px;color:#3b82f6;">৳{{ number_format($totalSupplierPayments, 0) }}</div>
-        <div class="msc-sub">Total paid to suppliers</div>
+    <div class="d-flex gap-2 flex-wrap">
+        @can('create payments')
+        <a href="{{ route('payments.create', ['type' => 'customer']) }}" class="btn btn-success btn-sm">
+            <i class="fas fa-arrow-down me-1"></i>Customer Receipt
+        </a>
+        <a href="{{ route('payments.create', ['type' => 'supplier']) }}" class="btn btn-primary btn-sm">
+            <i class="fas fa-arrow-up me-1"></i>Supplier Payment
+        </a>
+        @endcan
     </div>
-    <div class="module-stat-card" style="border-left:3px solid #8b5cf6;">
-        <div class="msc-label">Net Flow</div>
-        <div class="msc-value" style="font-size:16px;color:#8b5cf6;">৳{{ number_format($totalCustomerPayments - $totalSupplierPayments, 0) }}</div>
-        <div class="msc-sub">Customer - Supplier</div>
+</div>
+
+{{-- KPI cards --}}
+<div class="row g-3 mb-3">
+    <div class="col-12 col-md-4">
+        <div class="table-card p-3 border-0 shadow-sm h-100" style="border-left:4px solid #16a34a !important;">
+            <div class="d-flex align-items-center justify-content-between">
+                <div>
+                    <div class="text-muted small text-uppercase fw-semibold" style="letter-spacing:.04em;">Customer receipts</div>
+                    <div class="fs-4 fw-bold text-success">{{ $sym }}{{ number_format($customerTotal, 0) }}</div>
+                    <div class="text-muted small">Total received from customers</div>
+                </div>
+                <div class="rounded-circle d-flex align-items-center justify-content-center" style="width:44px;height:44px;background:rgba(22,163,74,.12);color:#16a34a;">
+                    <i class="fas fa-wallet"></i>
+                </div>
+            </div>
+        </div>
+    </div>
+    <div class="col-12 col-md-4">
+        <div class="table-card p-3 border-0 shadow-sm h-100" style="border-left:4px solid #3b82f6 !important;">
+            <div class="d-flex align-items-center justify-content-between">
+                <div>
+                    <div class="text-muted small text-uppercase fw-semibold" style="letter-spacing:.04em;">Supplier payments</div>
+                    <div class="fs-4 fw-bold text-primary">{{ $sym }}{{ number_format($supplierTotal, 0) }}</div>
+                    <div class="text-muted small">Total paid to suppliers</div>
+                </div>
+                <div class="rounded-circle d-flex align-items-center justify-content-center" style="width:44px;height:44px;background:rgba(59,130,246,.12);color:#3b82f6;">
+                    <i class="fas fa-truck"></i>
+                </div>
+            </div>
+        </div>
+    </div>
+    <div class="col-12 col-md-4">
+        <div class="table-card p-3 border-0 shadow-sm h-100" style="border-left:4px solid #8b5cf6 !important;">
+            <div class="d-flex align-items-center justify-content-between">
+                <div>
+                    <div class="text-muted small text-uppercase fw-semibold" style="letter-spacing:.04em;">Net flow</div>
+                    <div class="fs-4 fw-bold" style="color:#6d28d9;">{{ $sym }}{{ number_format($netFlow, 0) }}</div>
+                    <div class="text-muted small">Receipts − Payments</div>
+                </div>
+                <div class="rounded-circle d-flex align-items-center justify-content-center" style="width:44px;height:44px;background:rgba(139,92,246,.12);color:#8b5cf6;">
+                    <i class="fas fa-chart-line"></i>
+                </div>
+            </div>
+        </div>
     </div>
 </div>
 
 <div class="table-card">
-    <div class="table-card-header">
-        <h6><i class="fas fa-money-bill-wave me-2"></i>All Payments</h6>
-        <div class="d-flex gap-2">
-            @can('create payments')
-            <a href="{{ route('payments.create', ['type' => 'customer']) }}" class="btn btn-sm btn-success">
-                <i class="fas fa-plus me-1"></i>Customer Receipt
-            </a>
-            <a href="{{ route('payments.create', ['type' => 'supplier']) }}" class="btn btn-sm btn-primary">
-                <i class="fas fa-plus me-1"></i>Supplier Payment
-            </a>
-            @endcan
+    <div class="table-card-header bg-light border-0 py-3 d-flex flex-wrap align-items-center justify-content-between gap-2">
+        <h6 class="mb-0 fw-semibold text-dark"><i class="fas fa-money-bill-wave me-2 text-success"></i>All payments</h6>
+        <div class="small text-muted">
+            @if($payments->total() ?? 0)
+                {{ $payments->total() }} records
+            @endif
         </div>
     </div>
 
     <div class="filter-wrapper">
         <form method="GET">
             <div class="row g-2 align-items-end">
-                <div class="col-md-3">
+                <div class="col-12 col-md-4 col-lg-4">
                     <div class="input-group input-group-sm">
                         <span class="input-group-text"><i class="fas fa-search"></i></span>
                         <input type="text" class="form-control" name="search" value="{{ request('search') }}" placeholder="Payment #, reference, name...">
                     </div>
                 </div>
-                <div class="col-md-2">
+                <div class="col-6 col-md-2 col-lg-2">
                     <select class="form-select form-select-sm" name="type" onchange="this.form.submit()">
                         <option value="">All Types</option>
                         <option value="customer" {{ request('type')=='customer'?'selected':'' }}>Customer</option>
                         <option value="supplier" {{ request('type')=='supplier'?'selected':'' }}>Supplier</option>
                     </select>
                 </div>
-                <div class="col-md-2">
+                <div class="col-6 col-md-2 col-lg-2">
                     <select class="form-select form-select-sm" name="payment_method" onchange="this.form.submit()">
                         <option value="">All Methods</option>
                         <option value="cash"           {{ request('payment_method')=='cash'           ?'selected':'' }}>Cash</option>
@@ -65,14 +112,14 @@
                         <option value="cheque"         {{ request('payment_method')=='cheque'         ?'selected':'' }}>Cheque</option>
                     </select>
                 </div>
-                <div class="col-md-2">
+                <div class="col-6 col-md-2 col-lg-2">
                     <input type="date" class="form-control form-control-sm" name="date_from" value="{{ request('date_from') }}" placeholder="From">
                 </div>
-                <div class="col-md-2">
+                <div class="col-6 col-md-2 col-lg-2">
                     <input type="date" class="form-control form-control-sm" name="date_to" value="{{ request('date_to') }}" placeholder="To">
                 </div>
-                <div class="col-md-1 d-flex gap-1">
-                    <button type="submit" class="btn btn-sm btn-outline-primary w-100"><i class="fas fa-search"></i></button>
+                <div class="col-12 col-md-12 col-lg-1 d-flex gap-1">
+                    <button type="submit" class="btn btn-sm btn-outline-primary flex-grow-1"><i class="fas fa-search"></i></button>
                     @if(request()->anyFilled(['search','type','payment_method','date_from','date_to']))
                     <a href="{{ route('payments.index') }}" class="btn btn-sm btn-outline-secondary"><i class="fas fa-times"></i></a>
                     @endif
@@ -82,8 +129,8 @@
     </div>
 
     <div class="table-responsive">
-        <table class="table table-hover mb-0">
-            <thead>
+        <table class="table table-hover align-middle mb-0">
+            <thead class="table-light">
                 <tr>
                     <th>Payment #</th>
                     <th class="text-center">Type</th>
@@ -99,7 +146,7 @@
                 @forelse($payments as $payment)
                 <tr>
                     <td>
-                        <strong style="font-size:13px;">{{ $payment->payment_number }}</strong>
+                        <div class="fw-bold" style="font-size:13px;">{{ $payment->payment_number }}</div>
                         @if($payment->reference_number)
                         <div style="font-size:11px;color:#9ca3af;">Ref: {{ $payment->reference_number }}</div>
                         @endif
@@ -142,7 +189,7 @@
                     </td>
                     <td class="text-end fw-bold" style="font-size:15px;">
                         <span class="{{ $payment->payment_type==='customer' ? 'text-success' : 'text-primary' }}">
-                            ৳{{ number_format($payment->amount, 2) }}
+                            {{ $sym }}{{ number_format($payment->amount, 2) }}
                         </span>
                     </td>
                     <td>
@@ -150,7 +197,7 @@
                             {{ $payment->payment_method_name }}
                         </span>
                     </td>
-                    <td style="font-size:13px;">{{ $payment->payment_date->format('d M Y') }}</td>
+                    <td style="font-size:13px;">{{ $payment->payment_date?->format('d M Y') }}</td>
                     <td class="text-center">
                         <div class="btn-group btn-group-sm">
                             <a href="{{ route('payments.show', $payment) }}" class="btn btn-outline-primary" title="View"><i class="fas fa-eye"></i></a>

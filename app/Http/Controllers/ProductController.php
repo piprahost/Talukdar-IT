@@ -57,16 +57,21 @@ class ProductController extends Controller
         $this->authorizePermission('create products');
         $categories = Category::active()->ordered()->get();
         $brands = Brand::active()->ordered()->get();
-        return view('products.products.create', compact('categories', 'brands'));
+        $categoryRequired = function_exists('settings') && settings('products.category_required');
+        $requireBarcode = function_exists('settings') && settings('products.require_barcode');
+        return view('products.products.create', compact('categories', 'brands', 'categoryRequired', 'requireBarcode'));
     }
 
     public function store(Request $request)
     {
         $this->authorizePermission('create products');
-        $validated = $request->validate([
+        $categoryRequired = function_exists('settings') && settings('products.category_required');
+        $requireBarcode = function_exists('settings') && settings('products.require_barcode');
+        $rules = [
             'name' => ['required', 'string', 'max:255'],
             'sku' => ['nullable', 'string', 'max:255', 'unique:products,sku'],
-            'category_id' => ['required', 'exists:categories,id'],
+            'category_id' => [($categoryRequired ? 'required' : 'nullable'), 'exists:categories,id'],
+            'barcode' => [($requireBarcode ? 'required' : 'nullable'), 'string', 'max:255'],
             'brand_id' => ['nullable', 'exists:brands,id'],
             'product_model_id' => ['nullable', 'exists:product_models,id'],
             'description' => ['nullable', 'string'],
@@ -80,8 +85,12 @@ class ProductController extends Controller
             'warranty_period' => ['nullable', 'integer', 'min:0'],
             'notes' => ['nullable', 'string'],
             'sort_order' => ['integer', 'min:0'],
-        ]);
-
+        ];
+        $validated = $request->validate($rules);
+        if (!empty($validated['barcode'] ?? null)) {
+            $validated['barcodes'] = [$validated['barcode']];
+        }
+        unset($validated['barcode']);
         $validated['is_active'] = $request->has('is_active');
         $validated['is_featured'] = $request->has('is_featured');
         $validated['created_by'] = auth()->id();
@@ -105,17 +114,22 @@ class ProductController extends Controller
         $categories = Category::active()->ordered()->get();
         $brands = Brand::active()->ordered()->get();
         $models = $product->brand_id ? ProductModel::active()->forBrand($product->brand_id)->get() : collect();
+        $categoryRequired = function_exists('settings') && settings('products.category_required');
+        $requireBarcode = function_exists('settings') && settings('products.require_barcode');
 
-        return view('products.products.edit', compact('product', 'categories', 'brands', 'models'));
+        return view('products.products.edit', compact('product', 'categories', 'brands', 'models', 'categoryRequired', 'requireBarcode'));
     }
 
     public function update(Request $request, Product $product)
     {
         $this->authorizePermission('edit products');
-        $validated = $request->validate([
+        $categoryRequired = function_exists('settings') && settings('products.category_required');
+        $requireBarcode = function_exists('settings') && settings('products.require_barcode');
+        $rules = [
             'name' => ['required', 'string', 'max:255'],
             'sku' => ['nullable', 'string', 'max:255', 'unique:products,sku,' . $product->id],
-            'category_id' => ['required', 'exists:categories,id'],
+            'category_id' => [($categoryRequired ? 'required' : 'nullable'), 'exists:categories,id'],
+            'barcode' => [($requireBarcode ? 'required' : 'nullable'), 'string', 'max:255'],
             'brand_id' => ['nullable', 'exists:brands,id'],
             'product_model_id' => ['nullable', 'exists:product_models,id'],
             'description' => ['nullable', 'string'],
@@ -129,8 +143,21 @@ class ProductController extends Controller
             'warranty_period' => ['nullable', 'integer', 'min:0'],
             'notes' => ['nullable', 'string'],
             'sort_order' => ['integer', 'min:0'],
-        ]);
-
+        ];
+        $validated = $request->validate($rules);
+        if (array_key_exists('barcode', $validated)) {
+            $barcode = $validated['barcode'] ?? null;
+            $existing = $product->barcodes ?? [];
+            if ($barcode !== null && $barcode !== '') {
+                if (empty($existing)) {
+                    $validated['barcodes'] = [$barcode];
+                } else {
+                    $existing[0] = $barcode;
+                    $validated['barcodes'] = array_values(array_unique($existing));
+                }
+            }
+            unset($validated['barcode']);
+        }
         $validated['is_active'] = $request->has('is_active');
         $validated['is_featured'] = $request->has('is_featured');
 

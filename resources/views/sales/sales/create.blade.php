@@ -53,7 +53,7 @@
                             </div>
                             <div class="col-6 col-md-2">
                                 <label for="due_date" class="form-label fw-semibold small">Due date</label>
-                                <input type="date" class="form-control form-control-sm" id="due_date" name="due_date" value="{{ old('due_date') }}">
+                                <input type="date" class="form-control form-control-sm" id="due_date" name="due_date" value="{{ old('due_date', $defaultDueDate ?? null) }}">
                             </div>
                         </div>
                     </div>
@@ -137,12 +137,12 @@
                             <div class="mb-3">
                                 <label for="payment_method" class="form-label small fw-semibold">Payment method <span class="text-danger">*</span></label>
                                 <select class="form-select form-select-sm @error('payment_method') is-invalid @enderror" id="payment_method" name="payment_method" required onchange="toggleBankAccount()">
-                                    <option value="cash" {{ old('payment_method')=='cash'?'selected':'' }}>Cash</option>
-                                    <option value="card" {{ old('payment_method')=='card'?'selected':'' }}>Card</option>
-                                    <option value="mobile_banking" {{ old('payment_method')=='mobile_banking'?'selected':'' }}>Mobile Banking</option>
-                                    <option value="bank_transfer" {{ old('payment_method')=='bank_transfer'?'selected':'' }}>Bank Transfer</option>
-                                    <option value="cheque" {{ old('payment_method')=='cheque'?'selected':'' }}>Cheque</option>
-                                    <option value="other" {{ old('payment_method')=='other'?'selected':'' }}>Other</option>
+                                    <option value="cash" {{ old('payment_method', $defaultPaymentMethod ?? 'cash')=='cash'?'selected':'' }}>Cash</option>
+                                    <option value="card" {{ old('payment_method', $defaultPaymentMethod ?? 'cash')=='card'?'selected':'' }}>Card</option>
+                                    <option value="mobile_banking" {{ old('payment_method', $defaultPaymentMethod ?? 'cash')=='mobile_banking'?'selected':'' }}>Mobile Banking</option>
+                                    <option value="bank_transfer" {{ old('payment_method', $defaultPaymentMethod ?? 'cash')=='bank_transfer'?'selected':'' }}>Bank Transfer</option>
+                                    <option value="cheque" {{ old('payment_method', $defaultPaymentMethod ?? 'cash')=='cheque'?'selected':'' }}>Cheque</option>
+                                    <option value="other" {{ old('payment_method', $defaultPaymentMethod ?? 'cash')=='other'?'selected':'' }}>Other</option>
                                 </select>
                                 @error('payment_method')<div class="invalid-feedback">{{ $message }}</div>@enderror
                             </div>

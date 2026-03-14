@@ -26,13 +26,18 @@
 
         <div class="bill-to-section">
             <div class="bill-to-label">Supplier</div>
-            <div class="bill-to-name">{{ $purchase->supplier->name }}</div>
+            <div class="bill-to-name">{{ $purchase->display_supplier_name }}</div>
             <div class="bill-to-details">
-                @if($purchase->supplier->company_name){{ $purchase->supplier->company_name }}<br>@endif
-                @if($purchase->supplier->email)Email: {{ $purchase->supplier->email }}@endif
-                @if($purchase->supplier->email && $purchase->supplier->phone) &nbsp;|&nbsp; @endif
-                @if($purchase->supplier->phone)Phone: {{ $purchase->supplier->phone }}@endif
-                @if($purchase->supplier->address)<br>{{ $purchase->supplier->address }}@endif
+                @if($purchase->supplier)
+                    @if($purchase->supplier->company_name){{ $purchase->supplier->company_name }}<br>@endif
+                    @if($purchase->supplier->email)Email: {{ $purchase->supplier->email }}@endif
+                    @if($purchase->supplier->email && $purchase->supplier->phone) &nbsp;|&nbsp; @endif
+                    @if($purchase->supplier->phone)Phone: {{ $purchase->supplier->phone }}@endif
+                    @if($purchase->supplier->address)<br>{{ $purchase->supplier->address }}@endif
+                @else
+                    @if($purchase->supplier_phone)Phone: {{ $purchase->supplier_phone }}@endif
+                    @if($purchase->supplier_address)@if($purchase->supplier_phone)<br>@endif{{ $purchase->supplier_address }}@endif
+                @endif
             </div>
         </div>
 

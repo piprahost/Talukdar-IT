@@ -38,8 +38,9 @@ class ReportsController extends Controller
     public function salesReport(Request $request)
     {
         $this->authorizePermission('view sales-reports');
+        $defaultDays = function_exists('settings') ? (int) settings('reports.default_date_range_days', 30) : 30;
         $period = $request->get('period', 'month'); // daily, weekly, monthly, yearly, custom
-        $dateFrom = $request->get('date_from', Carbon::now()->startOfMonth()->format('Y-m-d'));
+        $dateFrom = $request->get('date_from', Carbon::now()->subDays($defaultDays)->format('Y-m-d'));
         $dateTo = $request->get('date_to', Carbon::now()->format('Y-m-d'));
         
         // Adjust dates based on period

@@ -56,12 +56,24 @@ class DashboardController extends Controller
             ? (($monthPurchases - $lastMonthPurchases) / $lastMonthPurchases) * 100
             : 0;
         
-        // Product Statistics
+        // Product Statistics (low stock: use reorder_level, or settings threshold when reorder_level is 0)
         $totalProducts = Product::count();
         $activeProducts = Product::where('is_active', true)->count();
-        $lowStockProducts = Product::whereColumn('stock_quantity', '<=', 'reorder_level')
-            ->where('is_active', true)
-            ->count();
+        $lowStockThreshold = function_exists('settings') ? (int) settings('dashboard.low_stock_threshold', 0) : 0;
+        if ($lowStockThreshold > 0) {
+            $lowStockProducts = Product::where('is_active', true)
+                ->where(function ($q) use ($lowStockThreshold) {
+                    $q->whereColumn('stock_quantity', '<=', 'reorder_level')
+                        ->orWhere(function ($q2) use ($lowStockThreshold) {
+                            $q2->where('reorder_level', 0)->where('stock_quantity', '<=', $lowStockThreshold);
+                        });
+                })
+                ->count();
+        } else {
+            $lowStockProducts = Product::whereColumn('stock_quantity', '<=', 'reorder_level')
+                ->where('is_active', true)
+                ->count();
+        }
         
         // Customer & Supplier Statistics
         $totalCustomers = Customer::count();
@@ -143,6 +155,9 @@ class DashboardController extends Controller
         $monthProfit = $monthSales - $monthPurchases;
         $profitMargin = $monthSales > 0 ? ($monthProfit / $monthSales) * 100 : 0;
         
+        $showSalesChart = function_exists('settings') ? settings('dashboard.show_sales_chart', true) : true;
+        $showLowStockAlert = function_exists('settings') ? settings('dashboard.show_low_stock_alert', true) : true;
+        
         return view('dashboard.index', compact(
             'todaySales',
             'monthSales',
@@ -163,7 +178,9 @@ class DashboardController extends Controller
             'pendingServices',
             'pendingWarranties',
             'monthProfit',
-            'profitMargin'
+            'profitMargin',
+            'showSalesChart',
+            'showLowStockAlert'
         ));
     }
 }

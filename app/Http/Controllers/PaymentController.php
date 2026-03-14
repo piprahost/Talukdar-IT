@@ -76,14 +76,15 @@ class PaymentController extends Controller
                 ->orderBy('sale_date', 'desc')
                 ->get();
             
-            return view('payments.create', compact('type', 'sales'));
+            $defaultPaymentMethod = function_exists('settings') ? (settings('payments.default_payment_method') ?: 'cash') : 'cash';
+            return view('payments.create', compact('type', 'sales', 'defaultPaymentMethod'));
         } else {
             $purchases = Purchase::where('due_amount', '>', 0)
                 ->with('supplier')
                 ->orderBy('order_date', 'desc')
                 ->get();
-            
-            return view('payments.create', compact('type', 'purchases'));
+            $defaultPaymentMethod = function_exists('settings') ? (settings('payments.default_payment_method') ?: 'cash') : 'cash';
+            return view('payments.create', compact('type', 'purchases', 'defaultPaymentMethod'));
         }
     }
 

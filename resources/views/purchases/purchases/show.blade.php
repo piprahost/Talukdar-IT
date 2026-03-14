@@ -116,15 +116,15 @@
                         <table class="table table-sm table-borderless mb-0" style="font-size:14px;">
                             <tr>
                                 <td class="text-muted ps-0" style="width:40%;">Name</td>
-                                <td class="fw-semibold pe-0">{{ $purchase->supplier->name }}</td>
+                                <td class="fw-semibold pe-0">{{ $purchase->display_supplier_name }}</td>
                             </tr>
-                            @if($purchase->supplier->company_name)
+                            @if($purchase->supplier && $purchase->supplier->company_name)
                             <tr>
                                 <td class="text-muted ps-0">Company</td>
                                 <td class="pe-0">{{ $purchase->supplier->company_name }}</td>
                             </tr>
                             @endif
-                            @if($purchase->supplier->phone)
+                            @if($purchase->supplier && $purchase->supplier->phone)
                             <tr>
                                 <td class="text-muted ps-0">Phone</td>
                                 <td class="pe-0">
@@ -132,6 +132,21 @@
                                         <i class="fas fa-phone fa-xs me-1 text-muted"></i>{{ $purchase->supplier->phone }}
                                     </a>
                                 </td>
+                            </tr>
+                            @elseif($purchase->supplier_phone)
+                            <tr>
+                                <td class="text-muted ps-0">Phone</td>
+                                <td class="pe-0">
+                                    <a href="tel:{{ $purchase->supplier_phone }}" style="color:inherit;text-decoration:none;">
+                                        <i class="fas fa-phone fa-xs me-1 text-muted"></i>{{ $purchase->supplier_phone }}
+                                    </a>
+                                </td>
+                            </tr>
+                            @endif
+                            @if($purchase->supplier_address)
+                            <tr>
+                                <td class="text-muted ps-0">Address</td>
+                                <td class="pe-0">{{ $purchase->supplier_address }}</td>
                             </tr>
                             @endif
                         </table>

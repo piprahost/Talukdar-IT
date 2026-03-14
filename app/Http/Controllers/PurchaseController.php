@@ -23,6 +23,8 @@ class PurchaseController extends Controller
         if ($request->has('search') && $request->search) {
             $query->where(function($q) use ($request) {
                 $q->where('po_number', 'like', "%{$request->search}%")
+                  ->orWhere('supplier_name', 'like', "%{$request->search}%")
+                  ->orWhere('supplier_phone', 'like', "%{$request->search}%")
                   ->orWhereHas('supplier', function($sq) use ($request) {
                       $sq->where('name', 'like', "%{$request->search}%")
                          ->orWhere('company_name', 'like', "%{$request->search}%");
@@ -68,8 +70,18 @@ class PurchaseController extends Controller
     public function store(Request $request)
     {
         $this->authorizePermission('create purchases');
-        $validated = $request->validate([
-            'supplier_id' => ['required', 'exists:suppliers,id'],
+        $requireSupplier = function_exists('settings') && settings('purchases.require_supplier');
+        $supplierRules = [
+            'supplier_id' => ['nullable', 'exists:suppliers,id'],
+            'supplier_name' => ['nullable', 'string', 'max:255'],
+            'supplier_phone' => ['nullable', 'string', 'max:50'],
+        ];
+        if ($requireSupplier) {
+            $supplierRules['supplier_name'][] = 'required_without:supplier_id';
+            $supplierRules['supplier_phone'][] = 'required_without:supplier_id';
+        }
+        $validated = $request->validate(array_merge($supplierRules, [
+            'supplier_address' => ['nullable', 'string'],
             'order_date' => ['required', 'date'],
             'expected_delivery_date' => ['nullable', 'date', 'after_or_equal:order_date'],
             'tax_amount' => ['nullable', 'numeric', 'min:0'],
@@ -89,13 +101,16 @@ class PurchaseController extends Controller
             'items.*.condition_notes' => ['nullable', 'string'],
             'items.*.warranty_info' => ['nullable', 'string'],
             'items.*.notes' => ['nullable', 'string'],
-        ]);
+        ]));
 
         // Use database transaction for data consistency
         $purchase = \DB::transaction(function () use ($validated) {
             // Create purchase order
             $purchase = Purchase::create([
-                'supplier_id' => $validated['supplier_id'],
+                'supplier_id' => $validated['supplier_id'] ?? null,
+                'supplier_name' => $validated['supplier_name'] ?? null,
+                'supplier_phone' => $validated['supplier_phone'] ?? null,
+                'supplier_address' => $validated['supplier_address'] ?? null,
                 'order_date' => $validated['order_date'],
                 'expected_delivery_date' => $validated['expected_delivery_date'] ?? null,
                 'tax_amount' => $validated['tax_amount'] ?? 0,
@@ -191,8 +206,18 @@ class PurchaseController extends Controller
     public function update(Request $request, Purchase $purchase)
     {
         $this->authorizePermission('edit purchases');
-        $validated = $request->validate([
-            'supplier_id' => ['required', 'exists:suppliers,id'],
+        $requireSupplier = function_exists('settings') && settings('purchases.require_supplier');
+        $supplierRules = [
+            'supplier_id' => ['nullable', 'exists:suppliers,id'],
+            'supplier_name' => ['nullable', 'string', 'max:255'],
+            'supplier_phone' => ['nullable', 'string', 'max:50'],
+        ];
+        if ($requireSupplier) {
+            $supplierRules['supplier_name'][] = 'required_without:supplier_id';
+            $supplierRules['supplier_phone'][] = 'required_without:supplier_id';
+        }
+        $validated = $request->validate(array_merge($supplierRules, [
+            'supplier_address' => ['nullable', 'string'],
             'order_date' => ['required', 'date'],
             'expected_delivery_date' => ['nullable', 'date', 'after_or_equal:order_date'],
             'tax_amount' => ['nullable', 'numeric', 'min:0'],
@@ -202,9 +227,23 @@ class PurchaseController extends Controller
             'bank_account_id' => ['nullable', 'exists:bank_accounts,id', 'required_if:payment_method,card,mobile_banking,bank_transfer,cheque'],
             'notes' => ['nullable', 'string'],
             'internal_notes' => ['nullable', 'string'],
-        ]);
+        ]));
 
-        $purchase->update($validated);
+        $purchase->update([
+            'supplier_id' => $validated['supplier_id'] ?? null,
+            'supplier_name' => $validated['supplier_name'] ?? null,
+            'supplier_phone' => $validated['supplier_phone'] ?? null,
+            'supplier_address' => $validated['supplier_address'] ?? null,
+            'order_date' => $validated['order_date'],
+            'expected_delivery_date' => $validated['expected_delivery_date'] ?? null,
+            'tax_amount' => $validated['tax_amount'] ?? 0,
+            'discount_amount' => $validated['discount_amount'] ?? 0,
+            'paid_amount' => $validated['paid_amount'] ?? 0,
+            'payment_method' => $validated['payment_method'],
+            'bank_account_id' => $validated['bank_account_id'] ?? null,
+            'notes' => $validated['notes'] ?? null,
+            'internal_notes' => $validated['internal_notes'] ?? null,
+        ]);
         $purchase->calculateTotals();
 
         // Update journal entry if needed

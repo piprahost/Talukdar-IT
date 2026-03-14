@@ -50,7 +50,8 @@ class Sale extends Model
 
         static::creating(function ($sale) {
             if (empty($sale->invoice_number)) {
-                $sale->invoice_number = 'INV-' . date('Ymd') . '-' . strtoupper(Str::random(6));
+                $prefix = function_exists('settings') ? (settings('sales.invoice_prefix') ?: 'INV-') : 'INV-';
+                $sale->invoice_number = $prefix . date('Ymd') . '-' . strtoupper(Str::random(6));
             }
             if (auth()->check() && empty($sale->created_by)) {
                 $sale->created_by = auth()->id();

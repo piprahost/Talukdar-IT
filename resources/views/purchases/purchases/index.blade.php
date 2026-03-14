@@ -116,9 +116,11 @@
                         @endif
                     </td>
                     <td>
-                        <div class="fw-semibold" style="font-size:14px;">{{ $purchase->supplier->name }}</div>
-                        @if($purchase->supplier->company_name)
+                        <div class="fw-semibold" style="font-size:14px;">{{ $purchase->display_supplier_name }}</div>
+                        @if($purchase->supplier && $purchase->supplier->company_name)
                         <div style="font-size:11px;color:#9ca3af;">{{ $purchase->supplier->company_name }}</div>
+                        @elseif($purchase->supplier_phone)
+                        <div style="font-size:11px;color:#9ca3af;">{{ $purchase->supplier_phone }}</div>
                         @endif
                     </td>
                     <td style="font-size:13px;">{{ $purchase->order_date->format('d M Y') }}</td>

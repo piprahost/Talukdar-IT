@@ -156,12 +156,12 @@
                             <div class="mb-3">
                                 <label class="form-label fw-semibold small">Payment method <span class="text-danger">*</span></label>
                                 <select class="form-select form-select-sm @error('payment_method') is-invalid @enderror" name="payment_method" id="payment_method" required onchange="toggleBankAccount()">
-                                    <option value="cash" {{ old('payment_method','cash')=='cash'?'selected':'' }}>Cash</option>
-                                    <option value="card" {{ old('payment_method')=='card'?'selected':'' }}>Card</option>
-                                    <option value="mobile_banking" {{ old('payment_method')=='mobile_banking'?'selected':'' }}>Mobile Banking</option>
-                                    <option value="bank_transfer" {{ old('payment_method')=='bank_transfer'?'selected':'' }}>Bank Transfer</option>
-                                    <option value="cheque" {{ old('payment_method')=='cheque'?'selected':'' }}>Cheque</option>
-                                    <option value="other" {{ old('payment_method')=='other'?'selected':'' }}>Other</option>
+                                    <option value="cash" {{ old('payment_method', $defaultPaymentMethod ?? 'cash')=='cash'?'selected':'' }}>Cash</option>
+                                    <option value="card" {{ old('payment_method', $defaultPaymentMethod ?? 'cash')=='card'?'selected':'' }}>Card</option>
+                                    <option value="mobile_banking" {{ old('payment_method', $defaultPaymentMethod ?? 'cash')=='mobile_banking'?'selected':'' }}>Mobile Banking</option>
+                                    <option value="bank_transfer" {{ old('payment_method', $defaultPaymentMethod ?? 'cash')=='bank_transfer'?'selected':'' }}>Bank Transfer</option>
+                                    <option value="cheque" {{ old('payment_method', $defaultPaymentMethod ?? 'cash')=='cheque'?'selected':'' }}>Cheque</option>
+                                    <option value="other" {{ old('payment_method', $defaultPaymentMethod ?? 'cash')=='other'?'selected':'' }}>Other</option>
                                 </select>
                                 @error('payment_method')<div class="invalid-feedback">{{ $message }}</div>@enderror
                             </div>
@@ -184,8 +184,8 @@
                         </div>
                         <div class="p-4 pt-3">
                             <select class="form-select form-select-sm @error('status') is-invalid @enderror" name="status" required>
-                                <option value="pending" {{ old('status','pending')=='pending'?'selected':'' }}>Pending</option>
-                                <option value="in_progress" {{ old('status')=='in_progress'?'selected':'' }}>In progress</option>
+                                <option value="pending" {{ old('status', $defaultStatus ?? 'pending')=='pending'?'selected':'' }}>Pending</option>
+                                <option value="in_progress" {{ old('status', $defaultStatus ?? 'pending')=='in_progress'?'selected':'' }}>In progress</option>
                                 <option value="completed" {{ old('status')=='completed'?'selected':'' }}>Completed</option>
                                 <option value="delivered" {{ old('status')=='delivered'?'selected':'' }}>Delivered</option>
                                 <option value="cancelled" {{ old('status')=='cancelled'?'selected':'' }}>Cancelled</option>

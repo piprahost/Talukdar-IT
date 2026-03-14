@@ -21,6 +21,7 @@ class DatabaseSeeder extends Seeder
             SuperAdminSeeder::class,
             DemoUserSeeder::class,
             ChartOfAccountsSeeder::class,
+            SettingsSeeder::class,
             ProductSeeder::class,
             DemoDataSeeder::class,
         ]);

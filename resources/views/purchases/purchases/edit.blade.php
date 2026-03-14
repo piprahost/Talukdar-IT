@@ -4,6 +4,10 @@
 @section('page-title', 'Edit Purchase Order')
 
 @section('content')
+<style>
+.purchase-form-wrap .table-card.mb-0.overflow-visible { overflow: visible !important; }
+.purchase-form-wrap .table-card.mb-0.overflow-visible .p-4 { overflow: visible !important; }
+</style>
 <div class="purchase-form-wrap">
     <div class="d-flex flex-column flex-md-row align-items-start align-items-md-center justify-content-between gap-3 mb-4 pb-3 border-bottom">
         <div>
@@ -22,23 +26,39 @@
         @method('PUT')
         <div class="row g-4">
             <div class="col-lg-8">
-                <div class="table-card mb-0">
+                <div class="table-card mb-0 overflow-visible">
                     <div class="table-card-header bg-light border-0 py-3">
                         <h6 class="mb-0 fw-semibold text-dark"><i class="fas fa-shopping-bag me-2 text-primary"></i>Order info</h6>
                     </div>
-                    <div class="p-4 pt-3">
-                    <div class="row g-3">
-                        <div class="col-md-6">
+                    <div class="p-4 pt-3 overflow-visible">
+                    <div class="row g-3 overflow-visible">
+                        <div class="col-md-6 overflow-visible">
                             <label class="form-label fw-semibold">Supplier <span class="text-danger">*</span></label>
-                            <select class="form-select @error('supplier_id') is-invalid @enderror" name="supplier_id" required>
-                                <option value="">— Select Supplier —</option>
-                                @foreach($suppliers as $supplier)
-                                    <option value="{{ $supplier->id }}" {{ old('supplier_id', $purchase->supplier_id)==$supplier->id?'selected':'' }}>
-                                        {{ $supplier->name }}@if($supplier->company_name) — {{ $supplier->company_name }}@endif
-                                    </option>
-                                @endforeach
-                            </select>
+                            <div class="position-relative overflow-visible">
+                                <input type="text" class="form-control form-control-sm @error('supplier_id') is-invalid @enderror @error('supplier_name') is-invalid @enderror" id="supplierSearch" placeholder="Search supplier..." autocomplete="off" value="{{ old('supplier_id') ? ($suppliers->firstWhere('id', old('supplier_id', $purchase->supplier_id))?->name ?? '') : old('supplier_name', $purchase->supplier_name) }}">
+                                <div class="position-absolute w-100 bg-white border rounded shadow-lg" id="supplierDropdown" style="display:none;max-height:260px;overflow-y:auto;z-index:1000;"></div>
+                                <input type="hidden" id="supplier_id" name="supplier_id" value="{{ old('supplier_id', $purchase->supplier_id) }}">
+                            </div>
+                            <div class="form-check form-check-sm mt-1">
+                                <input class="form-check-input" type="checkbox" id="walkInSupplier" onchange="toggleWalkInSupplier()" {{ old('supplier_name', $purchase->supplier_name) ? 'checked' : '' }}>
+                                <label class="form-check-label small" for="walkInSupplier">Walk-in supplier</label>
+                            </div>
+                            <div id="walkInSupplierFields" class="row g-2 mt-2" style="display:{{ old('supplier_name', $purchase->supplier_name) ? 'flex' : 'none' }};">
+                                <div class="col-12 col-md-4">
+                                    <label for="supplier_name" class="form-label small mb-0">Name</label>
+                                    <input type="text" class="form-control form-control-sm" id="supplier_name" name="supplier_name" value="{{ old('supplier_name', $purchase->supplier_name) }}">
+                                </div>
+                                <div class="col-12 col-md-4">
+                                    <label for="supplier_phone" class="form-label small mb-0">Phone</label>
+                                    <input type="text" class="form-control form-control-sm" id="supplier_phone" name="supplier_phone" value="{{ old('supplier_phone', $purchase->supplier_phone) }}">
+                                </div>
+                                <div class="col-12 col-md-4">
+                                    <label for="supplier_address" class="form-label small mb-0">Address</label>
+                                    <input type="text" class="form-control form-control-sm" id="supplier_address" name="supplier_address" value="{{ old('supplier_address', $purchase->supplier_address) }}">
+                                </div>
+                            </div>
                             @error('supplier_id')<div class="invalid-feedback">{{ $message }}</div>@enderror
+                            @error('supplier_name')<div class="invalid-feedback">{{ $message }}</div>@enderror
                         </div>
                         <div class="col-md-3">
                             <label class="form-label fw-semibold">Order Date <span class="text-danger">*</span></label>
@@ -161,9 +181,64 @@
     </form>
 </div>
 
+@php
+$suppliersJsonEdit = $suppliers->map(function($s) {
+    return ['id' => $s->id, 'name' => $s->name, 'company_name' => $s->company_name ?? '', 'phone' => $s->phone ?? '', 'email' => $s->email ?? ''];
+})->values();
+@endphp
 @push('scripts')
 <script>
 const poTotal = {{ $purchase->total_amount }};
+const suppliersEdit = @json($suppliersJsonEdit);
+
+function initSupplierSearch() {
+    const searchInput = document.getElementById('supplierSearch');
+    const dropdown = document.getElementById('supplierDropdown');
+    const supplierIdInput = document.getElementById('supplier_id');
+    if (!searchInput || !dropdown) return;
+    searchInput.addEventListener('input', function() {
+        const query = this.value.toLowerCase().trim();
+        dropdown.innerHTML = '';
+        if (document.getElementById('walkInSupplier').checked) { dropdown.style.display = 'none'; return; }
+        if (query.length < 1) { dropdown.style.display = 'none'; return; }
+        const filtered = suppliersEdit.filter(s => (s.name && s.name.toLowerCase().includes(query)) || (s.company_name && s.company_name.toLowerCase().includes(query)) || (s.phone && s.phone.includes(query)));
+        if (filtered.length === 0) {
+            dropdown.innerHTML = '<div class="p-2 text-muted">No suppliers found. Use Walk-in supplier.</div>';
+        } else {
+            filtered.slice(0, 12).forEach(supplier => {
+                const item = document.createElement('div');
+                item.className = 'p-2 border-bottom'; item.style.cursor = 'pointer';
+                item.innerHTML = '<strong>' + supplier.name + '</strong>' + (supplier.company_name ? ' <small class="text-muted">— ' + supplier.company_name + '</small>' : '');
+                item.addEventListener('click', function() {
+                    supplierIdInput.value = supplier.id;
+                    searchInput.value = supplier.name + (supplier.company_name ? ' — ' + supplier.company_name : '');
+                    dropdown.style.display = 'none';
+                    document.getElementById('walkInSupplier').checked = false;
+                    toggleWalkInSupplier();
+                });
+                item.addEventListener('mouseenter', function() { this.style.backgroundColor = '#f0f0f0'; });
+                item.addEventListener('mouseleave', function() { this.style.backgroundColor = ''; });
+                dropdown.appendChild(item);
+            });
+        }
+        dropdown.style.display = 'block';
+    });
+    document.addEventListener('click', function(e) {
+        if (searchInput && !searchInput.contains(e.target) && dropdown && !dropdown.contains(e.target)) dropdown.style.display = 'none';
+    });
+}
+function toggleWalkInSupplier() {
+    const walkIn = document.getElementById('walkInSupplier').checked;
+    document.getElementById('walkInSupplierFields').style.display = walkIn ? 'flex' : 'none';
+    if (walkIn) {
+        document.getElementById('supplier_id').value = '';
+        document.getElementById('supplierSearch').value = '';
+    } else {
+        document.getElementById('supplier_name').value = '';
+        document.getElementById('supplier_phone').value = '';
+        document.getElementById('supplier_address').value = '';
+    }
+}
 
 function recalculate() {
     const tax      = parseFloat(document.getElementById('tax_amount').value) || 0;
@@ -205,6 +280,8 @@ function toggleBankAccount() {
 }
 
 document.addEventListener('DOMContentLoaded', function () {
+    initSupplierSearch();
+    toggleWalkInSupplier();
     recalculate();
     toggleBankAccount();
 });

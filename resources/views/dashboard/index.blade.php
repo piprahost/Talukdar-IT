@@ -8,7 +8,8 @@
     $paid = $salesPaymentStatus->get('paid')?->total ?? 0;
     $partial = $salesPaymentStatus->get('partial')?->total ?? 0;
     $unpaid = $salesPaymentStatus->get('unpaid')?->total ?? 0;
-    $hasAlerts = $lowStockProducts > 0 || $customerDues > 0 || $supplierDues > 0 || $pendingServices > 0 || $pendingWarranties > 0;
+    $showLowStockAlert = $showLowStockAlert ?? true;
+    $hasAlerts = ($showLowStockAlert && $lowStockProducts > 0) || $customerDues > 0 || $supplierDues > 0 || $pendingServices > 0 || $pendingWarranties > 0;
 @endphp
 <div class="dashboard-wrap">
     {{-- Hero: welcome + primary number --}}
@@ -20,7 +21,7 @@
             </div>
             <div class="text-md-end">
                 <div class="small text-uppercase opacity-75" style="letter-spacing:0.05em;">This month</div>
-                <div class="h3 mb-0 fw-bold">৳{{ number_format($monthSales, 0) }}</div>
+                <div class="h3 mb-0 fw-bold">{{ $currencySymbol ?? '৳' }}{{ number_format($monthSales, 0) }}</div>
                 <div class="small opacity-75">Revenue · {{ $salesGrowth >= 0 ? '+' : '' }}{{ number_format($salesGrowth, 0) }}% vs last month</div>
             </div>
         </div>
@@ -29,9 +30,9 @@
     {{-- Alerts strip (only when needed) --}}
     @if($hasAlerts)
     <div class="d-flex flex-wrap gap-2 mb-3">
-        @if($lowStockProducts > 0)<a href="{{ route('stock.low-stock') }}" class="btn btn-sm btn-light text-dark border"><i class="fas fa-box-open me-1 text-warning"></i>{{ $lowStockProducts }} low stock</a>@endif
-        @if($customerDues > 0)<a href="{{ route('sales.index', ['payment_status'=>'unpaid']) }}" class="btn btn-sm btn-light text-dark border"><i class="fas fa-user-clock me-1 text-danger"></i>৳{{ number_format($customerDues, 0) }} receivable</a>@endif
-        @if($supplierDues > 0)<a href="{{ route('purchases.index', ['payment_status'=>'unpaid']) }}" class="btn btn-sm btn-light text-dark border"><i class="fas fa-truck me-1 text-primary"></i>৳{{ number_format($supplierDues, 0) }} payable</a>@endif
+        @if($showLowStockAlert && $lowStockProducts > 0)<a href="{{ route('stock.low-stock') }}" class="btn btn-sm btn-light text-dark border"><i class="fas fa-box-open me-1 text-warning"></i>{{ $lowStockProducts }} low stock</a>@endif
+        @if($customerDues > 0)<a href="{{ route('sales.index', ['payment_status'=>'unpaid']) }}" class="btn btn-sm btn-light text-dark border"><i class="fas fa-user-clock me-1 text-danger"></i>{{ $currencySymbol ?? '৳' }}{{ number_format($customerDues, 0) }} receivable</a>@endif
+        @if($supplierDues > 0)<a href="{{ route('purchases.index', ['payment_status'=>'unpaid']) }}" class="btn btn-sm btn-light text-dark border"><i class="fas fa-truck me-1 text-primary"></i>{{ $currencySymbol ?? '৳' }}{{ number_format($supplierDues, 0) }} payable</a>@endif
         @if($pendingServices > 0)<a href="{{ route('services.index', ['status'=>'pending']) }}" class="btn btn-sm btn-light text-dark border"><i class="fas fa-laptop-medical me-1 text-success"></i>{{ $pendingServices }} pending services</a>@endif
         @if($pendingWarranties > 0)<a href="{{ route('warranty-submissions.index') }}" class="btn btn-sm btn-light text-dark border"><i class="fas fa-shield-alt me-1"></i>{{ $pendingWarranties }} warranties</a>@endif
     </div>
@@ -42,34 +43,35 @@
         <div class="col-6 col-lg-3">
             <div class="table-card h-100 p-3 border-0 shadow-sm">
                 <div class="text-muted small text-uppercase fw-semibold mb-1">Revenue</div>
-                <div class="fs-4 fw-bold text-success">৳{{ number_format($monthSales, 0) }}</div>
+                <div class="fs-4 fw-bold text-success">{{ $currencySymbol ?? '৳' }}{{ number_format($monthSales, 0) }}</div>
                 <span class="badge {{ $salesGrowth >= 0 ? 'bg-success' : 'bg-danger' }} bg-opacity-25 text-{{ $salesGrowth >= 0 ? 'success' : 'danger' }} small">{{ $salesGrowth >= 0 ? '+' : '' }}{{ number_format($salesGrowth, 0) }}%</span>
             </div>
         </div>
         <div class="col-6 col-lg-3">
             <div class="table-card h-100 p-3 border-0 shadow-sm">
                 <div class="text-muted small text-uppercase fw-semibold mb-1">Purchases</div>
-                <div class="fs-4 fw-bold">৳{{ number_format($monthPurchases, 0) }}</div>
+                <div class="fs-4 fw-bold">{{ $currencySymbol ?? '৳' }}{{ number_format($monthPurchases, 0) }}</div>
                 <span class="badge {{ $purchaseGrowth >= 0 ? 'bg-primary' : 'bg-danger' }} bg-opacity-25 text-{{ $purchaseGrowth >= 0 ? 'primary' : 'danger' }} small">{{ $purchaseGrowth >= 0 ? '+' : '' }}{{ number_format($purchaseGrowth, 0) }}%</span>
             </div>
         </div>
         <div class="col-6 col-lg-3">
             <div class="table-card h-100 p-3 border-0 shadow-sm">
                 <div class="text-muted small text-uppercase fw-semibold mb-1">Profit</div>
-                <div class="fs-4 fw-bold {{ $monthProfit >= 0 ? 'text-success' : 'text-danger' }}">৳{{ number_format($monthProfit, 0) }}</div>
+                <div class="fs-4 fw-bold {{ $monthProfit >= 0 ? 'text-success' : 'text-danger' }}">{{ $currencySymbol ?? '৳' }}{{ number_format($monthProfit, 0) }}</div>
                 <span class="badge bg-opacity-25 {{ $profitMargin >= 0 ? 'bg-success text-success' : 'bg-danger text-danger' }} small">{{ number_format($profitMargin, 0) }}% margin</span>
             </div>
         </div>
         <div class="col-6 col-lg-3">
             <div class="table-card h-100 p-3 border-0 shadow-sm">
                 <div class="text-muted small text-uppercase fw-semibold mb-1">Today</div>
-                <div class="fs-4 fw-bold">৳{{ number_format($todaySales, 0) }}</div>
+                <div class="fs-4 fw-bold">{{ $currencySymbol ?? '৳' }}{{ number_format($todaySales, 0) }}</div>
                 <span class="text-muted small">Sales</span>
             </div>
         </div>
     </div>
 
     {{-- Charts --}}
+    @if($showSalesChart ?? true)
     <div class="row g-3 mb-3">
         <div class="col-lg-8">
             <div class="table-card border-0 shadow-sm overflow-hidden">
@@ -91,14 +93,15 @@
                         <canvas id="paymentChart" width="180" height="180"></canvas>
                     </div>
                     <div class="w-100 mt-3 small">
-                        <div class="d-flex justify-content-between align-items-center py-2 border-bottom"><span class="text-muted d-flex align-items-center"><span class="rounded-circle me-2 d-inline-block" style="width:8px;height:8px;background:#22c55e;"></span>Paid</span><strong>৳{{ number_format($paid, 0) }}</strong></div>
-                        <div class="d-flex justify-content-between align-items-center py-2 border-bottom"><span class="text-muted d-flex align-items-center"><span class="rounded-circle me-2 d-inline-block" style="width:8px;height:8px;background:#eab308;"></span>Partial</span><strong>৳{{ number_format($partial, 0) }}</strong></div>
-                        <div class="d-flex justify-content-between align-items-center py-2"><span class="text-muted d-flex align-items-center"><span class="rounded-circle me-2 d-inline-block" style="width:8px;height:8px;background:#ef4444;"></span>Unpaid</span><strong class="text-danger">৳{{ number_format($unpaid, 0) }}</strong></div>
+                        <div class="d-flex justify-content-between align-items-center py-2 border-bottom"><span class="text-muted d-flex align-items-center"><span class="rounded-circle me-2 d-inline-block" style="width:8px;height:8px;background:#22c55e;"></span>Paid</span><strong>{{ $currencySymbol ?? '৳' }}{{ number_format($paid, 0) }}</strong></div>
+                        <div class="d-flex justify-content-between align-items-center py-2 border-bottom"><span class="text-muted d-flex align-items-center"><span class="rounded-circle me-2 d-inline-block" style="width:8px;height:8px;background:#eab308;"></span>Partial</span><strong>{{ $currencySymbol ?? '৳' }}{{ number_format($partial, 0) }}</strong></div>
+                        <div class="d-flex justify-content-between align-items-center py-2"><span class="text-muted d-flex align-items-center"><span class="rounded-circle me-2 d-inline-block" style="width:8px;height:8px;background:#ef4444;"></span>Unpaid</span><strong class="text-danger">{{ $currencySymbol ?? '৳' }}{{ number_format($unpaid, 0) }}</strong></div>
                     </div>
                 </div>
             </div>
         </div>
     </div>
+    @endif
 
     {{-- Stats strip + Tables + Quick actions --}}
     <div class="row g-3 mb-3">
@@ -107,7 +110,7 @@
                 <div class="row g-0 text-center">
                     <div class="col-4 col-md-2 border-end"><div class="text-muted small">Products</div><div class="fw-bold">{{ $totalProducts }}</div></div>
                     <div class="col-4 col-md-2 border-end"><div class="text-muted small">Low stock</div><div class="fw-bold {{ $lowStockProducts > 0 ? 'text-danger' : 'text-success' }}">{{ $lowStockProducts }}</div></div>
-                    <div class="col-4 col-md-2 border-end"><div class="text-muted small">Customers</div><div class="fw-bold">{{ $totalCustomers }}</div><div class="text-muted small">৳{{ number_format($customerDues, 0) }} due</div></div>
+                    <div class="col-4 col-md-2 border-end"><div class="text-muted small">Customers</div><div class="fw-bold">{{ $totalCustomers }}</div><div class="text-muted small">{{ $currencySymbol ?? '৳' }}{{ number_format($customerDues, 0) }} due</div></div>
                     <div class="col-4 col-md-2 border-end"><div class="text-muted small">Suppliers</div><div class="fw-bold">{{ $totalSuppliers }}</div></div>
                     <div class="col-4 col-md-2 border-end"><div class="text-muted small">Services</div><div class="fw-bold">{{ $pendingServices }}</div><div class="text-muted small">pending</div></div>
                     <div class="col-4 col-md-2 border-end-0"><div class="text-muted small">Warranties</div><div class="fw-bold">{{ $pendingWarranties }}</div></div>
@@ -154,7 +157,7 @@
                             @forelse($recentSales->take(5) as $sale)
                                 <tr>
                                     <td><a href="{{ route('sales.show', $sale) }}" class="text-decoration-none fw-semibold">{{ $sale->invoice_number }}</a></td>
-                                    <td class="text-end">৳{{ number_format($sale->total_amount, 0) }}</td>
+                                    <td class="text-end">{{ $currencySymbol ?? '৳' }}{{ number_format($sale->total_amount, 0) }}</td>
                                     <td><span class="badge {{ $sale->payment_status === 'paid' ? 'bg-success' : ($sale->payment_status === 'partial' ? 'bg-warning text-dark' : 'bg-danger') }} rounded-pill">{{ ucfirst($sale->payment_status) }}</span></td>
                                 </tr>
                             @empty
@@ -188,6 +191,7 @@
 @push('scripts')
 <script src="https://cdn.jsdelivr.net/npm/chart.js@3.9.1/dist/chart.min.js"></script>
 <script>
+window.currencySymbol = @json($currencySymbol ?? '৳');
 (function() {
     const salesLabels = @json($salesChartData->pluck('date')->values());
     const salesData = @json($salesChartData->pluck('total')->values());
@@ -200,7 +204,7 @@
             data: {
                 labels: salesLabels,
                 datasets: [{
-                    label: 'Sales (৳)',
+                    label: 'Sales (' + (window.currencySymbol || '৳') + ')',
                     data: salesData,
                     borderColor: '#0f766e',
                     backgroundColor: 'rgba(15, 118, 110, 0.12)',
@@ -225,7 +229,7 @@
                         grid: { color: 'rgba(0,0,0,0.06)' },
                         ticks: {
                             maxTicksLimit: 6,
-                            callback: function(v) { return '৳' + (v >= 1000 ? (v/1000) + 'k' : v); }
+                            callback: function(v) { return (window.currencySymbol || '৳') + (v >= 1000 ? (v/1000) + 'k' : v); }
                         }
                     },
                     x: {

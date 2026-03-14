@@ -11,6 +11,7 @@ use App\Models\BankAccount;
 use App\Services\AccountingService;
 use Illuminate\Http\Request;
 use Illuminate\Support\Facades\DB;
+use Illuminate\Validation\Rule;
 
 class SaleController extends Controller
 {
@@ -63,15 +64,28 @@ class SaleController extends Controller
         $customers = Customer::active()->latest()->get();
         $products = Product::active()->orderBy('name')->get();
         $bankAccounts = BankAccount::active()->orderBy('account_name')->get();
-        return view('sales.sales.create', compact('customers', 'products', 'bankAccounts'));
+        $defaultPaymentMethod = function_exists('settings') ? (settings('payments.default_payment_method') ?: 'cash') : 'cash';
+        $defaultPaymentTermsDays = function_exists('settings') ? (int) settings('sales.default_payment_terms_days', 0) : 0;
+        $defaultDueDate = $defaultPaymentTermsDays > 0 ? now()->addDays($defaultPaymentTermsDays)->format('Y-m-d') : null;
+        return view('sales.sales.create', compact('customers', 'products', 'bankAccounts', 'defaultPaymentMethod', 'defaultPaymentTermsDays', 'defaultDueDate'));
     }
 
     public function store(Request $request)
     {
         $this->authorizePermission('create sales');
+        $customerOptional = function_exists('settings') && settings('sales.customer_optional');
         $validated = $request->validate([
-            'customer_id'      => ['nullable', 'exists:customers,id'],
-            'customer_name'    => ['nullable', 'string', 'max:255'],
+            'customer_id'      => [
+                Rule::requiredIf(!$customerOptional && empty($request->customer_name)),
+                'nullable',
+                'exists:customers,id',
+            ],
+            'customer_name'    => [
+                Rule::requiredIf(!$customerOptional && empty($request->customer_id)),
+                'nullable',
+                'string',
+                'max:255',
+            ],
             'customer_phone'   => ['nullable', 'string', 'max:20'],
             'customer_address' => ['nullable', 'string'],
             'sale_date'        => ['required', 'date'],
@@ -93,8 +107,13 @@ class SaleController extends Controller
             'status'             => ['nullable', 'in:draft,completed'],
         ]);
 
+        $defaultTermsDays = function_exists('settings') ? (int) settings('sales.default_payment_terms_days', 0) : 0;
+        $dueDate = $validated['due_date'] ?? null;
+        if ($dueDate === null && $defaultTermsDays > 0) {
+            $dueDate = \Carbon\Carbon::parse($validated['sale_date'])->addDays($defaultTermsDays)->toDateString();
+        }
         // Use database transaction for data consistency
-        $sale = \DB::transaction(function () use ($validated) {
+        $sale = \DB::transaction(function () use ($validated, $dueDate) {
             // Create sale
             $sale = Sale::create([
                 'customer_id' => $validated['customer_id'] ?? null,
@@ -102,7 +121,7 @@ class SaleController extends Controller
                 'customer_phone' => $validated['customer_phone'] ?? null,
                 'customer_address' => $validated['customer_address'] ?? null,
                 'sale_date' => $validated['sale_date'],
-                'due_date' => $validated['due_date'] ?? null,
+                'due_date' => $dueDate,
                 'tax_amount' => $validated['tax_amount'] ?? 0,
                 'discount_amount' => $validated['discount_amount'] ?? 0,
                 'paid_amount' => $validated['paid_amount'] ?? 0,
@@ -177,9 +196,19 @@ class SaleController extends Controller
                 ->with('error', 'Cannot update a completed sale.');
         }
 
+        $customerOptional = function_exists('settings') && settings('sales.customer_optional');
         $validated = $request->validate([
-            'customer_id' => ['nullable', 'exists:customers,id'],
-            'customer_name' => ['nullable', 'string', 'max:255'],
+            'customer_id' => [
+                Rule::requiredIf(!$customerOptional && empty($request->customer_name)),
+                'nullable',
+                'exists:customers,id',
+            ],
+            'customer_name' => [
+                Rule::requiredIf(!$customerOptional && empty($request->customer_id)),
+                'nullable',
+                'string',
+                'max:255',
+            ],
             'customer_phone' => ['nullable', 'string', 'max:20'],
             'customer_address' => ['nullable', 'string'],
             'sale_date' => ['required', 'date'],
@@ -226,6 +255,19 @@ class SaleController extends Controller
             return back()->with('error', 'Sale is already completed.');
         }
 
+        $allowNegativeStock = function_exists('settings') && settings('sales.allow_negative_stock');
+        if (!$allowNegativeStock) {
+            foreach ($sale->items as $item) {
+                $item->load('product');
+                $product = $item->product;
+                $available = $product->display_stock ?? $product->stock_quantity ?? 0;
+                $needed = $item->barcode && $product->hasBarcode($item->barcode) ? 1 : (int) $item->quantity;
+                if ($available < $needed) {
+                    return back()->with('error', "Insufficient stock for \"{$product->name}\". Available: {$available}, needed: {$needed}. Enable \"Allow negative stock\" in Sales settings to override.");
+                }
+            }
+        }
+
         $sale->status = 'completed';
         $sale->save();
 
@@ -261,7 +303,7 @@ class SaleController extends Controller
             'payment_method'  => ['required', 'in:cash,card,mobile_banking,bank_transfer,cheque,other'],
             'bank_account_id' => ['nullable', 'exists:bank_accounts,id', 'required_if:payment_method,card,mobile_banking,bank_transfer,cheque'],
         ], [
-            'payment_amount.max' => 'Payment amount cannot exceed the due amount (৳' . number_format($sale->due_amount, 2) . ').',
+            'payment_amount.max' => 'Payment amount cannot exceed the due amount (' . (function_exists('money') ? money($sale->due_amount, 2) : '৳' . number_format($sale->due_amount, 2)) . ').',
         ]);
 
         DB::transaction(function () use ($sale, $validated) {
@@ -280,7 +322,7 @@ class SaleController extends Controller
         });
 
         return redirect()->route('sales.show', $sale)
-            ->with('success', 'Payment of ৳' . number_format($validated['payment_amount'], 2) . ' collected successfully.');
+            ->with('success', 'Payment of ' . (function_exists('money') ? money($validated['payment_amount'], 2) : '৳' . number_format($validated['payment_amount'], 2)) . ' collected successfully.');
     }
 
     public function printInvoice(Sale $sale)

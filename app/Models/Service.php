@@ -126,9 +126,10 @@ class Service extends Model
 
         static::creating(function ($service) {
             if (empty($service->service_number)) {
+                $prefix = function_exists('settings') ? (settings('services.service_memo_prefix') ?: 'SRV-') : 'SRV-';
                 $year = date('Y');
-                $count = static::where('service_number', 'like', 'SRV-' . $year . '-%')->count();
-                $service->service_number = 'SRV-' . $year . '-' . str_pad($count + 1, 5, '0', STR_PAD_LEFT);
+                $count = static::where('service_number', 'like', $prefix . $year . '-%')->count();
+                $service->service_number = $prefix . $year . '-' . str_pad($count + 1, 5, '0', STR_PAD_LEFT);
             }
         });
     }

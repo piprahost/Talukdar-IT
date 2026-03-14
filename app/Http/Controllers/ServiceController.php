@@ -78,7 +78,9 @@ class ServiceController extends Controller
     {
         $this->authorizePermission('create services');
         $bankAccounts = BankAccount::active()->orderBy('account_name')->get();
-        return view('services.create', compact('bankAccounts'));
+        $defaultStatus = function_exists('settings') ? (settings('services.default_status') ?: 'pending') : 'pending';
+        $defaultPaymentMethod = function_exists('settings') ? (settings('payments.default_payment_method') ?: 'cash') : 'cash';
+        return view('services.create', compact('bankAccounts', 'defaultStatus', 'defaultPaymentMethod'));
     }
 
     /**
