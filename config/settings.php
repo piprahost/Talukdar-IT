@@ -433,5 +433,77 @@ return [
                 ],
             ],
         ],
+        'pdf_design' => [
+            'label' => 'Invoice & PDF Design',
+            'icon' => 'fas fa-file-pdf',
+            'keys' => [
+                'primary_color' => [
+                    'type' => 'text',
+                    'label' => 'Primary colour',
+                    'description' => 'Hex colour for headers, labels, table header, total highlight (e.g. #16a34a).',
+                    'default' => '#16a34a',
+                ],
+                'secondary_color' => [
+                    'type' => 'text',
+                    'label' => 'Secondary colour',
+                    'description' => 'Hex for tagline and accents (e.g. #15803d).',
+                    'default' => '#15803d',
+                ],
+                'show_logo' => [
+                    'type' => 'boolean',
+                    'label' => 'Show logo on PDFs',
+                    'description' => 'Display company logo in the header of invoices, POs, service orders, etc.',
+                    'default' => '0',
+                ],
+                'logo_url' => [
+                    'type' => 'text',
+                    'label' => 'Logo URL or path',
+                    'description' => 'Full URL (https://...) or path from public folder (e.g. /images/logo.png). Used when "Show logo" is on.',
+                    'default' => '',
+                ],
+                'show_company_name' => [
+                    'type' => 'boolean',
+                    'label' => 'Show company name',
+                    'description' => 'Display company name in PDF header.',
+                    'default' => '1',
+                ],
+                'show_tagline' => [
+                    'type' => 'boolean',
+                    'label' => 'Show tagline',
+                    'description' => 'Display company tagline in PDF header.',
+                    'default' => '1',
+                ],
+                'show_address' => [
+                    'type' => 'boolean',
+                    'label' => 'Show address & contact',
+                    'description' => 'Display address, phone, email in PDF header.',
+                    'default' => '1',
+                ],
+                'footer_label' => [
+                    'type' => 'text',
+                    'label' => 'Footer section label',
+                    'description' => 'Label above terms (e.g. Terms & Conditions).',
+                    'default' => 'Terms & Conditions',
+                ],
+                'footer_note' => [
+                    'type' => 'textarea',
+                    'label' => 'Footer note / terms',
+                    'description' => 'Optional: overrides company terms on PDFs. Leave blank to use company terms from Company Info.',
+                    'default' => '',
+                ],
+                'generated_note' => [
+                    'type' => 'text',
+                    'label' => 'Generated document note',
+                    'description' => 'Text at bottom of PDF (e.g. This is a computer generated document.).',
+                    'default' => 'This is a computer generated document.',
+                ],
+                'body_font_size_pt' => [
+                    'type' => 'integer',
+                    'label' => 'Body font size (pt)',
+                    'description' => 'Base font size for PDF body text (8–12).',
+                    'default' => 10,
+                ],
+            ],
+        ],
     ],
 ];

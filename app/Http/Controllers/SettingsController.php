@@ -35,12 +35,16 @@ class SettingsController extends Controller
         }
         $defs = Setting::getDefinitionsForCategory($category);
         $values = Setting::getByCategory($category);
-        return view('settings.app.edit', [
+        $viewData = [
             'categories' => $categories,
             'currentCategory' => $category,
             'defs' => $defs,
             'values' => $values,
-        ]);
+        ];
+        if ($category === 'pdf_design') {
+            $viewData['company'] = \App\Http\Controllers\CompanyInfoController::getCompanySettings();
+        }
+        return view('settings.app.edit', $viewData);
     }
 
     /**
@@ -67,8 +71,29 @@ class SettingsController extends Controller
                 $rules[$key] = 'nullable|string|max:1000';
             }
         }
+        if ($category === 'pdf_design' && $request->hasFile('logo_upload')) {
+            $rules['logo_upload'] = 'nullable|image|mimes:jpeg,png,gif,webp,svg|max:2048';
+        }
         $request->validate($rules);
+
+        if ($category === 'pdf_design' && $request->hasFile('logo_upload')) {
+            $file = $request->file('logo_upload');
+            $ext = $file->getClientOriginalExtension() ?: $file->guessExtension();
+            $filename = 'logo.' . ($ext === 'jpeg' ? 'jpg' : $ext);
+            $dir = 'pdf-design';
+            $oldUrl = Setting::get($category . '.logo_url', null);
+            if ($oldUrl && str_starts_with($oldUrl, $dir . '/')) {
+                \Illuminate\Support\Facades\Storage::disk('public')->delete($oldUrl);
+            }
+            $path = $file->storeAs($dir, $filename, 'public');
+            Setting::set($category, 'logo_url', $path);
+        }
+
+        $skipLogoUrl = $category === 'pdf_design' && $request->hasFile('logo_upload');
         foreach ($defs as $key => $def) {
+            if ($skipLogoUrl && $key === 'logo_url') {
+                continue;
+            }
             $type = $def['type'] ?? 'text';
             $value = $type === 'boolean' ? $request->boolean($key) : $request->input($key, $def['default'] ?? null);
             Setting::set($category, $key, $value);

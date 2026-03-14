@@ -54,7 +54,7 @@
 
     {{-- Form for current category --}}
     <div class="col-lg-9">
-        <form action="{{ route('settings.app.update', ['category' => $currentCategory]) }}" method="POST">
+        <form action="{{ route('settings.app.update', ['category' => $currentCategory]) }}" method="POST" @if($currentCategory === 'pdf_design') enctype="multipart/form-data" @endif>
             @csrf
             @method('PUT')
             <div class="table-card">
@@ -67,6 +67,8 @@
                 <div class="p-4">
                     @if($currentCategory === 'sms')
                         @include('settings.partials.sms-curl', ['defs' => $defs, 'values' => $values])
+                    @elseif($currentCategory === 'pdf_design')
+                        @include('settings.partials.pdf-design', ['defs' => $defs, 'values' => $values])
                     @else
                     <div class="row g-3">
                         @foreach($defs as $key => $def)

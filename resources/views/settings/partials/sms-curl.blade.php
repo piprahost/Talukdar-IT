@@ -20,7 +20,7 @@
         <strong>Custom API (HTTP / cURL)</strong>
     </div>
     <div class="card-body">
-        <p class="small text-muted mb-3">Configure one HTTP request per SMS. Use placeholders <code>{{phone}}</code>, <code>{{message}}</code>, <code>{{sender_id}}</code> in URL, headers and body.</p>
+        <p class="small text-muted mb-3">Configure one HTTP request per SMS. Use placeholders <code>@{{ phone }}</code>, <code>@{{ message }}</code>, <code>@{{ sender_id }}</code> in URL, headers and body.</p>
 
         <div class="row g-3">
             <div class="col-md-8">
@@ -55,7 +55,7 @@
         <div class="mt-3">
             <label class="form-label fw-semibold">Request body <span class="text-muted fw-normal">(for POST/PUT/PATCH)</span></label>
             <textarea class="form-control font-monospace" name="custom_body" id="setting_custom_body" rows="6"
-                      placeholder='{"to": "{{phone}}", "message": "{{message}}"}'
+                      placeholder='{"to": "@{{ phone }}", "message": "@{{ message }}"}'
                       style="font-size: 0.9rem;">{{ $v('custom_body', $defs['custom_body']['default'] ?? '') }}</textarea>
             @if(!empty($defs['custom_body']['description']))
                 <div class="form-text">{{ $defs['custom_body']['description'] }}</div>

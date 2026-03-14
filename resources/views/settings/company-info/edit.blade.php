@@ -69,7 +69,7 @@
             <div class="table-card">
                 <div class="table-card-header">
                     <h6><i class="fas fa-file-contract me-2"></i>Terms & Conditions</h6>
-                    <small class="text-muted">Printed on service memos</small>
+                    <small class="text-muted">Printed on sales invoices, purchase orders & service memos</small>
                 </div>
                 <div class="p-4">
                     <textarea class="form-control @error('terms_and_conditions') is-invalid @enderror"
@@ -77,7 +77,7 @@
                               placeholder="1. Items are repaired at customer's risk...&#10;2. Service charges must be paid before delivery...&#10;3. Unclaimed items after 30 days will be disposed...">{{ old('terms_and_conditions', $company->terms_and_conditions ?? '') }}</textarea>
                     @error('terms_and_conditions')<div class="invalid-feedback">{{ $message }}</div>@enderror
                     <div class="form-text mt-2">
-                        <i class="fas fa-info-circle me-1"></i>Use one line per condition. This text appears at the bottom of printed service memos.
+                        <i class="fas fa-info-circle me-1"></i>Use one line per condition. This text appears at the bottom of <strong>sales invoices</strong>, <strong>purchase orders</strong>, and <strong>service memos</strong>. You can override it per-PDF in <strong>Settings → Invoice & PDF Design → Footer note / terms</strong>.
                     </div>
                 </div>
             </div>
