@@ -236,6 +236,8 @@ class PurchaseReturnController extends Controller
 
                 AccountingService::recordPurchaseReturn($purchaseReturn);
             });
+            $purchaseReturn->refresh();
+            \App\Services\SmsNotificationService::purchaseReturnCompleted($purchaseReturn);
             return back()->with('success', 'Purchase return completed. Stock, invoice and accounting updated.');
         } catch (\Exception $e) {
             return back()->with('error', $e->getMessage());

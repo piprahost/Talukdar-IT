@@ -2,20 +2,20 @@
 
 namespace App\Services;
 
+use Illuminate\Support\Facades\Http;
 use Illuminate\Support\Facades\Log;
 
 class SmsService
 {
     /**
-     * Send a single SMS using lara-sms-bd if available.
+     * Send a single SMS via custom API (HTTP request from settings).
      *
-     * @param  string  $to   E.164 or local phone (as expected by gateway)
+     * @param  string  $to   Phone number
      * @param  string  $text Message body
      * @return bool
      */
     public static function send(string $to, string $text): bool
     {
-        // Global SMS enable flag
         if (!function_exists('settings') || !settings('sms.enabled', false)) {
             return false;
         }
@@ -25,86 +25,82 @@ class SmsService
             return false;
         }
 
-        // Test mode: redirect to test number
         $testMode = settings('sms.test_mode', false);
         $testNumber = trim((string) settings('sms.test_number', ''));
         if ($testMode && $testNumber !== '') {
             $to = $testNumber;
         }
 
-        // If SMS facade not installed, log and exit gracefully
-        if (!class_exists(\SMS::class) && !function_exists('sms')) {
-            Log::warning('SMS package (lara-sms-bd) not installed; skipping SMS send.', [
-                'to' => $to,
-                'text' => $text,
-            ]);
+        return static::sendViaCustomApi($to, $text);
+    }
+
+    /**
+     * Send SMS via custom API (URL, method, headers, body from settings).
+     */
+    protected static function sendViaCustomApi(string $to, string $text): bool
+    {
+        $url = trim((string) settings('sms.custom_url', ''));
+        if ($url === '') {
+            Log::warning('SMS: API URL not configured.');
             return false;
         }
 
+        $method = strtoupper(trim((string) settings('sms.custom_method', 'POST')));
+        $headersRaw = trim((string) settings('sms.custom_headers', ''));
+        $bodyRaw = trim((string) settings('sms.custom_body', ''));
+        $senderId = trim((string) settings('sms.sender_id', ''));
+
+        $replace = [
+            '{{phone}}' => $to,
+            '{{message}}' => $text,
+            '{{sender_id}}' => $senderId,
+        ];
+
+        $url = str_replace(array_keys($replace), array_values($replace), $url);
+
+        $headers = [];
+        if ($headersRaw !== '') {
+            foreach (preg_split('/\r?\n/', $headersRaw) as $line) {
+                $line = trim($line);
+                if ($line === '') {
+                    continue;
+                }
+                if (preg_match('/^([^:]+):\s*(.*)$/s', $line, $m)) {
+                    $headers[trim($m[1])] = trim(str_replace(array_keys($replace), array_values($replace), $m[2]));
+                }
+            }
+        }
+
+        $body = $bodyRaw !== '' ? str_replace(array_keys($replace), array_values($replace), $bodyRaw) : '';
+
         try {
-            $gateway = trim((string) settings('sms.default_gateway', ''));
+            $request = Http::withHeaders($headers)->timeout(15);
 
-            // Push admin-panel credentials into config so the SMS package uses them
-            if ($gateway !== '' && $gateway !== 'other') {
-                static::injectGatewayConfig($gateway);
+            if (in_array($method, ['GET', 'HEAD'], true)) {
+                $response = $method === 'GET'
+                    ? $request->get($url)
+                    : $request->head($url);
+            } else {
+                $contentType = $headers['Content-Type'] ?? $headers['content-type'] ?? 'application/json';
+                $response = $request->withBody($body, $contentType)->{strtolower($method)}($url);
             }
 
-            // Use helper or facade depending on availability
-            $sender = function_exists('sms') ? sms() : \SMS::class;
-
-            if ($gateway !== '') {
-                // Switch to configured gateway
-                $sender = $sender->gateway($gateway);
+            if ($response->successful()) {
+                return true;
             }
 
-            // Sender ID / From: prefer settings, then package config
-            $from = trim((string) (settings('sms.sender_id') ?: settings('sms.from', '')));
-            if ($from !== '' && method_exists($sender, 'from')) {
-                $sender = $sender->from($from);
-            }
-
-            $sender->send($to, $text);
-
-            return true;
+            Log::warning('SMS API: non-success response', [
+                'status' => $response->status(),
+                'body' => $response->body(),
+            ]);
+            return false;
         } catch (\Throwable $e) {
-            Log::error('Failed to send SMS', [
+            Log::error('SMS API failed', [
                 'to' => $to,
-                'text' => $text,
+                'url' => $url,
                 'error' => $e->getMessage(),
             ]);
             return false;
         }
     }
-
-    /**
-     * Inject gateway credentials from admin settings into config so the SMS package uses them.
-     */
-    protected static function injectGatewayConfig(string $gateway): void
-    {
-        $apiKey = trim((string) settings('sms.api_key', ''));
-        $apiSecret = trim((string) settings('sms.api_secret', ''));
-        $senderId = trim((string) settings('sms.sender_id', ''));
-        $username = trim((string) settings('sms.username', ''));
-        $password = trim((string) settings('sms.password', ''));
-        $from = trim((string) settings('sms.from', ''));
-
-        $payload = array_filter([
-            'api_key' => $apiKey ?: null,
-            'api_secret' => $apiSecret ?: null,
-            'sender_id' => $senderId ?: $from ?: null,
-            'username' => $username ?: null,
-            'password' => $password ?: null,
-            'from' => $from ?: null,
-        ], fn ($v) => $v !== null && $v !== '');
-
-        if ($payload === []) {
-            return;
-        }
-
-        // lara-sms-bd and similar packages read config like smsbd.gateways.{name}
-        $key = 'smsbd.gateways.' . $gateway;
-        $existing = config($key, []);
-        config([$key => array_merge(is_array($existing) ? $existing : [], $payload)]);
-    }
 }
-

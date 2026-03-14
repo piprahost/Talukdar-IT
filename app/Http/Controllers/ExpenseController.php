@@ -267,6 +267,11 @@ class ExpenseController extends Controller
             // Accounting entry will be updated via model observer if status changed
         });
 
+        $expense->refresh();
+        if (in_array($expense->status, ['approved', 'paid'], true) && !in_array($oldStatus, ['approved', 'paid'])) {
+            \App\Services\SmsNotificationService::expenseApproved($expense);
+        }
+
         return redirect()->route('expenses.index')
             ->with('success', 'Expense updated successfully.');
     }
@@ -303,6 +308,8 @@ class ExpenseController extends Controller
         }
 
         $expense->approve();
+
+        \App\Services\SmsNotificationService::expenseApproved($expense->fresh());
 
         return back()->with('success', 'Expense approved successfully.');
     }

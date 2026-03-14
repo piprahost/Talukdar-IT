@@ -290,6 +290,14 @@ class SaleController extends Controller
         // Optional SMS notification
         \App\Services\SmsNotificationService::saleCompleted($sale);
 
+        // Low stock SMS alerts (one per product that is now at or below threshold)
+        foreach ($sale->items as $item) {
+            $item->load('product');
+            if ($item->product) {
+                \App\Services\SmsNotificationService::lowStockAlert($item->product->fresh());
+            }
+        }
+
         return back()->with('success', 'Sale completed successfully. Stock updated.');
     }
 

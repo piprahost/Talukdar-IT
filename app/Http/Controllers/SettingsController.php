@@ -61,6 +61,8 @@ class SettingsController extends Controller
                 $rules[$key] = 'nullable';
             } elseif ($type === 'integer') {
                 $rules[$key] = 'nullable|integer';
+            } elseif ($type === 'textarea') {
+                $rules[$key] = 'nullable|string|max:10000';
             } else {
                 $rules[$key] = 'nullable|string|max:1000';
             }
@@ -126,6 +128,47 @@ class SettingsController extends Controller
             $message .= " Updated {$saleReturnsUpdated} sale return(s), {$purchaseReturnsUpdated} purchase return(s).";
         }
         $message .= ' For sales/purchases recalc run in terminal: php artisan sales:recalculate-totals && php artisan purchases:recalculate-totals';
+
+        return redirect()->back()->with('success', $message);
+    }
+
+    /**
+     * Recalculate sale and purchase return totals from line items (fixes Return Amount when 0).
+     */
+    public function recalculateReturns()
+    {
+        $this->authorizePermission('edit settings');
+
+        $saleReturnsUpdated = DB::update('
+            UPDATE sales_returns sr
+            INNER JOIN (
+                SELECT sale_return_id, COALESCE(SUM(subtotal), 0) AS item_subtotal
+                FROM sale_return_items
+                GROUP BY sale_return_id
+            ) t ON t.sale_return_id = sr.id
+            SET sr.subtotal = t.item_subtotal,
+                sr.total_amount = t.item_subtotal + COALESCE(sr.tax_amount, 0) - COALESCE(sr.discount_amount, 0)
+            WHERE sr.total_amount <= 0
+        ');
+
+        $purchaseReturnsUpdated = DB::update('
+            UPDATE purchase_returns pr
+            INNER JOIN (
+                SELECT purchase_return_id, COALESCE(SUM(subtotal), 0) AS item_subtotal
+                FROM purchase_return_items
+                GROUP BY purchase_return_id
+            ) t ON t.purchase_return_id = pr.id
+            SET pr.subtotal = t.item_subtotal,
+                pr.total_amount = t.item_subtotal + COALESCE(pr.tax_amount, 0) - COALESCE(pr.discount_amount, 0)
+            WHERE pr.total_amount <= 0
+        ');
+
+        $message = 'Return totals recalculated.';
+        if ($saleReturnsUpdated > 0 || $purchaseReturnsUpdated > 0) {
+            $message .= " Updated {$saleReturnsUpdated} sale return(s), {$purchaseReturnsUpdated} purchase return(s).";
+        } else {
+            $message .= ' No returns needed updating.';
+        }
 
         return redirect()->back()->with('success', $message);
     }

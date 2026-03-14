@@ -254,6 +254,8 @@ class SaleReturnController extends Controller
 
                 AccountingService::recordSaleReturn($saleReturn);
             });
+            $saleReturn->refresh();
+            \App\Services\SmsNotificationService::saleReturnCompleted($saleReturn);
             return back()->with('success', 'Sale return completed. Stock, invoice and accounting updated.');
         } catch (\Exception $e) {
             return back()->with('error', $e->getMessage());

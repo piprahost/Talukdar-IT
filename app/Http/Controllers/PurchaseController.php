@@ -174,6 +174,8 @@ class PurchaseController extends Controller
             return $purchase;
         });
 
+        \App\Services\SmsNotificationService::purchaseReceived($purchase);
+
         return redirect()->route('purchases.show', $purchase)
             ->with('success', 'Purchase order created and received successfully. Stock updated.');
     }

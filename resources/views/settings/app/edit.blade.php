@@ -40,8 +40,14 @@
                             <i class="fas fa-calculator me-1"></i>Re-calculate totals
                         </button>
                     </form>
+                    <form action="{{ route('settings.recalculate-returns') }}" method="POST" class="d-inline">
+                        @csrf
+                        <button type="submit" class="btn btn-outline-secondary btn-sm w-100 text-start">
+                            <i class="fas fa-undo me-1"></i>Re-calculate return totals
+                        </button>
+                    </form>
                 </div>
-                <p class="form-text small mb-0 mt-1">Clear cache: app, config, views. Re-calculate: return totals (sale/purchase returns) from line items. For sales/purchases use terminal.</p>
+                <p class="form-text small mb-0 mt-1">Clear cache: app, config, views. Re-calculate totals: returns from line items. Re-calculate return totals: fix sale/purchase return amounts only. Sales/purchases: use terminal.</p>
             </div>
         </div>
     </div>
@@ -59,16 +65,17 @@
                     </h6>
                 </div>
                 <div class="p-4">
+                    @if($currentCategory === 'sms')
+                        @include('settings.partials.sms-curl', ['defs' => $defs, 'values' => $values])
+                    @else
                     <div class="row g-3">
                         @foreach($defs as $key => $def)
                         @php
                             $type = $def['type'] ?? 'text';
                             $value = $values[$key] ?? ($def['default'] ?? '');
                             $inputName = $key;
-                            $showFor = $def['show_for'] ?? null;
-                            $isCredentialRow = $currentCategory === 'sms' && is_array($showFor);
                         @endphp
-                        <div class="col-12 {{ $isCredentialRow ? 'sms-credential-row' : '' }}" @if($isCredentialRow) data-show-for="{{ implode(',', $showFor) }}" @endif>
+                        <div class="col-12">
                             @if($type === 'boolean')
                                 <div class="form-check form-switch">
                                     <input class="form-check-input" type="checkbox" name="{{ $inputName }}" value="1"
@@ -78,7 +85,7 @@
                             @else
                                 <label class="form-label fw-semibold" for="setting_{{ $key }}">{{ $def['label'] }}</label>
                                 @if(isset($def['options']) && is_array($def['options']))
-                                    <select class="form-select" id="setting_{{ $key }}" name="{{ $inputName }}" @if($currentCategory === 'sms' && $key === 'default_gateway') data-sms-gateway-select @endif>
+                                    <select class="form-select" id="setting_{{ $key }}" name="{{ $inputName }}">
                                         @foreach($def['options'] as $optVal => $optLabel)
                                             <option value="{{ $optVal }}" {{ (string)old($key, $value) === (string)$optVal ? 'selected' : '' }}>{{ $optLabel }}</option>
                                         @endforeach
@@ -86,6 +93,9 @@
                                 @elseif($type === 'integer')
                                     <input type="number" class="form-control" id="setting_{{ $key }}" name="{{ $inputName }}"
                                            value="{{ old($key, $value) }}" min="0" step="1">
+                                @elseif($type === 'textarea')
+                                    <textarea class="form-control" id="setting_{{ $key }}" name="{{ $inputName }}" rows="4"
+                                              placeholder="{{ $def['default'] ?? '' }}">{{ old($key, $value) }}</textarea>
                                 @else
                                     @php $inputType = $def['input_type'] ?? 'text'; @endphp
                                     <input type="{{ $inputType }}" class="form-control" id="setting_{{ $key }}" name="{{ $inputName }}"
@@ -98,6 +108,7 @@
                         </div>
                         @endforeach
                     </div>
+                    @endif
                 </div>
                 <div class="table-card-header bg-light d-flex justify-content-end gap-2 py-2">
                     <a href="{{ route('settings.app.index') }}" class="btn btn-outline-secondary btn-sm">Cancel</a>
@@ -108,25 +119,4 @@
     </div>
 </div>
 
-@if($currentCategory === 'sms')
-<script>
-(function() {
-    var sel = document.querySelector('#setting_default_gateway');
-    var rows = document.querySelectorAll('.sms-credential-row');
-    if (!sel || !rows.length) return;
-
-    function updateCredentialVisibility() {
-        var gateway = (sel.value || '').trim();
-        rows.forEach(function(row) {
-            var showFor = (row.getAttribute('data-show-for') || '').split(',').map(function(s) { return s.trim(); });
-            var show = gateway && showFor.indexOf(gateway) !== -1;
-            row.style.display = show ? '' : 'none';
-        });
-    }
-
-    sel.addEventListener('change', updateCredentialVisibility);
-    updateCredentialVisibility();
-})();
-</script>
-@endif
 @endsection

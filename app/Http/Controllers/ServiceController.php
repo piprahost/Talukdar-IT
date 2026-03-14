@@ -175,6 +175,9 @@ class ServiceController extends Controller
         // Optional SMS when status changed
         if ($oldStatus !== $serviceFresh->status) {
             \App\Services\SmsNotificationService::serviceStatusChanged($serviceFresh);
+            if (in_array($serviceFresh->status, ['completed', 'delivered'], true)) {
+                \App\Services\SmsNotificationService::serviceCompleted($serviceFresh);
+            }
         }
 
         return redirect()->route('services.show', $serviceFresh)
