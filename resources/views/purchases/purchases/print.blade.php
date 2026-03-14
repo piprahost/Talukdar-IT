@@ -3,212 +3,64 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>Purchase Invoice - {{ $purchase->po_number }}</title>
-    <style>
-        @page {
-            margin: 0.7cm;
-            size: A4;
-        }
-        
-        * {
-            margin: 0;
-            padding: 0;
-            box-sizing: border-box;
-        }
-        
-        body {
-            font-family: 'Arial', 'Helvetica', sans-serif;
-            font-size: 9pt;
-            line-height: 1.4;
-            color: #000;
-            background: white;
-        }
-        
-        .print-container {
-            max-width: 210mm;
-            margin: 0 auto;
-            padding: 0;
-            background: white;
-        }
-        
-        .print-header {
-            border-bottom: 2px solid #000;
-            padding-bottom: 8px;
-            margin-bottom: 12px;
-        }
-        
-        .header-top {
-            display: flex;
-            justify-content: space-between;
-            align-items: flex-start;
-        }
-        
-        .company-info h1 {
-            color: #000;
-            font-size: 18pt;
-            margin-bottom: 3px;
-            font-weight: bold;
-        }
-        
-        .company-info p {
-            font-size: 8pt;
-            margin: 1px 0;
-        }
-        
-        .invoice-info {
-            text-align: right;
-        }
-        
-        .invoice-info h2 {
-            font-size: 16pt;
-            margin-bottom: 5px;
-            color: #000;
-        }
-        
-        .invoice-info p {
-            font-size: 8pt;
-            margin: 2px 0;
-        }
-        
-        .invoice-details {
-            display: flex;
-            justify-content: space-between;
-            margin: 12px 0;
-            padding: 8px 0;
-            border-bottom: 1px dotted #666;
-        }
-        
-        .invoice-details > div {
-            flex: 1;
-        }
-        
-        .invoice-details h3 {
-            font-size: 9pt;
-            margin-bottom: 4px;
-            color: #000;
-        }
-        
-        .invoice-details p {
-            font-size: 8pt;
-            margin: 2px 0;
-        }
-        
-        table {
-            width: 100%;
-            border-collapse: collapse;
-            margin: 10px 0;
-        }
-        
-        table thead {
-            background: #f5f5f5;
-        }
-        
-        table th {
-            padding: 6px 4px;
-            text-align: left;
-            font-size: 8pt;
-            border-bottom: 1px solid #333;
-            font-weight: bold;
-        }
-        
-        table td {
-            padding: 5px 4px;
-            font-size: 8pt;
-            border-bottom: 1px dotted #ccc;
-        }
-        
-        table tfoot {
-            border-top: 2px solid #000;
-        }
-        
-        table tfoot th {
-            padding: 6px 4px;
-            text-align: right;
-            font-size: 9pt;
-            border-bottom: none;
-        }
-        
-        .total-row {
-            font-weight: bold;
-            font-size: 10pt;
-        }
-        
-        .footer {
-            margin-top: 15px;
-            padding-top: 10px;
-            border-top: 1px solid #333;
-            font-size: 8pt;
-            text-align: center;
-        }
-        
-        @media print {
-            body {
-                background: white;
-            }
-            
-            .no-print {
-                display: none;
-            }
-        }
-    </style>
+    <title>Purchase Order - {{ $purchase->po_number }}</title>
+    <link href="https://fonts.googleapis.com/css2?family=DM+Sans:wght@400;500;600;700;800&display=swap" rel="stylesheet">
+    @include('partials.print-styles')
 </head>
 <body>
     <div class="print-container">
+        <div class="print-actions no-print">
+            <button onclick="window.print()" class="btn btn-primary">Print</button>
+            <a href="{{ route('purchases.show', $purchase) }}" class="btn">Back</a>
+        </div>
+
         @php
             $company = \App\Http\Controllers\CompanyInfoController::getCompanySettings();
         @endphp
-        
-        <div class="print-header">
-            <div class="header-top">
-                <div class="company-info">
-                    <h1>{{ $company->company_name ?? 'Company Name' }}</h1>
-                    @if($company->address ?? null)<p>{{ $company->address }}</p>@endif
-                    @if($company->phone ?? null)<p>Phone: {{ $company->phone }}</p>@endif
-                    @if($company->email ?? null)<p>Email: {{ $company->email }}</p>@endif
+        @include('partials.print-header-dynamic', [
+            'documentTitle' => 'PURCHASE ORDER',
+            'documentNumber' => $purchase->po_number,
+            'documentDate' => $purchase->order_date->format('F d, Y'),
+            'documentSubline' => $purchase->expected_delivery_date ? 'Expected delivery: ' . $purchase->expected_delivery_date->format('F d, Y') : null,
+        ])
+
+        <div class="bill-to-section">
+            <div class="bill-to-label">Supplier</div>
+            <div class="bill-to-name">{{ $purchase->supplier->name }}</div>
+            <div class="bill-to-details">
+                @if($purchase->supplier->company_name){{ $purchase->supplier->company_name }}<br>@endif
+                @if($purchase->supplier->email)Email: {{ $purchase->supplier->email }}@endif
+                @if($purchase->supplier->email && $purchase->supplier->phone) &nbsp;|&nbsp; @endif
+                @if($purchase->supplier->phone)Phone: {{ $purchase->supplier->phone }}@endif
+                @if($purchase->supplier->address)<br>{{ $purchase->supplier->address }}@endif
+            </div>
+        </div>
+
+        <div style="display: flex; justify-content: space-between; align-items: flex-start; margin-bottom: 25px; flex-wrap: wrap; gap: 15px;">
+            <div>
+                <span class="bill-to-label">Order & Payment</span>
+                <div style="margin-top: 8px;">
+                    <span class="status-badge status-{{ $purchase->payment_status === 'paid' ? 'paid' : ($purchase->payment_status === 'partial' ? 'partial' : 'unpaid') }}">{{ ucfirst($purchase->payment_status) }}</span>
+                    <span style="font-size: 9pt; color: #555;"> &nbsp; Status: {{ ucfirst($purchase->status) }}</span>
                 </div>
-                <div class="invoice-info">
-                    <h2>PURCHASE INVOICE</h2>
-                    <p><strong>PO #:</strong> {{ $purchase->po_number }}</p>
-                    <p><strong>Date:</strong> {{ $purchase->order_date->format('d M Y') }}</p>
-                    @if($purchase->expected_delivery_date)
-                        <p><strong>Expected Delivery:</strong> {{ $purchase->expected_delivery_date->format('d M Y') }}</p>
-                    @endif
+                <div style="font-size: 9pt; color: #555; margin-top: 6px;">
+                    @if($purchase->received_date)Received: {{ $purchase->received_date->format('d M Y') }} &nbsp;|&nbsp; @endif
+                    Paid: ৳{{ number_format($purchase->paid_amount, 2) }} &nbsp;|&nbsp; Due: ৳{{ number_format($purchase->due_amount, 2) }}
                 </div>
             </div>
         </div>
-        
-        <div class="invoice-details">
-            <div>
-                <h3>Supplier Information:</h3>
-                <p><strong>{{ $purchase->supplier->name }}</strong></p>
-                @if($purchase->supplier->company_name)<p>{{ $purchase->supplier->company_name }}</p>@endif
-                @if($purchase->supplier->email)<p>Email: {{ $purchase->supplier->email }}</p>@endif
-                @if($purchase->supplier->phone)<p>Phone: {{ $purchase->supplier->phone }}</p>@endif
-                @if($purchase->supplier->address)<p>{{ $purchase->supplier->address }}</p>@endif
-            </div>
-            <div>
-                <h3>Order Information:</h3>
-                <p><strong>Status:</strong> {{ ucfirst($purchase->status) }}</p>
-                @if($purchase->received_date)
-                    <p><strong>Received Date:</strong> {{ $purchase->received_date->format('d M Y') }}</p>
-                @endif
-                <p><strong>Payment Status:</strong> {{ ucfirst($purchase->payment_status) }}</p>
-                <p><strong>Paid:</strong> ৳{{ number_format($purchase->paid_amount, 2) }}</p>
-                <p><strong>Due:</strong> ৳{{ number_format($purchase->due_amount, 2) }}</p>
-            </div>
-        </div>
-        
-        <table>
+
+        <table class="print-table">
             <thead>
                 <tr>
-                    <th style="width: 5%;">#</th>
-                    <th style="width: 30%;">Product</th>
-                    <th style="width: 15%;">Barcode</th>
-                    <th style="width: 12%;">Serial Number</th>
-                    <th style="width: 8%;">Qty</th>
+                    <th style="width: 4%;">#</th>
+                    <th style="width: 26%;">Product</th>
+                    <th style="width: 12%;">Barcode</th>
+                    <th style="width: 10%;">Serial</th>
+                    <th style="width: 6%;">Qty</th>
                     <th style="width: 12%;">Cost Price</th>
-                    <th style="width: 10%;">Selling Price</th>
-                    <th style="width: 8%; text-align: right;">Subtotal</th>
+                    <th style="width: 12%;">Selling Price</th>
+                    <th class="text-end" style="width: 18%;">Subtotal</th>
                 </tr>
             </thead>
             <tbody>
@@ -221,56 +73,45 @@
                         <td>{{ $item->quantity }}</td>
                         <td>৳{{ number_format($item->cost_price, 2) }}</td>
                         <td>{{ $item->selling_price ? '৳' . number_format($item->selling_price, 2) : 'N/A' }}</td>
-                        <td style="text-align: right;">৳{{ number_format($item->cost_price * $item->quantity, 2) }}</td>
+                        <td class="text-end">৳{{ number_format($item->cost_price * $item->quantity, 2) }}</td>
                     </tr>
                 @endforeach
             </tbody>
-            <tfoot>
+        </table>
+
+        <div class="totals-wrap">
+            <table class="totals-table">
                 <tr>
-                    <th colspan="7" style="text-align: right;">Subtotal:</th>
-                    <th style="text-align: right;">৳{{ number_format($purchase->subtotal, 2) }}</th>
+                    <td class="label">Subtotal</td>
+                    <td class="value">৳{{ number_format($purchase->subtotal, 2) }}</td>
                 </tr>
                 @if($purchase->tax_amount > 0)
                 <tr>
-                    <th colspan="7" style="text-align: right;">Tax:</th>
-                    <th style="text-align: right;">৳{{ number_format($purchase->tax_amount, 2) }}</th>
+                    <td class="label">Tax</td>
+                    <td class="value">৳{{ number_format($purchase->tax_amount, 2) }}</td>
                 </tr>
                 @endif
                 @if($purchase->discount_amount > 0)
                 <tr>
-                    <th colspan="7" style="text-align: right;">Discount:</th>
-                    <th style="text-align: right;">৳{{ number_format($purchase->discount_amount, 2) }}</th>
+                    <td class="label">Discount</td>
+                    <td class="value">(-) ৳{{ number_format($purchase->discount_amount, 2) }}</td>
                 </tr>
                 @endif
                 <tr class="total-row">
-                    <th colspan="7" style="text-align: right;">Total Amount:</th>
-                    <th style="text-align: right;">৳{{ number_format($purchase->total_amount, 2) }}</th>
+                    <td class="label">Total Amount</td>
+                    <td class="value total-highlight">৳{{ number_format($purchase->total_amount, 2) }}</td>
                 </tr>
-            </tfoot>
-        </table>
-        
+            </table>
+        </div>
+
         @if($purchase->notes)
-        <div style="margin-top: 10px; padding: 5px; font-size: 8pt;">
-            <strong>Notes:</strong> {{ $purchase->notes }}
-        </div>
+        <div class="print-terms" style="margin-top: 0;"><strong>Notes:</strong> {{ $purchase->notes }}</div>
         @endif
-        
         @if($purchase->internal_notes)
-        <div style="margin-top: 5px; padding: 5px; font-size: 8pt; border-top: 1px dotted #ccc;">
-            <strong>Internal Notes:</strong> {{ $purchase->internal_notes }}
-        </div>
+        <div class="print-terms" style="margin-top: 6px;"><strong>Internal notes:</strong> {{ $purchase->internal_notes }}</div>
         @endif
-        
-        <div class="footer">
-            <p>Purchase Order Invoice</p>
-            <p style="margin-top: 5px;">This is a computer-generated purchase invoice.</p>
-        </div>
-    </div>
-    
-    <div class="no-print" style="text-align: center; margin: 20px;">
-        <button onclick="window.print()" class="btn btn-primary">Print Invoice</button>
-        <a href="{{ route('purchases.show', $purchase) }}" class="btn btn-secondary">Back</a>
+
+        @include('partials.print-footer-dynamic')
     </div>
 </body>
 </html>
-
