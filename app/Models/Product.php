@@ -233,8 +233,9 @@ class Product extends Model
     // Barcode Management Methods
     public function addBarcode($barcode, $updateStock = false, $stockNotes = null)
     {
+        $this->refresh(); // Ensure we have latest barcodes when called in quick succession (e.g. seeding)
         $barcodes = $this->barcodes ?? [];
-        
+
         // Check if barcode already exists
         if (!in_array($barcode, $barcodes)) {
             $barcodes[] = $barcode;

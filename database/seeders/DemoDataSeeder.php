@@ -211,22 +211,36 @@ class DemoDataSeeder extends Seeder
 
                 for ($u = 0; $u < $units; $u++) {
                     $barcode = 'BD-' . sprintf('%010d', ++$barcodeSeq);
-                    PurchaseItem::create([
-                        'purchase_order_id' => $purchase->id,
-                        'product_id' => $product->id,
-                        'barcode' => $barcode,
-                        'serial_number' => $faker->optional(0.4)->bothify('SN-########'),
-                        'cost_price' => $costPrice,
-                        'selling_price' => $sellingPrice,
-                        'quantity' => 1,
-                        'status' => 'received',
-                        'received_date' => $purchase->received_date,
-                        'condition_notes' => 'New stock',
-                        'warranty_info' => 'Standard manufacturer warranty',
-                        'notes' => 'BD demo',
-                    ]);
+                    PurchaseItem::withoutEvents(function () use ($purchase, $product, $barcode, $faker, $costPrice, $sellingPrice) {
+                        PurchaseItem::create([
+                            'purchase_order_id' => $purchase->id,
+                            'product_id' => $product->id,
+                            'barcode' => $barcode,
+                            'serial_number' => $faker->optional(0.4)->bothify('SN-########'),
+                            'cost_price' => $costPrice,
+                            'selling_price' => $sellingPrice,
+                            'quantity' => 1,
+                            'status' => 'received',
+                            'received_date' => $purchase->received_date,
+                            'condition_notes' => 'New stock',
+                            'warranty_info' => 'Standard manufacturer warranty',
+                            'notes' => 'BD demo',
+                        ]);
+                    });
                 }
             }
+
+            // Sync product barcodes and stock from purchase items (1 barcode = 1 unit)
+            $purchase->items()->get()->groupBy('product_id')->each(function ($items, $productId) {
+                $product = Product::find($productId);
+                if (!$product) {
+                    return;
+                }
+                $barcodes = $items->pluck('barcode')->filter()->values()->all();
+                if (count($barcodes) > 0) {
+                    $product->addBarcodes($barcodes, true, 'Demo purchase receive (1 barcode = 1 stock)');
+                }
+            });
 
             $purchase->refresh();
             $subtotal = $purchase->items()->sum(\DB::raw('cost_price * quantity'));
