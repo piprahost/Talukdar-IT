@@ -51,46 +51,63 @@
 
 <!-- Calculator Modal -->
 <div class="modal fade" id="calculatorModal" tabindex="-1" aria-labelledby="calculatorModalLabel" aria-hidden="true">
-    <div class="modal-dialog modal-dialog-centered">
+    <div class="modal-dialog modal-dialog-centered modal-lg">
         <div class="modal-content">
-            <div class="modal-header" style="background: linear-gradient(135deg, #10b981 0%, #059669 100%); color: white;">
+            <div class="modal-header calculator-modal-header">
                 <h5 class="modal-title" id="calculatorModalLabel"><i class="fas fa-calculator me-2"></i>Calculator</h5>
                 <button type="button" class="btn-close btn-close-white" data-bs-dismiss="modal" aria-label="Close"></button>
             </div>
-            <div class="modal-body" style="background: #f8f9fa;">
-                <div class="calculator-container">
-                    <div class="calculator-display mb-3">
-                        <input type="text" id="calcDisplay" class="form-control form-control-lg text-end" value="0" readonly style="font-size: 24px; font-weight: bold; background: white; border: 2px solid #10b981;">
+            <div class="modal-body calculator-modal-body">
+                <div class="row g-3">
+                    <div class="col-lg-7">
+                        <div class="calculator-panel">
+                            <div class="calculator-expression" id="calcExpression">&nbsp;</div>
+                            <div class="calculator-display mb-2">
+                                <input type="text" id="calcDisplay" class="form-control form-control-lg text-end" value="0" readonly>
+                            </div>
+                            <div class="calculator-shortcuts mb-3">Shortcuts: Enter/=, Del=CE, C=Clear, Esc=Close</div>
+                            <div class="calculator-buttons">
+                                <div class="row g-2 mb-2">
+                                    <div class="col-3"><button class="btn calc-btn calc-btn-muted w-100" onclick="calcClear()">C</button></div>
+                                    <div class="col-3"><button class="btn calc-btn calc-btn-muted w-100" onclick="calcClearEntry()">CE</button></div>
+                                    <div class="col-3"><button class="btn calc-btn calc-btn-muted w-100" onclick="calcBackspace()">⌫</button></div>
+                                    <div class="col-3"><button class="btn calc-btn calc-btn-op w-100" onclick="calcOperation('/')">/</button></div>
+                                </div>
+                                <div class="row g-2 mb-2">
+                                    <div class="col-3"><button class="btn calc-btn calc-btn-number w-100" onclick="calcInput('7')">7</button></div>
+                                    <div class="col-3"><button class="btn calc-btn calc-btn-number w-100" onclick="calcInput('8')">8</button></div>
+                                    <div class="col-3"><button class="btn calc-btn calc-btn-number w-100" onclick="calcInput('9')">9</button></div>
+                                    <div class="col-3"><button class="btn calc-btn calc-btn-op w-100" onclick="calcOperation('*')">×</button></div>
+                                </div>
+                                <div class="row g-2 mb-2">
+                                    <div class="col-3"><button class="btn calc-btn calc-btn-number w-100" onclick="calcInput('4')">4</button></div>
+                                    <div class="col-3"><button class="btn calc-btn calc-btn-number w-100" onclick="calcInput('5')">5</button></div>
+                                    <div class="col-3"><button class="btn calc-btn calc-btn-number w-100" onclick="calcInput('6')">6</button></div>
+                                    <div class="col-3"><button class="btn calc-btn calc-btn-op w-100" onclick="calcOperation('-')">−</button></div>
+                                </div>
+                                <div class="row g-2 mb-2">
+                                    <div class="col-3"><button class="btn calc-btn calc-btn-number w-100" onclick="calcInput('1')">1</button></div>
+                                    <div class="col-3"><button class="btn calc-btn calc-btn-number w-100" onclick="calcInput('2')">2</button></div>
+                                    <div class="col-3"><button class="btn calc-btn calc-btn-number w-100" onclick="calcInput('3')">3</button></div>
+                                    <div class="col-3"><button class="btn calc-btn calc-btn-op w-100" onclick="calcOperation('+')">+</button></div>
+                                </div>
+                                <div class="row g-2">
+                                    <div class="col-6"><button class="btn calc-btn calc-btn-number w-100" onclick="calcInput('0')">0</button></div>
+                                    <div class="col-3"><button class="btn calc-btn calc-btn-number w-100" onclick="calcInput('.')">.</button></div>
+                                    <div class="col-3"><button class="btn calc-btn calc-btn-equals w-100" onclick="calcCalculate()">=</button></div>
+                                </div>
+                            </div>
+                        </div>
                     </div>
-                    <div class="calculator-buttons">
-                        <div class="row g-2 mb-2">
-                            <div class="col-3"><button class="btn btn-secondary w-100" onclick="calcClear()">C</button></div>
-                            <div class="col-3"><button class="btn btn-secondary w-100" onclick="calcClearEntry()">CE</button></div>
-                            <div class="col-3"><button class="btn btn-secondary w-100" onclick="calcBackspace()">⌫</button></div>
-                            <div class="col-3"><button class="btn btn-warning w-100" onclick="calcOperation('/')">/</button></div>
-                        </div>
-                        <div class="row g-2 mb-2">
-                            <div class="col-3"><button class="btn btn-light w-100" onclick="calcInput('7')">7</button></div>
-                            <div class="col-3"><button class="btn btn-light w-100" onclick="calcInput('8')">8</button></div>
-                            <div class="col-3"><button class="btn btn-light w-100" onclick="calcInput('9')">9</button></div>
-                            <div class="col-3"><button class="btn btn-warning w-100" onclick="calcOperation('*')">×</button></div>
-                        </div>
-                        <div class="row g-2 mb-2">
-                            <div class="col-3"><button class="btn btn-light w-100" onclick="calcInput('4')">4</button></div>
-                            <div class="col-3"><button class="btn btn-light w-100" onclick="calcInput('5')">5</button></div>
-                            <div class="col-3"><button class="btn btn-light w-100" onclick="calcInput('6')">6</button></div>
-                            <div class="col-3"><button class="btn btn-warning w-100" onclick="calcOperation('-')">−</button></div>
-                        </div>
-                        <div class="row g-2 mb-2">
-                            <div class="col-3"><button class="btn btn-light w-100" onclick="calcInput('1')">1</button></div>
-                            <div class="col-3"><button class="btn btn-light w-100" onclick="calcInput('2')">2</button></div>
-                            <div class="col-3"><button class="btn btn-light w-100" onclick="calcInput('3')">3</button></div>
-                            <div class="col-3"><button class="btn btn-warning w-100" onclick="calcOperation('+')">+</button></div>
-                        </div>
-                        <div class="row g-2">
-                            <div class="col-6"><button class="btn btn-light w-100" onclick="calcInput('0')">0</button></div>
-                            <div class="col-3"><button class="btn btn-light w-100" onclick="calcInput('.')">.</button></div>
-                            <div class="col-3"><button class="btn btn-success w-100" onclick="calcCalculate()">=</button></div>
+                    <div class="col-lg-5">
+                        <div class="calculator-history-panel">
+                            <div class="d-flex align-items-center justify-content-between mb-2">
+                                <div class="fw-semibold"><i class="fas fa-history me-2"></i>History</div>
+                                <button class="btn btn-sm btn-outline-danger" onclick="calcClearHistory()">Clear</button>
+                            </div>
+                            <div class="calculator-history-list" id="calcHistoryList">
+                                <div class="calculator-history-empty">No calculations yet</div>
+                            </div>
                         </div>
                     </div>
                 </div>
@@ -99,11 +116,113 @@
     </div>
 </div>
 
+<style>
+.calculator-modal-header {
+    background: linear-gradient(135deg, #0f766e 0%, #0d9488 100%);
+    color: #fff;
+}
+.calculator-modal-body {
+    background: linear-gradient(180deg, #f8fafc 0%, #eef2ff 100%);
+}
+.calculator-panel,
+.calculator-history-panel {
+    background: #fff;
+    border: 1px solid #e2e8f0;
+    border-radius: 12px;
+    padding: 1rem;
+    box-shadow: 0 10px 24px rgba(15, 23, 42, 0.08);
+}
+.calculator-expression {
+    min-height: 20px;
+    color: #64748b;
+    font-size: 0.9rem;
+    text-align: right;
+    margin-bottom: 0.35rem;
+}
+#calcDisplay {
+    font-size: 2rem;
+    font-weight: 700;
+    border: 2px solid #14b8a6;
+    color: #0f172a;
+}
+.calculator-shortcuts {
+    color: #64748b;
+    font-size: 0.78rem;
+}
+.calc-btn {
+    border-radius: 10px;
+    font-weight: 600;
+    padding: 0.55rem 0;
+    border: none;
+}
+.calc-btn-number {
+    background: #f8fafc;
+    color: #0f172a;
+}
+.calc-btn-number:hover {
+    background: #e2e8f0;
+}
+.calc-btn-muted {
+    background: #334155;
+    color: #fff;
+}
+.calc-btn-muted:hover {
+    background: #1e293b;
+    color: #fff;
+}
+.calc-btn-op {
+    background: #f59e0b;
+    color: #fff;
+}
+.calc-btn-op:hover {
+    background: #d97706;
+    color: #fff;
+}
+.calc-btn-equals {
+    background: #10b981;
+    color: #fff;
+}
+.calc-btn-equals:hover {
+    background: #059669;
+    color: #fff;
+}
+.calculator-history-list {
+    max-height: 318px;
+    overflow-y: auto;
+}
+.calculator-history-item {
+    border: 1px solid #e2e8f0;
+    border-radius: 10px;
+    padding: 0.5rem 0.6rem;
+    margin-bottom: 0.5rem;
+    cursor: pointer;
+    background: #f8fafc;
+}
+.calculator-history-item:hover {
+    background: #eef2ff;
+}
+.calculator-history-expression {
+    font-size: 0.85rem;
+    color: #475569;
+}
+.calculator-history-result {
+    font-weight: 700;
+    color: #0f172a;
+}
+.calculator-history-empty {
+    color: #94a3b8;
+    text-align: center;
+    padding: 2rem 0.5rem;
+}
+</style>
+
 <script>
 let calcValue = '0';
 let calcOperator = '';
 let calcPreviousValue = '';
 let calcKeyboardBound = false;
+let calcHistory = [];
+const CALC_HISTORY_KEY = 'talukdar_calc_history';
 
 function openCalculator() {
     const modalEl = document.getElementById('calculatorModal');
@@ -111,73 +230,91 @@ function openCalculator() {
     calcValue = '0';
     calcOperator = '';
     calcPreviousValue = '';
-    document.getElementById('calcDisplay').value = '0';
+    updateCalculatorDisplay();
+    loadCalculatorHistory();
+    renderCalculatorHistory();
     bindCalculatorKeyboard();
     modal.show();
 }
 
 function calcInput(value) {
-    if (calcValue === '0') {
+    if (value === '.' && calcValue.includes('.')) {
+        return;
+    }
+
+    if (calcValue === '0' && value !== '.') {
         calcValue = value;
     } else {
         calcValue += value;
     }
-    document.getElementById('calcDisplay').value = calcValue;
+    updateCalculatorDisplay();
 }
 
 function calcOperation(op) {
-    if (calcPreviousValue !== '' && calcOperator !== '') {
-        calcCalculate();
+    if (calcPreviousValue !== '' && calcOperator !== '' && calcValue !== '0') {
+        const result = getCalcResult();
+        if (result === null) {
+            return;
+        }
+        calcValue = result.toString();
+        calcPreviousValue = '';
+        calcOperator = '';
     }
+
     calcPreviousValue = calcValue;
     calcValue = '0';
     calcOperator = op;
+    updateCalculatorDisplay();
+}
+
+function getCalcResult() {
+    const prev = parseFloat(calcPreviousValue);
+    const current = parseFloat(calcValue);
+
+    switch(calcOperator) {
+        case '+':
+            return prev + current;
+        case '-':
+            return prev - current;
+        case '*':
+            return prev * current;
+        case '/':
+            if (current === 0) {
+                alert('Cannot divide by zero!');
+                return null;
+            }
+            return prev / current;
+        default:
+            return null;
+    }
 }
 
 function calcCalculate() {
     if (calcPreviousValue === '' || calcOperator === '') return;
-    
-    let result;
-    const prev = parseFloat(calcPreviousValue);
-    const current = parseFloat(calcValue);
-    
-    switch(calcOperator) {
-        case '+':
-            result = prev + current;
-            break;
-        case '-':
-            result = prev - current;
-            break;
-        case '*':
-            result = prev * current;
-            break;
-        case '/':
-            if (current === 0) {
-                alert('Cannot divide by zero!');
-                return;
-            }
-            result = prev / current;
-            break;
-        default:
-            return;
+
+    const expression = `${calcPreviousValue}${calcOperator}${calcValue}`;
+    const result = getCalcResult();
+    if (result === null) {
+        return;
     }
-    
+
+    addCalculationToHistory(expression, result);
     calcValue = result.toString();
     calcPreviousValue = '';
     calcOperator = '';
-    document.getElementById('calcDisplay').value = calcValue;
+    updateCalculatorDisplay();
 }
 
 function calcClear() {
     calcValue = '0';
     calcOperator = '';
     calcPreviousValue = '';
-    document.getElementById('calcDisplay').value = '0';
+    updateCalculatorDisplay();
 }
 
 function calcClearEntry() {
     calcValue = '0';
-    document.getElementById('calcDisplay').value = '0';
+    updateCalculatorDisplay();
 }
 
 function calcBackspace() {
@@ -186,7 +323,85 @@ function calcBackspace() {
     } else {
         calcValue = '0';
     }
-    document.getElementById('calcDisplay').value = calcValue;
+    updateCalculatorDisplay();
+}
+
+function updateCalculatorDisplay() {
+    const displayEl = document.getElementById('calcDisplay');
+    const expressionEl = document.getElementById('calcExpression');
+
+    if (displayEl) {
+        displayEl.value = calcValue;
+    }
+
+    if (!expressionEl) {
+        return;
+    }
+
+    if (calcPreviousValue !== '' && calcOperator !== '') {
+        expressionEl.textContent = `${calcPreviousValue}${calcOperator}${calcValue}`;
+    } else {
+        expressionEl.innerHTML = '&nbsp;';
+    }
+}
+
+function loadCalculatorHistory() {
+    try {
+        const raw = localStorage.getItem(CALC_HISTORY_KEY);
+        calcHistory = raw ? JSON.parse(raw) : [];
+        if (!Array.isArray(calcHistory)) {
+            calcHistory = [];
+        }
+    } catch (error) {
+        calcHistory = [];
+    }
+}
+
+function saveCalculatorHistory() {
+    localStorage.setItem(CALC_HISTORY_KEY, JSON.stringify(calcHistory));
+}
+
+function addCalculationToHistory(expression, result) {
+    calcHistory.unshift({
+        expression,
+        result: result.toString()
+    });
+
+    calcHistory = calcHistory.slice(0, 20);
+    saveCalculatorHistory();
+    renderCalculatorHistory();
+}
+
+function useHistoryResult(result) {
+    calcValue = result.toString();
+    calcOperator = '';
+    calcPreviousValue = '';
+    updateCalculatorDisplay();
+}
+
+function calcClearHistory() {
+    calcHistory = [];
+    saveCalculatorHistory();
+    renderCalculatorHistory();
+}
+
+function renderCalculatorHistory() {
+    const list = document.getElementById('calcHistoryList');
+    if (!list) {
+        return;
+    }
+
+    if (calcHistory.length === 0) {
+        list.innerHTML = '<div class="calculator-history-empty">No calculations yet</div>';
+        return;
+    }
+
+    list.innerHTML = calcHistory.map((item) => `
+        <div class="calculator-history-item" onclick="useHistoryResult('${item.result.replace(/'/g, "\\'")}')">
+            <div class="calculator-history-expression">${item.expression}</div>
+            <div class="calculator-history-result">= ${item.result}</div>
+        </div>
+    `).join('');
 }
 
 function isCalculatorOpen() {
@@ -209,9 +424,7 @@ function handleCalculatorKeydown(event) {
 
     if (key === '.') {
         event.preventDefault();
-        if (!calcValue.includes('.')) {
-            calcInput('.');
-        }
+        calcInput('.');
         return;
     }
 
