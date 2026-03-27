@@ -15,16 +15,11 @@ class DatabaseSeeder extends Seeder
      */
     public function run(): void
     {
-        // Seed core configuration and Bangladesh-friendly demo data
+        // Seed only essential bootstrap data for fresh install.
         $this->call([
             RolePermissionSeeder::class,
             SuperAdminSeeder::class,
-            DemoUserSeeder::class,
-            ChartOfAccountsSeeder::class,
             SettingsSeeder::class,
-            CompanySeeder::class,
-            ProductSeeder::class,
-            DemoDataSeeder::class,
         ]);
     }
 }

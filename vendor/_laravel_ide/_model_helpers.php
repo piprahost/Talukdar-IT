@@ -25,7 +25,7 @@ namespace App\Models {
      * @property-read \Illuminate\Database\Eloquent\Collection<int, \App\Models\Account> $children
      * @property-read int|null $children_count
      * @property-read \Illuminate\Database\Eloquent\Collection<int, \App\Models\JournalEntryItem> $journalEntryItems
-     * @property-read int|null $journalEntryItems_count
+     * @property-read int|null $journal_entry_items_count
      * @method static \Illuminate\Database\Eloquent\Builder<Account>|Account whereId($value)
      * @method static \Illuminate\Database\Eloquent\Builder<Account>|Account whereCode($value)
      * @method static \Illuminate\Database\Eloquent\Builder<Account>|Account whereName($value)
@@ -3106,9 +3106,9 @@ namespace App\Models {
      * @property-read \App\Models\Brand $brand
      * @property-read \App\Models\ProductModel $productModel
      * @property-read \Illuminate\Database\Eloquent\Collection<int, \App\Models\StockMovement> $stockMovements
-     * @property-read int|null $stockMovements_count
+     * @property-read int|null $stock_movements_count
      * @property-read \Illuminate\Database\Eloquent\Collection<int, \App\Models\SaleItem> $saleItems
-     * @property-read int|null $saleItems_count
+     * @property-read int|null $sale_items_count
      * @property-read \Illuminate\Database\Eloquent\Collection<int, \App\Models\Warranty> $warranties
      * @property-read int|null $warranties_count
      * @property-read \App\Models\User $creator
@@ -7930,7 +7930,7 @@ namespace App\Models {
      * @property string $name
      * @property int $id
      * @property-read \Illuminate\Database\Eloquent\Collection<int, \App\Models\Purchase> $purchaseOrders
-     * @property-read int|null $purchaseOrders_count
+     * @property-read int|null $purchase_orders_count
      * @method static \Illuminate\Database\Eloquent\Builder<Supplier>|Supplier whereId($value)
      * @method static \Illuminate\Database\Eloquent\Builder<Supplier>|Supplier whereName($value)
      * @method static \Illuminate\Database\Eloquent\Builder<Supplier>|Supplier whereCompanyName($value)
