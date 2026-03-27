@@ -19,6 +19,46 @@ use Illuminate\Support\Facades\DB;
 class AccountingService
 {
     /**
+     * Resolve system account by code; create/restore minimal defaults if missing.
+     */
+    protected static function accountByCode(string $code): ?Account
+    {
+        $account = Account::withTrashed()->where('code', $code)->first();
+        if ($account) {
+            if ($account->trashed()) {
+                $account->restore();
+            }
+            if (!$account->is_active) {
+                $account->is_active = true;
+                $account->save();
+            }
+            return $account;
+        }
+
+        $defaults = [
+            '1000' => ['name' => 'Cash in Hand', 'type' => 'asset', 'category' => 'current_asset', 'balance_type' => 'debit', 'sort_order' => 10],
+            '1200' => ['name' => 'Accounts Receivable', 'type' => 'asset', 'category' => 'current_asset', 'balance_type' => 'debit', 'sort_order' => 20],
+            '1300' => ['name' => 'Inventory', 'type' => 'asset', 'category' => 'current_asset', 'balance_type' => 'debit', 'sort_order' => 30],
+            '2000' => ['name' => 'Accounts Payable', 'type' => 'liability', 'category' => 'current_liability', 'balance_type' => 'credit', 'sort_order' => 40],
+            '4000' => ['name' => 'Sales Revenue', 'type' => 'revenue', 'category' => 'sales_revenue', 'balance_type' => 'credit', 'sort_order' => 50],
+            '4100' => ['name' => 'Service Revenue', 'type' => 'revenue', 'category' => 'other_revenue', 'balance_type' => 'credit', 'sort_order' => 60],
+            '5000' => ['name' => 'Cost of Goods Sold', 'type' => 'expense', 'category' => 'cost_of_goods_sold', 'balance_type' => 'debit', 'sort_order' => 70],
+        ];
+
+        if (!isset($defaults[$code])) {
+            return null;
+        }
+
+        return Account::create(array_merge($defaults[$code], [
+            'code' => $code,
+            'opening_balance' => 0,
+            'is_active' => true,
+            'is_system' => true,
+            'description' => 'Auto-created system account',
+        ]));
+    }
+
+    /**
      * Resolve the correct asset account (cash or bank) based on payment method and bank_account_id.
      */
     protected static function cashOrBankAccount(?string $paymentMethod, ?int $bankAccountId): ?Account
@@ -32,7 +72,7 @@ class AccountingService
         }
 
         // Fallback to main cash account (code 1000)
-        return Account::where('code', '1000')->first();
+        return self::accountByCode('1000');
     }
 
     /**
@@ -65,8 +105,8 @@ class AccountingService
             ->delete();
 
         $accounts = [
-            'accounts_receivable' => Account::where('code', '1200')->first(),
-            'sales_revenue' => Account::where('code', '4000')->first(),
+            'accounts_receivable' => self::accountByCode('1200'),
+            'sales_revenue' => self::accountByCode('4000'),
         ];
 
         DB::transaction(function () use ($sale, $accounts) {
@@ -128,8 +168,8 @@ class AccountingService
             ->delete();
 
         $accounts = [
-            'inventory' => Account::where('code', '1300')->first(),
-            'accounts_payable' => Account::where('code', '2000')->first(),
+            'inventory' => self::accountByCode('1300'),
+            'accounts_payable' => self::accountByCode('2000'),
         ];
 
         DB::transaction(function () use ($purchase, $accounts) {
@@ -199,8 +239,8 @@ class AccountingService
             ->delete();
 
         $accounts = [
-            'accounts_receivable' => Account::where('code', '1200')->first(),
-            'accounts_payable'    => Account::where('code', '2000')->first(),
+            'accounts_receivable' => self::accountByCode('1200'),
+            'accounts_payable'    => self::accountByCode('2000'),
         ];
 
         DB::transaction(function () use ($payment, $accounts) {
@@ -294,9 +334,9 @@ class AccountingService
             ->delete();
 
         $accounts = [
-            'inventory' => Account::where('code', '1300')->first(),
-            'accounts_payable' => Account::where('code', '2000')->first(),
-            'cash' => Account::where('code', '1000')->first(),
+            'inventory' => self::accountByCode('1300'),
+            'accounts_payable' => self::accountByCode('2000'),
+            'cash' => self::accountByCode('1000'),
         ];
 
         DB::transaction(function () use ($return, $accounts) {
@@ -345,10 +385,10 @@ class AccountingService
             ->delete();
 
         $accounts = [
-            'sales_revenue' => Account::where('code', '4000')->first(),
-            'accounts_receivable' => Account::where('code', '1200')->first(),
-            'cash' => Account::where('code', '1000')->first(),
-            'inventory' => Account::where('code', '1300')->first(),
+            'sales_revenue' => self::accountByCode('4000'),
+            'accounts_receivable' => self::accountByCode('1200'),
+            'cash' => self::accountByCode('1000'),
+            'inventory' => self::accountByCode('1300'),
         ];
 
         $return->load('items.product');
@@ -400,7 +440,7 @@ class AccountingService
                 ]);
 
                 // Reduce Cost of Goods Sold (credit)
-                $cogsAccount = Account::where('code', '5000')->first(); // COGS account
+                $cogsAccount = self::accountByCode('5000'); // COGS account
                 if ($cogsAccount) {
                     JournalEntryItem::create([
                         'journal_entry_id' => $entry->id,
@@ -437,8 +477,8 @@ class AccountingService
         }
 
         $accounts = [
-            'accounts_receivable' => Account::where('code', '1200')->first(),
-            'service_revenue'     => Account::where('code', '4100')->first(),
+            'accounts_receivable' => self::accountByCode('1200'),
+            'service_revenue'     => self::accountByCode('4100'),
         ];
 
         if (!$accounts['service_revenue']) {
@@ -507,8 +547,8 @@ class AccountingService
             ->delete();
 
         $accounts = [
-            'service_revenue' => Account::where('code', '4100')->first(),
-            'cash' => Account::where('code', '1000')->first(),
+            'service_revenue' => self::accountByCode('4100'),
+            'cash' => self::accountByCode('1000'),
         ];
 
         DB::transaction(function () use ($return, $accounts) {
