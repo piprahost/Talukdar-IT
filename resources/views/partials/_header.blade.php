@@ -103,13 +103,16 @@
 let calcValue = '0';
 let calcOperator = '';
 let calcPreviousValue = '';
+let calcKeyboardBound = false;
 
 function openCalculator() {
-    const modal = new bootstrap.Modal(document.getElementById('calculatorModal'));
+    const modalEl = document.getElementById('calculatorModal');
+    const modal = bootstrap.Modal.getOrCreateInstance(modalEl);
     calcValue = '0';
     calcOperator = '';
     calcPreviousValue = '';
     document.getElementById('calcDisplay').value = '0';
+    bindCalculatorKeyboard();
     modal.show();
 }
 
@@ -184,6 +187,78 @@ function calcBackspace() {
         calcValue = '0';
     }
     document.getElementById('calcDisplay').value = calcValue;
+}
+
+function isCalculatorOpen() {
+    const modal = document.getElementById('calculatorModal');
+    return modal && modal.classList.contains('show');
+}
+
+function handleCalculatorKeydown(event) {
+    if (!isCalculatorOpen()) {
+        return;
+    }
+
+    const key = event.key;
+
+    if (/[0-9]/.test(key)) {
+        event.preventDefault();
+        calcInput(key);
+        return;
+    }
+
+    if (key === '.') {
+        event.preventDefault();
+        if (!calcValue.includes('.')) {
+            calcInput('.');
+        }
+        return;
+    }
+
+    if (['+', '-', '*', '/'].includes(key)) {
+        event.preventDefault();
+        calcOperation(key);
+        return;
+    }
+
+    if (key === 'Enter' || key === '=') {
+        event.preventDefault();
+        calcCalculate();
+        return;
+    }
+
+    if (key === 'Backspace') {
+        event.preventDefault();
+        calcBackspace();
+        return;
+    }
+
+    if (key === 'Delete') {
+        event.preventDefault();
+        calcClearEntry();
+        return;
+    }
+
+    if (key.toLowerCase() === 'c') {
+        event.preventDefault();
+        calcClear();
+        return;
+    }
+
+    if (key === 'Escape') {
+        event.preventDefault();
+        const modalEl = document.getElementById('calculatorModal');
+        bootstrap.Modal.getOrCreateInstance(modalEl).hide();
+    }
+}
+
+function bindCalculatorKeyboard() {
+    if (calcKeyboardBound) {
+        return;
+    }
+
+    document.addEventListener('keydown', handleCalculatorKeydown);
+    calcKeyboardBound = true;
 }
 </script>
 
