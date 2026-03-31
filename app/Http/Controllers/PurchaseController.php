@@ -295,15 +295,77 @@ class PurchaseController extends Controller
 
     public function destroy(Purchase $purchase)
     {
-        if ($purchase->status === 'received') {
-            return redirect()->route('purchases.index')
-                ->with('error', 'Cannot delete a received purchase order.');
-        }
+        $this->authorizePermission('delete purchases');
 
-        $purchase->delete();
+        DB::transaction(function () use ($purchase) {
+            $purchase->load(['items', 'returns.items', 'payments']);
+
+            // Lock related products so stock/barcode rollback is consistent in concurrent requests.
+            $productIds = $purchase->items->pluck('product_id')->filter()->unique()->values();
+            $products = Product::whereIn('id', $productIds)->lockForUpdate()->get()->keyBy('id');
+
+            // Roll back stock by removing only barcodes still present in products.
+            // If barcode already sold/removed, it won't be touched to avoid double stock deduction.
+            $itemsByProduct = $purchase->items->groupBy('product_id');
+            foreach ($itemsByProduct as $productId => $items) {
+                $product = $products->get((int) $productId);
+                if (!$product) {
+                    continue;
+                }
+
+                $barcodes = $items->pluck('barcode')->filter()->values()->all();
+                if (!empty($barcodes)) {
+                    $product->removeBarcodes($barcodes, "Purchase deleted: {$purchase->po_number}");
+                }
+
+                // Fallback for legacy/non-barcode rows: reduce by quantity.
+                $nonBarcodeQty = (int) $items->filter(fn ($item) => empty($item->barcode))->sum('quantity');
+                if ($nonBarcodeQty > 0) {
+                    $product->reduceStock(
+                        $nonBarcodeQty,
+                        'out',
+                        "Purchase deleted: {$purchase->po_number}",
+                        'purchase',
+                        $purchase->id
+                    );
+                }
+            }
+
+            // Remove payment accounting entries, then payments.
+            foreach ($purchase->payments as $payment) {
+                AccountingService::deleteJournalEntry('payment', $payment->id);
+                $payment->delete();
+            }
+
+            // Delete purchase return items/entries first (FK restrict), then returns.
+            foreach ($purchase->returns as $return) {
+                AccountingService::deleteJournalEntry('purchase_return', $return->id);
+                $return->items()->delete();
+                $return->delete();
+            }
+
+            // Remove purchase-level accounting entry.
+            AccountingService::deleteJournalEntry('purchase', $purchase->id);
+
+            // Remove stock movement history directly tied to this purchase and its returns.
+            \App\Models\StockMovement::where('reference_type', 'purchase')
+                ->where('reference_id', $purchase->id)
+                ->delete();
+
+            \App\Models\StockMovement::where('reference_type', 'purchase_return')
+                ->whereIn('reference_id', $purchase->returns->pluck('id'))
+                ->delete();
+
+            // Barcode-based stock movements use `reference_type=barcode`, so clean by PO note signature.
+            \App\Models\StockMovement::where('notes', 'like', 'Purchase: ' . $purchase->po_number . '%')->delete();
+            \App\Models\StockMovement::where('notes', 'like', 'Purchase deleted: ' . $purchase->po_number . '%')->delete();
+
+            // Items are cascade-deleted via FK on purchase_orders.
+            $purchase->delete();
+        });
 
         return redirect()->route('purchases.index')
-            ->with('success', 'Purchase order deleted successfully.');
+            ->with('success', 'Purchase order and all related records deleted successfully.');
     }
 
     public function receive(Purchase $purchase)

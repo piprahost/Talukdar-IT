@@ -181,6 +181,16 @@
                             <a href="{{ route('purchases.receive', $purchase) }}" class="btn btn-outline-success" title="Receive Items"><i class="fas fa-check"></i></a>
                             @endif
                             @endcan
+                            @can('delete purchases')
+                            <form action="{{ route('purchases.destroy', $purchase) }}" method="POST" class="d-inline"
+                                  onsubmit="return confirm('Delete this purchase order and all related stock, barcode, payment, and accounting history? This action cannot be undone.');">
+                                @csrf
+                                @method('DELETE')
+                                <button type="submit" class="btn btn-outline-danger" title="Delete Purchase Order">
+                                    <i class="fas fa-trash-alt"></i>
+                                </button>
+                            </form>
+                            @endcan
                         </div>
                     </td>
                 </tr>
