@@ -57,7 +57,9 @@ class ServiceReturnController extends Controller
                     $query->orWhere('id', $service->id);
                 }
             })
+            ->select(['id', 'service_number', 'serial_number', 'customer_name', 'product_name', 'service_cost'])
             ->latest()
+            ->limit(300)
             ->get();
         
         return view('returns.service-returns.create', compact('service', 'services'));

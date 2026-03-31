@@ -330,9 +330,6 @@ let lastKeyTime = Date.now();
 let barcodeInput = '';
 
 document.addEventListener('DOMContentLoaded', function() {
-    console.log('Services loaded:', services);
-    console.log('Services count:', services ? services.length : 0);
-    
     initServiceSearch();
     
     const scanner = document.getElementById('barcodeScanner');

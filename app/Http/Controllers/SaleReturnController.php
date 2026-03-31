@@ -16,7 +16,7 @@ class SaleReturnController extends Controller
     public function index(Request $request)
     {
         $this->authorizePermission('view sale-returns');
-        $query = SaleReturn::with(['sale', 'customer', 'creator', 'items'])->latest();
+        $query = SaleReturn::with(['sale', 'customer', 'creator'])->latest();
 
         if ($request->has('search') && $request->search) {
             $term = $request->search;
@@ -49,9 +49,12 @@ class SaleReturnController extends Controller
                 ->findOrFail($saleId);
         }
         
+        // Keep dropdown payload bounded to avoid heavy page render / 503 on large datasets.
         $sales = Sale::where('status', 'completed')
-            ->with('customer')
+            ->select(['id', 'invoice_number', 'customer_id', 'customer_name', 'sale_date'])
+            ->with(['customer:id,name'])
             ->latest()
+            ->limit(300)
             ->get();
         
         return view('returns.sale-returns.create', compact('sale', 'sales'));

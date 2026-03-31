@@ -47,9 +47,12 @@ class PurchaseReturnController extends Controller
             $purchase = Purchase::with(['items.product', 'supplier'])->findOrFail($purchaseId);
         }
         
+        // Keep dropdown payload bounded to avoid heavy page render / 503 on large datasets.
         $purchases = Purchase::where('status', 'received')
-            ->with('supplier')
+            ->select(['id', 'po_number', 'supplier_id', 'order_date'])
+            ->with(['supplier:id,name'])
             ->latest()
+            ->limit(300)
             ->get();
         
         return view('returns.purchase-returns.create', compact('purchase', 'purchases'));

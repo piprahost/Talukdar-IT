@@ -94,7 +94,7 @@
                                                        data-cost-price="{{ $item->cost_price }}">
                                             </td>
                                             <td><strong>{{ $item->product->name }}</strong></td>
-                                            <td><code>{{ $item->barcode }}</code></td>
+                                            <td><code data-barcode="{{ $item->barcode ?? '' }}">{{ $item->barcode ?? 'N/A' }}</code></td>
                                             <td>৳{{ number_format($item->cost_price, 2) }}</td>
                                             <td>
                                                 <input type="number" class="form-control form-control-sm return-qty" 
