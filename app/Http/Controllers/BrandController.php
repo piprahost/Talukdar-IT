@@ -94,7 +94,7 @@ class BrandController extends Controller
                 ->with('error', 'Cannot delete brand with existing products.');
         }
 
-        $brand->delete();
+        $brand->forceDelete();
 
         return redirect()->route('brands.index')
             ->with('success', 'Brand deleted successfully.');

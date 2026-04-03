@@ -99,7 +99,7 @@ class ProductModelController extends Controller
                 ->with('error', 'Cannot delete model with existing products.');
         }
 
-        $productModel->delete();
+        $productModel->forceDelete();
 
         return redirect()->route('product-models.index')
             ->with('success', 'Product model deleted successfully.');

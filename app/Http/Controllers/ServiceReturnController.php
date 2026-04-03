@@ -133,15 +133,16 @@ class ServiceReturnController extends Controller
     public function destroy(ServiceReturn $serviceReturn)
     {
         $this->authorizePermission('delete service-returns');
-        if ($serviceReturn->status !== 'pending') {
-            return redirect()->route('service-returns.index')
-                ->with('error', 'Only pending returns can be deleted.');
-        }
 
-        $serviceReturn->delete();
+        DB::transaction(function () use ($serviceReturn) {
+            if ($serviceReturn->status === 'completed' && (float) $serviceReturn->refund_amount > 0) {
+                AccountingService::deleteJournalEntry('service_return', $serviceReturn->id);
+            }
+            $serviceReturn->forceDelete();
+        });
 
         return redirect()->route('service-returns.index')
-            ->with('success', 'Service return deleted successfully.');
+            ->with('success', 'Service return and related accounting records deleted successfully.');
     }
 
     public function approve(ServiceReturn $serviceReturn)

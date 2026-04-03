@@ -293,7 +293,7 @@ class ExpenseController extends Controller
             // Delete related journal entry
             AccountingService::deleteJournalEntry(Expense::class, $expense->id);
 
-            $expense->delete();
+            $expense->forceDelete();
         });
 
         return redirect()->route('expenses.index')

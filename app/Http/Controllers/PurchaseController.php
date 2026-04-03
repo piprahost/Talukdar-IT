@@ -334,14 +334,14 @@ class PurchaseController extends Controller
             // Remove payment accounting entries, then payments.
             foreach ($purchase->payments as $payment) {
                 AccountingService::deleteJournalEntry('payment', $payment->id);
-                $payment->delete();
+                $payment->forceDelete();
             }
 
             // Delete purchase return items/entries first (FK restrict), then returns.
             foreach ($purchase->returns as $return) {
                 AccountingService::deleteJournalEntry('purchase_return', $return->id);
                 $return->items()->delete();
-                $return->delete();
+                $return->forceDelete();
             }
 
             // Remove purchase-level accounting entry.
@@ -361,7 +361,7 @@ class PurchaseController extends Controller
             \App\Models\StockMovement::where('notes', 'like', 'Purchase deleted: ' . $purchase->po_number . '%')->delete();
 
             // Items are cascade-deleted via FK on purchase_orders.
-            $purchase->delete();
+            $purchase->forceDelete();
         });
 
         return redirect()->route('purchases.index')

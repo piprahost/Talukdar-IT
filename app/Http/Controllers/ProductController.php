@@ -6,7 +6,9 @@ use App\Models\Brand;
 use App\Models\Category;
 use App\Models\Product;
 use App\Models\ProductModel;
+use App\Models\StockMovement;
 use Illuminate\Http\Request;
+use Illuminate\Support\Facades\DB;
 
 class ProductController extends Controller
 {
@@ -170,7 +172,11 @@ class ProductController extends Controller
     public function destroy(Product $product)
     {
         $this->authorizePermission('delete products');
-        $product->delete();
+
+        DB::transaction(function () use ($product) {
+            StockMovement::where('product_id', $product->id)->delete();
+            $product->forceDelete();
+        });
 
         return redirect()->route('products.index')
             ->with('success', 'Product deleted successfully.');

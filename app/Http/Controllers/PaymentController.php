@@ -232,7 +232,8 @@ class PaymentController extends Controller
         $type = $payment->payment_type;
 
         DB::transaction(function () use ($payment) {
-            $payment->delete();
+            AccountingService::deleteJournalEntry('payment', $payment->id);
+            $payment->forceDelete();
         });
 
         if ($type === 'customer' && $saleId) {

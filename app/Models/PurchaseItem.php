@@ -58,6 +58,24 @@ class PurchaseItem extends Model
         return $this->belongsTo(Product::class);
     }
 
+    /**
+     * Latest received purchase line for this product + barcode (1 barcode = 1 unit).
+     */
+    public static function latestReceivedForBarcode(int $productId, string $barcode): ?self
+    {
+        $barcode = trim($barcode);
+        if ($barcode === '') {
+            return null;
+        }
+
+        return static::query()
+            ->where('product_id', $productId)
+            ->where('barcode', $barcode)
+            ->where('status', 'received')
+            ->orderByDesc('id')
+            ->first();
+    }
+
     // Helper Methods
     public function updateProductStock()
     {

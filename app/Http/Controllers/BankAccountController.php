@@ -147,7 +147,7 @@ class BankAccountController extends Controller
     public function destroy(BankAccount $bankAccount)
     {
         $this->authorizePermission('delete bank-accounts');
-        $bankAccount->delete();
+        $bankAccount->forceDelete();
 
         return redirect()->route('bank-accounts.index')
             ->with('success', 'Bank account deleted successfully.');

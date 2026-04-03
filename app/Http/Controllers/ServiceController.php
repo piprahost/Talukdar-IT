@@ -4,6 +4,7 @@ namespace App\Http\Controllers;
 
 use App\Models\Payment;
 use App\Models\Service;
+use App\Models\ServiceReturn;
 use App\Models\BankAccount;
 use App\Services\AccountingService;
 use Illuminate\Http\Request;
@@ -239,11 +240,27 @@ class ServiceController extends Controller
     public function destroy(Service $service)
     {
         $this->authorizePermission('delete services');
-        AccountingService::deleteJournalEntry('service', $service->id);
-        $service->delete();
+
+        DB::transaction(function () use ($service) {
+            $returns = ServiceReturn::where('service_id', $service->id)->get();
+            foreach ($returns as $serviceReturn) {
+                if ($serviceReturn->status === 'completed' && (float) $serviceReturn->refund_amount > 0) {
+                    AccountingService::deleteJournalEntry('service_return', $serviceReturn->id);
+                }
+                $serviceReturn->forceDelete();
+            }
+
+            foreach (Payment::where('service_id', $service->id)->get() as $payment) {
+                AccountingService::deleteJournalEntry('payment', $payment->id);
+                $payment->forceDelete();
+            }
+
+            AccountingService::deleteJournalEntry('service', $service->id);
+            $service->delete();
+        });
 
         return redirect()->route('services.index')
-            ->with('success', 'Service order deleted successfully.');
+            ->with('success', 'Service order and related accounting records deleted successfully.');
     }
 
     /**

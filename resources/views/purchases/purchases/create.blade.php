@@ -100,7 +100,7 @@
                                     <button type="button" class="btn btn-primary btn-sm w-100" onclick="addBarcodeManually()"><i class="fas fa-plus me-1"></i>Add</button>
                                 </div>
                             </div>
-                            <p class="small text-muted mb-0 mt-2">Select product, then scan. Each barcode = 1 unit.</p>
+                            <p class="small text-muted mb-0 mt-2">Select product, then scan. Each barcode = 1 unit. <strong>Unit cost</strong> is price <em>per piece</em>; line total = unit cost × qty.</p>
                         </div>
                         <div class="table-responsive">
                             <table class="table table-sm table-hover mb-0" id="scannedItemsTable">
@@ -109,15 +109,21 @@
                                         <th>Product</th>
                                         <th>Barcodes</th>
                                         <th>Qty</th>
-                                        <th>Cost (৳)</th>
-                                        <th>Selling (৳)</th>
-                                        <th>Subtotal</th>
+                                        <th>
+                                            <span class="d-block">Unit cost (৳)</span>
+                                            <small class="text-muted fw-normal">per barcode = 1 pc</small>
+                                        </th>
+                                        <th>
+                                            <span class="d-block">Unit sell (৳)</span>
+                                            <small class="text-muted fw-normal">optional</small>
+                                        </th>
+                                        <th>Line total</th>
                                         <th></th>
                                     </tr>
                                 </thead>
                                 <tbody id="scannedItemsBody"></tbody>
                                 <tfoot class="table-light">
-                                    <tr><th colspan="5" class="text-end">Subtotal</th><th id="itemsSubtotal">৳0.00</th><th></th></tr>
+                                    <tr><th colspan="5" class="text-end">Items subtotal</th><th id="itemsSubtotal">৳0.00</th><th></th></tr>
                                 </tfoot>
                             </table>
                         </div>

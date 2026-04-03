@@ -93,7 +93,7 @@
                     <div class="table-responsive">
                         <table class="table table-sm table-hover mb-0">
                             <thead class="table-light">
-                                <tr><th>#</th><th>Product</th><th>Barcode</th><th class="text-end">Cost</th><th class="text-end">Selling</th><th class="text-center">Status</th></tr>
+                                <tr><th>#</th><th>Product</th><th>Barcode</th><th class="text-end">Unit cost</th><th class="text-end">Unit sell</th><th class="text-center">Status</th></tr>
                             </thead>
                             <tbody>
                                 @forelse($purchase->items as $i => $item)

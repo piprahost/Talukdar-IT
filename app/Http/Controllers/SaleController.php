@@ -4,10 +4,14 @@ namespace App\Http\Controllers;
 
 use App\Models\Customer;
 use App\Models\Product;
+use App\Models\PurchaseItem;
 use App\Models\Sale;
 use App\Models\SaleItem;
 use App\Models\Payment;
 use App\Models\BankAccount;
+use App\Models\StockMovement;
+use App\Models\Warranty;
+use App\Models\WarrantySubmission;
 use App\Services\AccountingService;
 use Illuminate\Http\Request;
 use Illuminate\Support\Facades\DB;
@@ -305,15 +309,112 @@ class SaleController extends Controller
     public function destroy(Sale $sale)
     {
         $this->authorizePermission('delete sales');
-        if ($sale->status === 'completed') {
-            return redirect()->route('sales.index')
-                ->with('error', 'Cannot delete a completed sale.');
-        }
 
-        $sale->delete();
+        DB::transaction(function () use ($sale) {
+            $sale->load(['items.product', 'payments', 'returns.items.product']);
+
+            $returnIds = $sale->returns->pluck('id')->filter()->values()->all();
+
+            if ($sale->status === 'completed') {
+                $productIds = $sale->items->pluck('product_id')
+                    ->merge($sale->returns->flatMap->items->pluck('product_id'))
+                    ->filter()
+                    ->unique()
+                    ->values();
+                Product::whereIn('id', $productIds)->lockForUpdate()->get();
+
+                foreach ($sale->returns as $return) {
+                    AccountingService::deleteJournalEntry('sale_return', $return->id);
+
+                    if ($return->status === 'completed') {
+                        Payment::where('sale_id', $sale->id)
+                            ->where('amount', '<', 0)
+                            ->where('notes', 'Refund – Sale Return ' . $return->return_number)
+                            ->forceDelete();
+
+                        foreach ($return->items as $ri) {
+                            $ri->loadMissing('product');
+                            if (!$ri->product) {
+                                continue;
+                            }
+                            $notes = "Sale deleted: reverse return {$return->return_number}";
+                            if ($ri->barcode) {
+                                if ($ri->product->hasBarcode($ri->barcode)) {
+                                    $ri->product->removeBarcode($ri->barcode);
+                                }
+                            } else {
+                                $ri->product->reduceStock(
+                                    (int) $ri->quantity,
+                                    'out',
+                                    $notes,
+                                    'sale_return',
+                                    $return->id
+                                );
+                            }
+                        }
+                    }
+
+                    $return->items()->delete();
+                    $return->forceDelete();
+                }
+
+                foreach ($sale->payments as $payment) {
+                    AccountingService::deleteJournalEntry('payment', $payment->id);
+                    $payment->forceDelete();
+                }
+
+                AccountingService::deleteJournalEntry('sale', $sale->id);
+
+                foreach ($sale->items as $item) {
+                    $item->loadMissing('product');
+                    if (!$item->product) {
+                        continue;
+                    }
+                    $note = "Sale deleted: {$sale->invoice_number}";
+                    if ($item->barcode) {
+                        $item->product->addBarcode($item->barcode, true, $note);
+                    } else {
+                        $item->product->addStock(
+                            (int) $item->quantity,
+                            'in',
+                            $note,
+                            'sale',
+                            $sale->id
+                        );
+                    }
+                }
+
+                $warrantyIds = Warranty::where('sale_id', $sale->id)->pluck('id');
+                if ($warrantyIds->isNotEmpty()) {
+                    WarrantySubmission::whereIn('warranty_id', $warrantyIds)->forceDelete();
+                    Warranty::whereIn('id', $warrantyIds)->delete();
+                }
+
+                StockMovement::where('reference_type', 'sale')
+                    ->where('reference_id', $sale->id)
+                    ->delete();
+                if (!empty($returnIds)) {
+                    StockMovement::where('reference_type', 'sale_return')
+                        ->whereIn('reference_id', $returnIds)
+                        ->delete();
+                }
+            } else {
+                foreach ($sale->returns as $return) {
+                    $return->items()->delete();
+                    $return->forceDelete();
+                }
+                foreach ($sale->payments as $payment) {
+                    AccountingService::deleteJournalEntry('payment', $payment->id);
+                    $payment->forceDelete();
+                }
+            }
+
+            $sale->items()->delete();
+            $sale->forceDelete();
+        });
 
         return redirect()->route('sales.index')
-            ->with('success', 'Sale deleted successfully.');
+            ->with('success', 'Sale and related accounting records deleted successfully.');
     }
 
     public function complete(Sale $sale)
@@ -436,14 +537,23 @@ class SaleController extends Controller
             return response()->json(['error' => 'Product not found for this barcode'], 404);
         }
 
+        $purchaseItem = PurchaseItem::latestReceivedForBarcode((int) $product->id, (string) $barcode);
+        $purchaseUnitCost = $purchaseItem ? (float) $purchaseItem->cost_price : null;
+        $suggestedUnitPrice = $product->selling_price;
+        if ($purchaseItem && $purchaseItem->selling_price !== null && (float) $purchaseItem->selling_price > 0) {
+            $suggestedUnitPrice = (float) $purchaseItem->selling_price;
+        }
+
         return response()->json([
             'id' => $product->id,
             'name' => $product->name,
             'sku' => $product->sku,
-            'selling_price' => $product->selling_price,
-            'cost_price' => $product->cost_price,
-            'stock_quantity' => $product->stock_quantity,
+            'selling_price' => (float) $product->selling_price,
+            'cost_price' => $product->cost_price !== null ? (float) $product->cost_price : null,
+            'stock_quantity' => (int) $product->stock_quantity,
             'barcode' => $barcode,
+            'purchase_unit_cost' => $purchaseUnitCost,
+            'suggested_unit_price' => (float) $suggestedUnitPrice,
         ]);
     }
 }

@@ -4,11 +4,14 @@ namespace App\Models;
 
 use Illuminate\Database\Eloquent\Model;
 use Illuminate\Database\Eloquent\SoftDeletes;
-use Illuminate\Support\Facades\Cache;
+use Illuminate\Support\Facades\DB;
+use Illuminate\Support\Facades\Schema;
 
 class JournalEntry extends Model
 {
     use SoftDeletes;
+
+    protected static ?bool $journalEntrySequencesTableExists = null;
 
     protected $fillable = [
         'entry_number',
@@ -43,38 +46,84 @@ class JournalEntry extends Model
     }
 
     /**
-     * Next JE-{Ymd}-{seq} that is unique including soft-deleted rows (DB unique index applies to all rows).
-     * Uses a cache lock so concurrent first-of-day inserts cannot collide; counts include trashed rows.
+     * Next JE-{Ymd}-{seq}. Unique even with soft-deleted journal rows (unique index still applies).
+     * Uses a DB sequence row + lockForUpdate() so concurrency and CACHE_DRIVER=array both work.
      */
     public static function generateNextEntryNumber(): string
     {
         $date = date('Ymd');
         $prefix = 'JE-' . $date . '-';
 
-        $lock = Cache::lock('journal_entry_seq:' . $date, 15);
+        return DB::transaction(function () use ($date, $prefix) {
+            if (static::$journalEntrySequencesTableExists === null) {
+                static::$journalEntrySequencesTableExists = Schema::hasTable('journal_entry_sequences');
+            }
+            if (! static::$journalEntrySequencesTableExists) {
+                return static::generateNextEntryNumberLegacy($prefix);
+            }
 
-        return $lock->block(10, function () use ($prefix) {
+            DB::table('journal_entry_sequences')->insertOrIgnore([
+                'day' => $date,
+                'last_seq' => 0,
+                'created_at' => now(),
+                'updated_at' => now(),
+            ]);
+
+            $seqRow = DB::table('journal_entry_sequences')
+                ->where('day', $date)
+                ->lockForUpdate()
+                ->first();
+
+            $maxFromJournal = 0;
             $maxRow = static::withTrashed()
                 ->where('entry_number', 'like', $prefix . '%')
                 ->orderByDesc('entry_number')
                 ->first();
-
-            $next = 1;
             if ($maxRow && str_starts_with($maxRow->entry_number, $prefix)) {
                 $suffix = substr($maxRow->entry_number, strlen($prefix));
                 if (is_numeric($suffix)) {
-                    $next = (int) $suffix + 1;
+                    $maxFromJournal = (int) $suffix;
                 }
             }
 
-            $candidate = $prefix . str_pad((string) $next, 4, '0', STR_PAD_LEFT);
-            while (static::withTrashed()->where('entry_number', $candidate)->exists()) {
-                $next++;
-                $candidate = $prefix . str_pad((string) $next, 4, '0', STR_PAD_LEFT);
-            }
+            $next = max((int) ($seqRow->last_seq ?? 0), $maxFromJournal) + 1;
 
-            return $candidate;
+            DB::table('journal_entry_sequences')
+                ->where('day', $date)
+                ->update([
+                    'last_seq' => $next,
+                    'updated_at' => now(),
+                ]);
+
+            return $prefix . str_pad((string) $next, 4, '0', STR_PAD_LEFT);
         });
+    }
+
+    /**
+     * Fallback if migration not run yet (avoids boot failure).
+     */
+    protected static function generateNextEntryNumberLegacy(string $prefix): string
+    {
+        $maxRow = static::withTrashed()
+            ->where('entry_number', 'like', $prefix . '%')
+            ->orderByDesc('entry_number')
+            ->first();
+
+        $next = 1;
+        if ($maxRow && str_starts_with($maxRow->entry_number, $prefix)) {
+            $suffix = substr($maxRow->entry_number, strlen($prefix));
+            if (is_numeric($suffix)) {
+                $next = (int) $suffix + 1;
+            }
+        }
+
+        $candidate = $prefix . str_pad((string) $next, 4, '0', STR_PAD_LEFT);
+        while (static::withTrashed()->where('entry_number', $candidate)->exists()) {
+            $next++;
+            $candidate = $prefix . str_pad((string) $next, 4, '0', STR_PAD_LEFT);
+        }
+
+        return $candidate;
     }
 
     // Relationships

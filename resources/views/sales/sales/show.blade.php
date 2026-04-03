@@ -233,7 +233,8 @@
                             <th>Product</th>
                             <th>Barcode</th>
                             <th class="text-center">Qty</th>
-                            <th class="text-end">Unit Price</th>
+                            <th class="text-end">Buy (cost)</th>
+                            <th class="text-end">Sell</th>
                             <th class="text-end">Discount</th>
                             <th class="text-center">Warranty</th>
                             <th class="text-end">Subtotal</th>
@@ -259,6 +260,13 @@
                             <td class="text-center">
                                 <span class="badge bg-primary">{{ $item->quantity }}</span>
                             </td>
+                            <td class="text-end text-muted small">
+                                @if($item->purchase_unit_cost !== null)
+                                    ৳{{ number_format($item->purchase_unit_cost, 2) }}
+                                @else
+                                    —
+                                @endif
+                            </td>
                             <td class="text-end">৳{{ number_format($item->unit_price, 2) }}</td>
                             <td class="text-end {{ $item->discount > 0 ? 'text-success' : 'text-muted' }}">
                                 {{ $item->discount > 0 ? '-৳'.number_format($item->discount, 2) : '—' }}
@@ -273,7 +281,7 @@
                             <td class="text-end fw-bold">৳{{ number_format($item->subtotal, 2) }}</td>
                         </tr>
                         @empty
-                        <tr><td colspan="8" class="text-center py-4 text-muted">No items found.</td></tr>
+                        <tr><td colspan="9" class="text-center py-4 text-muted">No items found.</td></tr>
                         @endforelse
                     </tbody>
                     <tfoot style="background:#f9fafb;">

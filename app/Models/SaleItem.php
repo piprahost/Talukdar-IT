@@ -16,6 +16,7 @@ class SaleItem extends Model
         'discount',
         'quantity',
         'subtotal',
+        'purchase_unit_cost',
         'notes',
     ];
 
@@ -24,11 +25,21 @@ class SaleItem extends Model
         'discount' => 'decimal:2',
         'quantity' => 'integer',
         'subtotal' => 'decimal:2',
+        'purchase_unit_cost' => 'decimal:2',
     ];
 
     protected static function boot()
     {
         parent::boot();
+
+        static::creating(function ($item) {
+            if ($item->purchase_unit_cost === null && $item->barcode && $item->product_id) {
+                $pi = PurchaseItem::latestReceivedForBarcode((int) $item->product_id, (string) $item->barcode);
+                if ($pi) {
+                    $item->purchase_unit_cost = $pi->cost_price;
+                }
+            }
+        });
 
         static::saving(function ($item) {
             // Calculate subtotal

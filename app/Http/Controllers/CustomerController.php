@@ -133,7 +133,7 @@ class CustomerController extends Controller
                 ->with('error', 'Cannot delete customer with existing sales.');
         }
 
-        $customer->delete();
+        $customer->forceDelete();
 
         return redirect()->route('customers.index')
             ->with('success', 'Customer deleted successfully.');

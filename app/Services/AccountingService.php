@@ -99,10 +99,7 @@ class AccountingService
             return;
         }
 
-        // Check if journal entry already exists - delete and recreate if exists
-        JournalEntry::where('reference_type', 'sale')
-            ->where('reference_id', $sale->id)
-            ->delete();
+        self::deleteJournalEntry('sale', $sale->id);
 
         $accounts = [
             'accounts_receivable' => self::accountByCode('1200'),
@@ -162,10 +159,7 @@ class AccountingService
      */
     public static function recordPurchase(Purchase $purchase)
     {
-        // Check if journal entry already exists - delete and recreate if exists
-        JournalEntry::where('reference_type', 'purchase')
-            ->where('reference_id', $purchase->id)
-            ->delete();
+        self::deleteJournalEntry('purchase', $purchase->id);
 
         $accounts = [
             'inventory' => self::accountByCode('1300'),
@@ -234,9 +228,7 @@ class AccountingService
             return;
         }
 
-        JournalEntry::where('reference_type', 'payment')
-            ->where('reference_id', $payment->id)
-            ->delete();
+        self::deleteJournalEntry('payment', $payment->id);
 
         $accounts = [
             'accounts_receivable' => self::accountByCode('1200'),
@@ -329,9 +321,7 @@ class AccountingService
             return;
         }
 
-        JournalEntry::where('reference_type', 'purchase_return')
-            ->where('reference_id', $return->id)
-            ->delete();
+        self::deleteJournalEntry('purchase_return', $return->id);
 
         $accounts = [
             'inventory' => self::accountByCode('1300'),
@@ -380,9 +370,7 @@ class AccountingService
             return;
         }
 
-        JournalEntry::where('reference_type', 'sale_return')
-            ->where('reference_id', $return->id)
-            ->delete();
+        self::deleteJournalEntry('sale_return', $return->id);
 
         $accounts = [
             'sales_revenue' => self::accountByCode('4000'),
@@ -461,10 +449,7 @@ class AccountingService
      */
     public static function recordService(Service $service)
     {
-        // Remove any existing journal entry for this service (idempotent; also clears on cancel)
-        JournalEntry::where('reference_type', 'service')
-            ->where('reference_id', $service->id)
-            ->delete();
+        self::deleteJournalEntry('service', $service->id);
 
         $total = (float) $service->service_cost;
         if ($total <= 0) {
@@ -542,9 +527,7 @@ class AccountingService
             return;
         }
 
-        JournalEntry::where('reference_type', 'service_return')
-            ->where('reference_id', $return->id)
-            ->delete();
+        self::deleteJournalEntry('service_return', $return->id);
 
         $accounts = [
             'service_revenue' => self::accountByCode('4100'),
@@ -655,13 +638,21 @@ class AccountingService
     }
 
     /**
-     * Delete journal entry when transaction is deleted
+     * Permanently remove auto-posted journal lines and headers for a source document.
+     * Hard-deletes line items and force-deletes entries (including already soft-deleted rows)
+     * so balances stay correct and the DB does not accumulate orphan journal_entry_items.
      */
-    public static function deleteJournalEntry($referenceType, $referenceId)
+    public static function deleteJournalEntry($referenceType, $referenceId): void
     {
-        JournalEntry::where('reference_type', $referenceType)
+        $entries = JournalEntry::withTrashed()
+            ->where('reference_type', $referenceType)
             ->where('reference_id', $referenceId)
-            ->delete();
+            ->get();
+
+        foreach ($entries as $entry) {
+            JournalEntryItem::where('journal_entry_id', $entry->id)->delete();
+            $entry->forceDelete();
+        }
     }
 }
 

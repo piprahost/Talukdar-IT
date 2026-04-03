@@ -148,7 +148,7 @@ class SupplierController extends Controller
                 ->with('error', 'Cannot delete supplier with existing purchase orders.');
         }
 
-        $supplier->delete();
+        $supplier->forceDelete();
 
         return redirect()->route('suppliers.index')
             ->with('success', 'Supplier deleted successfully.');

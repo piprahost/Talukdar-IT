@@ -3,10 +3,12 @@
 namespace App\Http\Controllers;
 
 use App\Models\Payment;
+use App\Models\Product;
 use App\Models\SaleReturn;
 use App\Models\Sale;
 use App\Models\SaleItem;
 use App\Models\SaleReturnItem;
+use App\Models\StockMovement;
 use App\Services\AccountingService;
 use Illuminate\Http\Request;
 use Illuminate\Support\Facades\DB;
@@ -206,15 +208,53 @@ class SaleReturnController extends Controller
     public function destroy(SaleReturn $saleReturn)
     {
         $this->authorizePermission('delete sale-returns');
-        if ($saleReturn->status !== 'pending') {
-            return redirect()->route('sale-returns.index')
-                ->with('error', 'Only pending returns can be deleted.');
-        }
 
-        $saleReturn->delete();
+        DB::transaction(function () use ($saleReturn) {
+            $saleReturn->load(['items.product']);
+
+            if ($saleReturn->status === 'completed') {
+                $productIds = $saleReturn->items->pluck('product_id')->filter()->unique()->values();
+                Product::whereIn('id', $productIds)->lockForUpdate()->get();
+
+                AccountingService::deleteJournalEntry('sale_return', $saleReturn->id);
+
+                Payment::where('sale_id', $saleReturn->sale_id)
+                    ->where('amount', '<', 0)
+                    ->where('notes', 'Refund – Sale Return ' . $saleReturn->return_number)
+                    ->forceDelete();
+
+                foreach ($saleReturn->items as $ri) {
+                    $ri->loadMissing('product');
+                    if (!$ri->product) {
+                        continue;
+                    }
+                    $notes = "Sale return deleted: {$saleReturn->return_number}";
+                    if ($ri->barcode) {
+                        if ($ri->product->hasBarcode($ri->barcode)) {
+                            $ri->product->removeBarcode($ri->barcode);
+                        }
+                    } else {
+                        $ri->product->reduceStock(
+                            (int) $ri->quantity,
+                            'out',
+                            $notes,
+                            'sale_return',
+                            $saleReturn->id
+                        );
+                    }
+                }
+
+                StockMovement::where('reference_type', 'sale_return')
+                    ->where('reference_id', $saleReturn->id)
+                    ->delete();
+            }
+
+            $saleReturn->items()->delete();
+            $saleReturn->forceDelete();
+        });
 
         return redirect()->route('sale-returns.index')
-            ->with('success', 'Sale return deleted successfully.');
+            ->with('success', 'Sale return and related accounting records deleted successfully.');
     }
 
     public function approve(SaleReturn $saleReturn)

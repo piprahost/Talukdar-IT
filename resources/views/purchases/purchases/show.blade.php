@@ -220,8 +220,8 @@
                             <th>Product</th>
                             <th>Barcode</th>
                             <th>Serial No.</th>
-                            <th class="text-end">Cost</th>
-                            <th class="text-end">Selling</th>
+                            <th class="text-end">Unit cost</th>
+                            <th class="text-end">Unit sell</th>
                             <th class="text-center">Status</th>
                             <th>Received</th>
                         </tr>

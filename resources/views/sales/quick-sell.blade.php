@@ -18,6 +18,7 @@
                 </button>
             </div>
             <p class="quick-sell-hint"><kbd>Enter</kbd> to add · <kbd>Ctrl+B</kbd> focus</p>
+            <p class="quick-sell-hint mb-0">প্রতিটি বারকোডের কেনা দাম ও সাজেস্টেড বিক্রয় দাম দেখাবে; প্রয়োজনে লাইন অনুযায়ী দাম ঠিক করুন।</p>
         </div>
     </div>
 
@@ -171,6 +172,37 @@
 .quick-sell-item-price { font-weight: 600; min-width: 5rem; text-align: right; }
 .quick-sell-item-remove { color: #94a3b8; cursor: pointer; padding: 0.25rem; }
 .quick-sell-item-remove:hover { color: #dc2626; }
+.quick-sell-line {
+    display: grid;
+    grid-template-columns: 1fr auto auto auto auto auto;
+    gap: 0.5rem 0.75rem;
+    align-items: center;
+    padding: 0.65rem 0;
+    border-bottom: 1px solid #f1f5f9;
+    font-size: 0.875rem;
+}
+.quick-sell-line:last-child { border-bottom: none; }
+.quick-sell-line-head {
+    font-size: 0.7rem;
+    text-transform: uppercase;
+    letter-spacing: 0.04em;
+    color: #64748b;
+    font-weight: 700;
+    padding: 0.35rem 0 0;
+    border-bottom: 1px solid #e2e8f0;
+}
+.quick-sell-line input[type="number"] {
+    width: 5.5rem;
+    padding: 0.25rem 0.4rem;
+    font-size: 0.85rem;
+    border: 1px solid #e2e8f0;
+    border-radius: 6px;
+}
+.quick-sell-line .cost-cell { color: #64748b; font-variant-numeric: tabular-nums; }
+@media (max-width: 768px) {
+    .quick-sell-line { grid-template-columns: 1fr 1fr; }
+    .quick-sell-line-head { display: none; }
+}
 .quick-sell-optional-card {
     background: #f8fafc; border-radius: var(--radius-md, 12px);
     border: 1px solid #e2e8f0; padding: 1rem 1.25rem; margin-top: 1rem;
@@ -204,32 +236,38 @@
 const productsByBarcodeUrl = '{{ route("sales.products-by-barcode") }}';
 const customers = @json($customersJson);
 
-let productItems = {}; // productId => { product_id, product_name, barcodes: [], unit_price, discount }
+let cartLineUid = 0;
+/** Each scan = one line: per-barcode purchase cost + editable sell price */
+let cartLines = []; // { uid, product_id, product_name, barcode, purchase_cost, unit_price, discount }
 
 function addByBarcode(barcode) {
-    if (!barcode.trim()) return;
-    fetch(productsByBarcodeUrl + '?barcode=' + encodeURIComponent(barcode))
+    const raw = barcode.trim();
+    if (!raw) return;
+    fetch(productsByBarcodeUrl + '?barcode=' + encodeURIComponent(raw))
         .then(r => r.json())
         .then(data => {
             if (data.error) {
                 alert(data.error);
                 return;
             }
-            const productId = data.id;
-            if (!productItems[productId]) {
-                productItems[productId] = {
-                    product_id: productId,
-                    product_name: data.name,
-                    barcodes: [],
-                    unit_price: parseFloat(data.selling_price) || 0,
-                    discount: 0
-                };
-            }
-            if (productItems[productId].barcodes.includes(barcode)) {
+            if (cartLines.some(l => l.barcode === raw)) {
                 alert('Already in cart');
                 return;
             }
-            productItems[productId].barcodes.push(barcode);
+            const unit = parseFloat(data.suggested_unit_price);
+            const unitPrice = !isNaN(unit) ? unit : (parseFloat(data.selling_price) || 0);
+            const purchaseCost = data.purchase_unit_cost != null && data.purchase_unit_cost !== ''
+                ? parseFloat(data.purchase_unit_cost)
+                : null;
+            cartLines.push({
+                uid: ++cartLineUid,
+                product_id: data.id,
+                product_name: data.name,
+                barcode: raw,
+                purchase_cost: purchaseCost != null && !isNaN(purchaseCost) ? purchaseCost : null,
+                unit_price: unitPrice,
+                discount: 0
+            });
             document.getElementById('barcodeInput').value = '';
             document.getElementById('barcodeInput').focus();
             renderCart();
@@ -237,16 +275,25 @@ function addByBarcode(barcode) {
         .catch(() => alert('Product not found'));
 }
 
-function removeBarcode(productId, barcode) {
-    if (!productItems[productId]) return;
-    productItems[productId].barcodes = productItems[productId].barcodes.filter(b => b !== barcode);
-    if (productItems[productId].barcodes.length === 0) delete productItems[productId];
+function removeCartLine(uid) {
+    cartLines = cartLines.filter(l => l.uid !== uid);
     renderCart();
 }
 
-function removeProduct(productId) {
-    delete productItems[productId];
-    renderCart();
+function updateCartLinePrice(uid, val) {
+    const line = cartLines.find(l => l.uid === uid);
+    if (line) {
+        line.unit_price = parseFloat(val) || 0;
+        renderCart();
+    }
+}
+
+function updateCartLineDiscount(uid, val) {
+    const line = cartLines.find(l => l.uid === uid);
+    if (line) {
+        line.discount = parseFloat(val) || 0;
+        renderCart();
+    }
 }
 
 function renderCart() {
@@ -260,31 +307,30 @@ function renderCart() {
     const completeBtn = document.getElementById('completeBtn');
     const hiddenContainer = document.getElementById('quickSellHiddenItems');
 
-    let totalQty = 0;
     let subtotal = 0;
-    let itemIndex = 0;
     hiddenContainer.innerHTML = '';
 
-    Object.keys(productItems).forEach(pid => {
-        const item = productItems[pid];
-        const qty = item.barcodes.length;
-        totalQty += qty;
-        const lineTotal = (item.unit_price * qty) - (item.discount || 0);
+    cartLines.forEach((line, itemIndex) => {
+        const lineTotal = line.unit_price - (line.discount || 0);
         subtotal += lineTotal;
-
-        item.barcodes.forEach(barcode => {
-            const div = document.createElement('div');
-            div.innerHTML = `
-                <input type="hidden" name="items[${itemIndex}][product_id]" value="${item.product_id}">
-                <input type="hidden" name="items[${itemIndex}][barcode]" value="${barcode}">
-                <input type="hidden" name="items[${itemIndex}][unit_price]" value="${item.unit_price}">
-                <input type="hidden" name="items[${itemIndex}][discount]" value="${item.discount || 0}">
-                <input type="hidden" name="items[${itemIndex}][quantity]" value="1">
-            `;
-            hiddenContainer.appendChild(div);
-            itemIndex++;
+        const wrap = document.createElement('div');
+        [
+            ['product_id', line.product_id],
+            ['barcode', line.barcode],
+            ['unit_price', line.unit_price],
+            ['discount', line.discount || 0],
+            ['quantity', 1],
+        ].forEach(([key, val]) => {
+            const inp = document.createElement('input');
+            inp.type = 'hidden';
+            inp.name = 'items[' + itemIndex + '][' + key + ']';
+            inp.value = val;
+            wrap.appendChild(inp);
         });
+        hiddenContainer.appendChild(wrap);
     });
+
+    const totalQty = cartLines.length;
 
     if (totalQty === 0) {
         empty.style.display = 'block';
@@ -294,19 +340,38 @@ function renderCart() {
         completeBtn.disabled = true;
     } else {
         empty.style.display = 'none';
-        container.innerHTML = Object.keys(productItems).map(pid => {
-            const item = productItems[pid];
-            const qty = item.barcodes.length;
-            const lineTotal = (item.unit_price * qty) - (item.discount || 0);
+        const head = `
+            <div class="quick-sell-line quick-sell-line-head d-none d-md-grid">
+                <span>Product</span>
+                <span>Barcode</span>
+                <span>Buy (৳)</span>
+                <span>Sell (৳)</span>
+                <span>Disc</span>
+                <span></span>
+            </div>`;
+        const rows = cartLines.map(line => {
+            const costLabel = line.purchase_cost != null ? '৳' + line.purchase_cost.toFixed(2) : '—';
+            const lineTotal = (line.unit_price - (line.discount || 0)).toFixed(2);
             return `
-                <div class="quick-sell-item" data-product-id="${pid}">
-                    <span class="quick-sell-item-name">${item.product_name}</span>
-                    <span class="quick-sell-item-qty">×${qty}</span>
-                    <span class="quick-sell-item-price">৳${lineTotal.toFixed(2)}</span>
-                    <span class="quick-sell-item-remove" onclick="removeProduct('${pid}')" title="Remove"><i class="fas fa-times"></i></span>
-                </div>
-            `;
+                <div class="quick-sell-line">
+                    <div><strong>${escapeHtml(line.product_name)}</strong></div>
+                    <div><code class="small">${escapeHtml(line.barcode)}</code></div>
+                    <div class="cost-cell">${costLabel}</div>
+                    <div>
+                        <input type="number" step="0.01" min="0" value="${line.unit_price}"
+                            onchange="updateCartLinePrice(${line.uid}, this.value)" aria-label="Sell price">
+                    </div>
+                    <div>
+                        <input type="number" step="0.01" min="0" value="${line.discount || 0}"
+                            onchange="updateCartLineDiscount(${line.uid}, this.value)" aria-label="Discount">
+                    </div>
+                    <div class="d-flex align-items-center gap-2 justify-content-end">
+                        <strong>৳${lineTotal}</strong>
+                        <span class="quick-sell-item-remove" onclick="removeCartLine(${line.uid})" title="Remove"><i class="fas fa-times"></i></span>
+                    </div>
+                </div>`;
         }).join('');
+        container.innerHTML = head + rows;
         footer.classList.remove('d-none');
         clearBtn.style.display = 'block';
         completeBtn.disabled = false;
@@ -317,8 +382,14 @@ function renderCart() {
     totalEl.textContent = '৳' + subtotal.toFixed(2);
 }
 
+function escapeHtml(s) {
+    const d = document.createElement('div');
+    d.textContent = s;
+    return d.innerHTML;
+}
+
 function clearCart() {
-    productItems = {};
+    cartLines = [];
     document.getElementById('barcodeInput').value = '';
     document.getElementById('barcodeInput').focus();
     renderCart();

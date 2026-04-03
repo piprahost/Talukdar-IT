@@ -153,7 +153,7 @@ class WarrantySubmissionController extends Controller
                 ->with('error', 'Cannot delete submission that is not pending.');
         }
 
-        $warrantySubmission->delete();
+        $warrantySubmission->forceDelete();
 
         return redirect()->route('warranty-submissions.index')
             ->with('success', 'Warranty submission deleted successfully.');

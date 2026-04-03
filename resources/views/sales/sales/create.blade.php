@@ -87,7 +87,7 @@
                                     <button type="button" class="btn btn-primary btn-sm w-100" onclick="addBarcodeManually()"><i class="fas fa-plus me-1"></i>Add</button>
                                 </div>
                             </div>
-                            <p class="small text-muted mb-0 mt-2">Each barcode = 1 unit. Scan to add product.</p>
+                            <p class="small text-muted mb-0 mt-2">Each barcode = 1 unit. Scan করলে ওই বারকোডের <strong>কেনা দাম</strong> ও <strong>সাজেস্টেড বিক্রয় দাম</strong> (purchase লাইনের selling price, না থাকলে product price) দেখাবে; লাইন অনুযায়ী বিক্রয় দাম বদলাতে পারবেন।</p>
                         </div>
                         <div class="table-responsive">
                             <table class="table table-sm table-hover mb-0" id="scannedItemsTable">
@@ -95,8 +95,9 @@
                                     <tr>
                                         <th>Product</th>
                                         <th>Barcode</th>
+                                        <th>Buy (৳)</th>
                                         <th>Qty</th>
-                                        <th>Unit price (৳)</th>
+                                        <th>Sell (৳)</th>
                                         <th>Discount (৳)</th>
                                         <th>Subtotal</th>
                                         <th></th>
@@ -104,7 +105,7 @@
                                 </thead>
                                 <tbody id="scannedItemsBody"></tbody>
                                 <tfoot class="table-light">
-                                    <tr><th colspan="5" class="text-end">Subtotal</th><th id="itemsSubtotal">৳0.00</th><th></th></tr>
+                                    <tr><th colspan="6" class="text-end">Subtotal</th><th id="itemsSubtotal">৳0.00</th><th></th></tr>
                                 </tfoot>
                             </table>
                         </div>
@@ -201,7 +202,9 @@ $productsJson = $products->map(function($p) {
 const customers = @json($customersJson);
 const products = @json($productsJson);
 
-let productItems = {}; // {product_id: {product_name, barcode, unit_price, discount, quantity, stock}}
+let saleLineUid = 0;
+/** One row per barcode: purchase cost + editable sell price */
+let saleLines = []; // { uid, product_id, product_name, barcode, purchase_cost, unit_price, discount }
 let selectedProduct = null;
 let selectedCustomer = null;
 
@@ -369,32 +372,75 @@ function addBarcodeManually() {
     processBarcode(barcode);
 }
 
-function processBarcode(barcode) {
-    if (!selectedProduct) {
-        // Try to find product by barcode
-        fetch(`{{ route('sales.products-by-barcode') }}?barcode=${barcode}`)
-            .then(response => response.json())
-            .then(data => {
-                if (data.error) {
-                    alert(data.error);
-                    document.getElementById('barcodeScanner').value = '';
-                    return;
-                }
-                // Select the product and add barcode
-                const product = products.find(p => p.id === data.id);
-                if (product) {
-                    selectProduct(product);
-                    addBarcodeToProduct(barcode, product);
-                }
-            })
-            .catch(error => {
-                alert('Product not found for this barcode');
+function processBarcode(barcodeRaw) {
+    const barcode = String(barcodeRaw).trim();
+    if (!barcode) return;
+
+    fetch(`{{ route('sales.products-by-barcode') }}?barcode=${encodeURIComponent(barcode)}`)
+        .then(response => response.json())
+        .then(data => {
+            if (data.error) {
+                alert(data.error);
                 document.getElementById('barcodeScanner').value = '';
+                return;
+            }
+            const product = products.find(p => p.id === data.id);
+            if (!product) {
+                alert('Product not found in catalog');
+                document.getElementById('barcodeScanner').value = '';
+                return;
+            }
+            if (selectedProduct && selectedProduct.id !== data.id) {
+                alert('This barcode belongs to a different product. Clear product selection first.');
+                document.getElementById('barcodeScanner').value = '';
+                return;
+            }
+            if (product.barcodes && product.barcodes.length && !product.barcodes.includes(barcode)) {
+                alert('This barcode does not belong to the selected product');
+                document.getElementById('barcodeScanner').value = '';
+                return;
+            }
+            const stock = typeof data.stock_quantity === 'number' ? data.stock_quantity : product.stock_quantity;
+            if (stock <= 0) {
+                alert('Product is out of stock');
+                document.getElementById('barcodeScanner').value = '';
+                return;
+            }
+            if (saleLines.some(l => l.barcode === barcode)) {
+                alert('This barcode is already added');
+                document.getElementById('barcodeScanner').value = '';
+                return;
+            }
+            if (!selectedProduct) {
+                selectProduct(product);
+            }
+            const unit = parseFloat(data.suggested_unit_price);
+            const unitPrice = !isNaN(unit) ? unit : (parseFloat(product.selling_price) || 0);
+            const purchaseCost = data.purchase_unit_cost != null && data.purchase_unit_cost !== ''
+                ? parseFloat(data.purchase_unit_cost) : null;
+            saleLines.push({
+                uid: ++saleLineUid,
+                product_id: product.id,
+                product_name: product.name,
+                barcode,
+                purchase_cost: purchaseCost != null && !isNaN(purchaseCost) ? purchaseCost : null,
+                unit_price: unitPrice,
+                discount: 0
             });
-        return;
-    }
-    
-    addBarcodeToProduct(barcode, selectedProduct);
+            const scanner = document.getElementById('barcodeScanner');
+            scanner.style.backgroundColor = '#d4edda';
+            setTimeout(() => {
+                scanner.style.backgroundColor = '';
+                scanner.value = '';
+                scanner.focus();
+            }, 300);
+            updateScannedItemsTable();
+            calculateTotals();
+        })
+        .catch(() => {
+            alert('Product not found for this barcode');
+            document.getElementById('barcodeScanner').value = '';
+        });
 }
 
 function selectProduct(product) {
@@ -407,158 +453,95 @@ function selectProduct(product) {
     document.getElementById('selectedProduct').style.display = 'block';
 }
 
-function addBarcodeToProduct(barcode, product) {
-    const productId = product.id;
-    
-    // Check if barcode exists in product's barcodes
-    if (product.barcodes && !product.barcodes.includes(barcode)) {
-        alert('This barcode does not belong to the selected product');
-        document.getElementById('barcodeScanner').value = '';
-        return;
-    }
-    
-    // Check stock
-    if (product.stock_quantity <= 0) {
-        alert('Product is out of stock');
-        document.getElementById('barcodeScanner').value = '';
-        return;
-    }
-    
-    // Initialize product item if not exists
-    if (!productItems[productId]) {
-        productItems[productId] = {
-            product_id: productId,
-            product_name: product.name,
-            barcodes: [],
-            unit_price: product.selling_price || 0,
-            discount: 0
-        };
-    }
-    
-    // Check if barcode already added
-    if (productItems[productId].barcodes.includes(barcode)) {
-        alert('This barcode is already added');
-        document.getElementById('barcodeScanner').value = '';
-        return;
-    }
-    
-    // Add barcode
-    productItems[productId].barcodes.push(barcode);
-    
-    // Visual feedback
-    const scanner = document.getElementById('barcodeScanner');
-    scanner.style.backgroundColor = '#d4edda';
-    setTimeout(() => {
-        scanner.style.backgroundColor = '';
-        scanner.value = '';
-        scanner.focus();
-    }, 300);
-    
+function removeSaleLine(uid) {
+    saleLines = saleLines.filter(l => l.uid !== uid);
     updateScannedItemsTable();
     calculateTotals();
 }
 
-function removeBarcode(productId, barcode) {
-    if (productItems[productId] && productItems[productId].barcodes.includes(barcode)) {
-        productItems[productId].barcodes = productItems[productId].barcodes.filter(b => b !== barcode);
-        if (productItems[productId].barcodes.length === 0) {
-            delete productItems[productId];
-        }
+function updateSaleLinePrice(uid, newPrice) {
+    const line = saleLines.find(l => l.uid === uid);
+    if (line) {
+        line.unit_price = parseFloat(newPrice) || 0;
         updateScannedItemsTable();
         calculateTotals();
     }
 }
 
-function removeProduct(productId) {
-    delete productItems[productId];
-    updateScannedItemsTable();
-    calculateTotals();
-}
-
-function updateUnitPrice(productId, newPrice) {
-    if (productItems[productId]) {
-        productItems[productId].unit_price = parseFloat(newPrice) || 0;
+function updateSaleLineDiscount(uid, newDiscount) {
+    const line = saleLines.find(l => l.uid === uid);
+    if (line) {
+        line.discount = parseFloat(newDiscount) || 0;
         updateScannedItemsTable();
         calculateTotals();
     }
 }
 
-function updateDiscount(productId, newDiscount) {
-    if (productItems[productId]) {
-        productItems[productId].discount = parseFloat(newDiscount) || 0;
-        updateScannedItemsTable();
-        calculateTotals();
-    }
+function escapeHtmlSale(s) {
+    const d = document.createElement('div');
+    d.textContent = s;
+    return d.innerHTML;
 }
 
 function updateScannedItemsTable() {
     const tbody = document.getElementById('scannedItemsBody');
     const totalCount = document.getElementById('totalItemsCount');
-    
+
     tbody.innerHTML = '';
-    
+
     let itemIndex = 0;
     let subtotal = 0;
-    let totalQty = 0;
-    
-    Object.keys(productItems).forEach(productId => {
-        const item = productItems[productId];
-        const qty = item.barcodes.length;
-        totalQty += qty;
-        const itemSubtotal = (item.unit_price * qty) - item.discount;
-        subtotal += itemSubtotal;
-        
-        const barcodesHtml = item.barcodes.map(barcode => 
-            `<span class="badge bg-primary me-1 mb-1">${barcode} <button type="button" class="btn-close btn-close-white btn-sm ms-1" style="font-size: 0.6em;" onclick="removeBarcode('${productId}', '${barcode}')" title="Remove barcode"></button></span>`
-        ).join('');
-        
+
+    saleLines.forEach(line => {
+        const lineSubtotal = line.unit_price - (line.discount || 0);
+        subtotal += lineSubtotal;
+        const costCell = line.purchase_cost != null ? '৳' + line.purchase_cost.toFixed(2) : '—';
+
         const row = document.createElement('tr');
         row.innerHTML = `
-            <td><strong>${item.product_name}</strong></td>
+            <td><strong>${escapeHtmlSale(line.product_name)}</strong></td>
+            <td><code class="small">${escapeHtmlSale(line.barcode)}</code></td>
+            <td class="text-muted small">${costCell}</td>
+            <td><strong>1</strong></td>
             <td>
-                <div class="d-flex flex-wrap gap-1">${barcodesHtml}</div>
-                <small class="text-muted">${qty} barcode(s)</small>
-            </td>
-            <td><strong>${qty}</strong></td>
-            <td>
-                <input type="number" step="0.01" class="form-control form-control-sm" value="${item.unit_price}" 
-                       onchange="updateUnitPrice('${productId}', this.value)" style="width: 120px;">
+                <input type="number" step="0.01" min="0" class="form-control form-control-sm" value="${line.unit_price}"
+                       onchange="updateSaleLinePrice(${line.uid}, this.value)" style="width: 110px;">
             </td>
             <td>
-                <input type="number" step="0.01" class="form-control form-control-sm" value="${item.discount}" 
-                       onchange="updateDiscount('${productId}', this.value)" style="width: 100px;">
+                <input type="number" step="0.01" min="0" class="form-control form-control-sm" value="${line.discount}"
+                       onchange="updateSaleLineDiscount(${line.uid}, this.value)" style="width: 90px;">
             </td>
-            <td><strong>৳${itemSubtotal.toFixed(2)}</strong></td>
+            <td><strong>৳${lineSubtotal.toFixed(2)}</strong></td>
             <td>
-                <button type="button" class="btn btn-sm btn-danger" onclick="removeProduct('${productId}')" title="Remove product">
+                <button type="button" class="btn btn-sm btn-danger" onclick="removeSaleLine(${line.uid})" title="Remove">
                     <i class="fas fa-trash"></i>
                 </button>
             </td>
         `;
         tbody.appendChild(row);
-        
-        // Add hidden inputs for form submission - one per barcode
-        item.barcodes.forEach(barcode => {
-            const hiddenRow = document.createElement('tr');
-            hiddenRow.style.display = 'none';
-            hiddenRow.innerHTML = `
-                <input type="hidden" name="items[${itemIndex}][product_id]" value="${item.product_id}">
-                <input type="hidden" name="items[${itemIndex}][barcode]" value="${barcode}">
-                <input type="hidden" name="items[${itemIndex}][unit_price]" value="${item.unit_price}">
-                <input type="hidden" name="items[${itemIndex}][discount]" value="${item.discount}">
-                <input type="hidden" name="items[${itemIndex}][quantity]" value="1">
-            `;
-            tbody.appendChild(hiddenRow);
-            itemIndex++;
+
+        const hiddenTr = document.createElement('tr');
+        hiddenTr.style.display = 'none';
+        const wrap = document.createElement('td');
+        wrap.colSpan = 8;
+        [['product_id', line.product_id], ['barcode', line.barcode], ['unit_price', line.unit_price], ['discount', line.discount || 0], ['quantity', 1]].forEach(([k, v]) => {
+            const inp = document.createElement('input');
+            inp.type = 'hidden';
+            inp.name = 'items[' + itemIndex + '][' + k + ']';
+            inp.value = v;
+            wrap.appendChild(inp);
         });
+        hiddenTr.appendChild(wrap);
+        tbody.appendChild(hiddenTr);
+        itemIndex++;
     });
-    
-    totalCount.textContent = totalQty;
+
+    totalCount.textContent = saleLines.length;
     document.getElementById('itemsSubtotal').textContent = '৳' + subtotal.toFixed(2);
-    
-    var hasItems = Object.keys(productItems).length > 0;
+
+    const hasItems = saleLines.length > 0;
     document.getElementById('completeBtn').disabled = !hasItems;
-    var completeSidebar = document.getElementById('completeBtnSidebar');
+    const completeSidebar = document.getElementById('completeBtnSidebar');
     if (completeSidebar) completeSidebar.disabled = !hasItems;
 }
 
@@ -576,8 +559,8 @@ function toggleBankAccount() {
 
 function calculateTotals() {
     let subtotal = 0;
-    Object.values(productItems).forEach(item => {
-        subtotal += (item.unit_price * item.barcodes.length) - item.discount;
+    saleLines.forEach(line => {
+        subtotal += line.unit_price - (line.discount || 0);
     });
     
     const taxAmount = parseFloat(document.getElementById('tax_amount')?.value || 0);

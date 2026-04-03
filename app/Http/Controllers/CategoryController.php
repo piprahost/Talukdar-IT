@@ -90,7 +90,7 @@ class CategoryController extends Controller
                 ->with('error', 'Cannot delete category with existing products.');
         }
 
-        $category->delete();
+        $category->forceDelete();
 
         return redirect()->route('categories.index')
             ->with('success', 'Category deleted successfully.');

@@ -118,7 +118,7 @@ class AccountController extends Controller
                 ->with('error', 'Cannot delete account with journal entries.');
         }
 
-        $account->delete();
+        $account->forceDelete();
 
         return redirect()->route('accounts.index')
             ->with('success', 'Account deleted successfully.');

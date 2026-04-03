@@ -171,7 +171,8 @@ class JournalEntryController extends Controller
                 ->with('error', 'Posted journal entries cannot be deleted.');
         }
 
-        $journalEntry->delete();
+        $journalEntry->items()->delete();
+        $journalEntry->forceDelete();
 
         return redirect()->route('journal-entries.index')
             ->with('success', 'Journal entry deleted successfully.');

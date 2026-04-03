@@ -3,8 +3,10 @@
 namespace App\Http\Controllers;
 
 use App\Models\Payment;
+use App\Models\Product;
 use App\Models\PurchaseReturn;
 use App\Models\Purchase;
+use App\Models\StockMovement;
 use App\Services\AccountingService;
 use Illuminate\Http\Request;
 use Illuminate\Support\Facades\DB;
@@ -188,15 +190,51 @@ class PurchaseReturnController extends Controller
     public function destroy(PurchaseReturn $purchaseReturn)
     {
         $this->authorizePermission('delete purchase-returns');
-        if ($purchaseReturn->status !== 'pending') {
-            return redirect()->route('purchase-returns.index')
-                ->with('error', 'Only pending returns can be deleted.');
-        }
 
-        $purchaseReturn->delete();
+        DB::transaction(function () use ($purchaseReturn) {
+            $purchaseReturn->load(['items.product']);
+
+            if ($purchaseReturn->status === 'completed') {
+                $productIds = $purchaseReturn->items->pluck('product_id')->filter()->unique()->values();
+                Product::whereIn('id', $productIds)->lockForUpdate()->get();
+
+                AccountingService::deleteJournalEntry('purchase_return', $purchaseReturn->id);
+
+                Payment::where('purchase_id', $purchaseReturn->purchase_id)
+                    ->where('amount', '<', 0)
+                    ->where('notes', 'Credit – Purchase Return ' . $purchaseReturn->return_number)
+                    ->forceDelete();
+
+                foreach ($purchaseReturn->items as $ri) {
+                    $ri->loadMissing('product');
+                    if (!$ri->product) {
+                        continue;
+                    }
+                    $notes = "Purchase return deleted: {$purchaseReturn->return_number}";
+                    if ($ri->barcode) {
+                        $ri->product->addBarcode($ri->barcode, true, $notes);
+                    } else {
+                        $ri->product->addStock(
+                            (int) $ri->quantity,
+                            'in',
+                            $notes,
+                            'purchase_return',
+                            $purchaseReturn->id
+                        );
+                    }
+                }
+
+                StockMovement::where('reference_type', 'purchase_return')
+                    ->where('reference_id', $purchaseReturn->id)
+                    ->delete();
+            }
+
+            $purchaseReturn->items()->delete();
+            $purchaseReturn->forceDelete();
+        });
 
         return redirect()->route('purchase-returns.index')
-            ->with('success', 'Purchase return deleted successfully.');
+            ->with('success', 'Purchase return and related accounting records deleted successfully.');
     }
 
     public function approve(PurchaseReturn $purchaseReturn)
