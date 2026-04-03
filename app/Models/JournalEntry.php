@@ -4,7 +4,7 @@ namespace App\Models;
 
 use Illuminate\Database\Eloquent\Model;
 use Illuminate\Database\Eloquent\SoftDeletes;
-use Illuminate\Support\Str;
+use Illuminate\Support\Facades\Cache;
 
 class JournalEntry extends Model
 {
@@ -34,13 +34,46 @@ class JournalEntry extends Model
 
         static::creating(function ($entry) {
             if (empty($entry->entry_number)) {
-                $date = date('Ymd');
-                $count = static::whereDate('created_at', today())->count();
-                $entry->entry_number = 'JE-' . $date . '-' . str_pad($count + 1, 4, '0', STR_PAD_LEFT);
+                $entry->entry_number = static::generateNextEntryNumber();
             }
             if (auth()->check() && empty($entry->created_by)) {
                 $entry->created_by = auth()->id();
             }
+        });
+    }
+
+    /**
+     * Next JE-{Ymd}-{seq} that is unique including soft-deleted rows (DB unique index applies to all rows).
+     * Uses a cache lock so concurrent first-of-day inserts cannot collide; counts include trashed rows.
+     */
+    public static function generateNextEntryNumber(): string
+    {
+        $date = date('Ymd');
+        $prefix = 'JE-' . $date . '-';
+
+        $lock = Cache::lock('journal_entry_seq:' . $date, 15);
+
+        return $lock->block(10, function () use ($prefix) {
+            $maxRow = static::withTrashed()
+                ->where('entry_number', 'like', $prefix . '%')
+                ->orderByDesc('entry_number')
+                ->first();
+
+            $next = 1;
+            if ($maxRow && str_starts_with($maxRow->entry_number, $prefix)) {
+                $suffix = substr($maxRow->entry_number, strlen($prefix));
+                if (is_numeric($suffix)) {
+                    $next = (int) $suffix + 1;
+                }
+            }
+
+            $candidate = $prefix . str_pad((string) $next, 4, '0', STR_PAD_LEFT);
+            while (static::withTrashed()->where('entry_number', $candidate)->exists()) {
+                $next++;
+                $candidate = $prefix . str_pad((string) $next, 4, '0', STR_PAD_LEFT);
+            }
+
+            return $candidate;
         });
     }
 
