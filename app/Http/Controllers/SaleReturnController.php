@@ -91,7 +91,9 @@ class SaleReturnController extends Controller
                 return back()->withErrors(['items' => 'Invalid sale item for this invoice.'])->withInput();
             }
             $alreadyReturned = (int) SaleReturnItem::where('sale_item_id', $saleItem->id)
-                ->whereHas('saleReturn', fn ($q) => $q->where('sale_id', $sale->id))
+                ->whereHas('saleReturn', fn ($q) => $q
+                    ->where('sale_id', $sale->id)
+                    ->whereIn('status', ['pending', 'approved', 'completed']))
                 ->sum('quantity');
             $maxReturnable = $saleItem->quantity - $alreadyReturned;
             if ($itemData['quantity'] > $maxReturnable) {
@@ -174,6 +176,25 @@ class SaleReturnController extends Controller
             'items.*.quantity' => ['required', 'integer', 'min:1'],
             'items.*.reason' => ['nullable', 'string'],
         ]);
+
+        // Validate return quantity does not exceed (original - already returned) per line.
+        // Exclude current draft return from "already returned" while editing.
+        foreach ($validated['items'] as $itemData) {
+            $saleItem = SaleItem::find($itemData['sale_item_id']);
+            if (!$saleItem || $saleItem->sale_id != $saleReturn->sale_id) {
+                return back()->withErrors(['items' => 'Invalid sale item for this invoice.'])->withInput();
+            }
+            $alreadyReturned = (int) SaleReturnItem::where('sale_item_id', $saleItem->id)
+                ->whereHas('saleReturn', fn ($q) => $q
+                    ->where('sale_id', $saleReturn->sale_id)
+                    ->where('id', '!=', $saleReturn->id)
+                    ->whereIn('status', ['pending', 'approved', 'completed']))
+                ->sum('quantity');
+            $maxReturnable = $saleItem->quantity - $alreadyReturned;
+            if ($itemData['quantity'] > $maxReturnable) {
+                return back()->withErrors(['items' => "Return quantity for product cannot exceed {$maxReturnable} (sold: {$saleItem->quantity}, already returned: {$alreadyReturned})."])->withInput();
+            }
+        }
 
         DB::transaction(function () use ($saleReturn, $validated) {
             $saleReturn->update([
@@ -272,6 +293,9 @@ class SaleReturnController extends Controller
     public function complete(SaleReturn $saleReturn)
     {
         $this->authorizePermission('complete sale-returns');
+        if ($saleReturn->status === 'completed') {
+            return back()->with('success', 'Sale return is already completed.');
+        }
         if ($saleReturn->status !== 'approved') {
             return back()->with('error', 'Return must be approved before completion.');
         }
@@ -280,19 +304,10 @@ class SaleReturnController extends Controller
             DB::transaction(function () use ($saleReturn) {
                 $saleReturn->complete();
 
-                // Link to invoice & payment: create refund payment so sale paid/due update
+                // Adjust invoice totals after completed returns so due decreases for due sales.
                 $sale = $saleReturn->sale;
-                $refundAmount = (float) $saleReturn->getDisplayTotalAmount();
-                if ($sale && $refundAmount > 0) {
-                    Payment::create([
-                        'payment_type' => 'customer',
-                        'sale_id' => $sale->id,
-                        'customer_id' => $sale->customer_id,
-                        'amount' => -$refundAmount,
-                        'payment_date' => $saleReturn->return_date,
-                        'payment_method' => settings('payments.default_payment_method', 'cash'),
-                        'notes' => 'Refund – Sale Return ' . $saleReturn->return_number,
-                    ]);
+                if ($sale) {
+                    $this->syncSaleTotalsAfterReturns($sale);
                 }
 
                 AccountingService::recordSaleReturn($saleReturn);
@@ -303,5 +318,29 @@ class SaleReturnController extends Controller
         } catch (\Exception $e) {
             return back()->with('error', $e->getMessage());
         }
+    }
+
+    /**
+     * Recalculate sale net totals after completed sale returns.
+     * Keeps original sale item math as source and subtracts completed returns only.
+     */
+    protected function syncSaleTotalsAfterReturns(Sale $sale): void
+    {
+        $baseSubtotal = (float) ($sale->items()->sum('subtotal') ?? 0);
+        $baseTotal = $baseSubtotal + (float) ($sale->tax_amount ?? 0) - (float) ($sale->discount_amount ?? 0);
+
+        $completedReturns = SaleReturn::where('sale_id', $sale->id)
+            ->where('status', 'completed');
+
+        $returnedSubtotal = (float) ($completedReturns->sum('subtotal') ?? 0);
+        $returnedTotal = (float) ($completedReturns->sum('total_amount') ?? 0);
+
+        $sale->subtotal = max(0, $baseSubtotal - $returnedSubtotal);
+        $sale->total_amount = max(0, $baseTotal - $returnedTotal);
+        $sale->due_amount = max(0, (float) $sale->total_amount - (float) $sale->paid_amount);
+        $sale->payment_status = $sale->due_amount <= 0 && (float) $sale->paid_amount > 0
+            ? 'paid'
+            : ((float) $sale->paid_amount > 0 && $sale->due_amount > 0 ? 'partial' : 'unpaid');
+        $sale->save();
     }
 }
