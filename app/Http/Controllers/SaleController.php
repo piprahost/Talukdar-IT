@@ -22,7 +22,11 @@ class SaleController extends Controller
     public function index(Request $request)
     {
         $this->authorizePermission('view sales');
-        $query = Sale::with(['customer', 'creator'])->latest();
+        $query = Sale::with(['customer', 'creator'])
+            ->withCount(['returns as completed_returns_count' => function ($q) {
+                $q->where('status', 'completed');
+            }])
+            ->latest();
 
         if ($request->has('search') && $request->search) {
             $query->where(function($q) use ($request) {

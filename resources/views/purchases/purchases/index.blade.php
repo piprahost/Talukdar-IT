@@ -129,7 +129,9 @@
                     </td>
                     <td class="text-end fw-bold">৳{{ number_format($purchase->total_amount, 2) }}</td>
                     <td>
-                        @if($purchase->payment_status === 'paid')
+                        @if(($purchase->completed_returns_count ?? 0) > 0)
+                            <span class="badge bg-info text-dark">Adjusted (Return)</span>
+                        @elseif($purchase->payment_status === 'paid')
                             <span class="badge bg-success">✓ Paid</span>
                         @elseif($purchase->payment_status === 'partial')
                             <span class="badge bg-warning text-dark">Partial</span>
@@ -144,19 +146,25 @@
                         </div>
                     </td>
                     <td class="text-center">
-                        @php
-                            $statusBadge = [
-                                'draft'     => ['bg'=>'#f3f4f6','color'=>'#374151'],
-                                'pending'   => ['bg'=>'#fff7ed','color'=>'#c2410c'],
-                                'ordered'   => ['bg'=>'#eff6ff','color'=>'#1d4ed8'],
-                                'partial'   => ['bg'=>'#fefce8','color'=>'#854d0e'],
-                                'received'  => ['bg'=>'#f0fdf4','color'=>'#166534'],
-                                'cancelled' => ['bg'=>'#fef2f2','color'=>'#991b1b'],
-                            ][$purchase->status] ?? ['bg'=>'#f3f4f6','color'=>'#374151'];
-                        @endphp
-                        <span style="background:{{ $statusBadge['bg'] }};color:{{ $statusBadge['color'] }};padding:4px 10px;border-radius:20px;font-size:11px;font-weight:700;">
-                            {{ ucfirst($purchase->status) }}
-                        </span>
+                        @if(($purchase->completed_returns_count ?? 0) > 0)
+                            <span style="background:#e0f2fe;color:#0c4a6e;padding:4px 10px;border-radius:20px;font-size:11px;font-weight:700;">
+                                Returned
+                            </span>
+                        @else
+                            @php
+                                $statusBadge = [
+                                    'draft'     => ['bg'=>'#f3f4f6','color'=>'#374151'],
+                                    'pending'   => ['bg'=>'#fff7ed','color'=>'#c2410c'],
+                                    'ordered'   => ['bg'=>'#eff6ff','color'=>'#1d4ed8'],
+                                    'partial'   => ['bg'=>'#fefce8','color'=>'#854d0e'],
+                                    'received'  => ['bg'=>'#f0fdf4','color'=>'#166534'],
+                                    'cancelled' => ['bg'=>'#fef2f2','color'=>'#991b1b'],
+                                ][$purchase->status] ?? ['bg'=>'#f3f4f6','color'=>'#374151'];
+                            @endphp
+                            <span style="background:{{ $statusBadge['bg'] }};color:{{ $statusBadge['color'] }};padding:4px 10px;border-radius:20px;font-size:11px;font-weight:700;">
+                                {{ ucfirst($purchase->status) }}
+                            </span>
+                        @endif
                     </td>
                     <td class="text-center">
                         <div class="btn-group btn-group-sm">

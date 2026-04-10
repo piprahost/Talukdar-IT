@@ -18,7 +18,11 @@ class PurchaseController extends Controller
     public function index(Request $request)
     {
         $this->authorizePermission('view purchases');
-        $query = Purchase::with(['supplier', 'creator'])->latest();
+        $query = Purchase::with(['supplier', 'creator'])
+            ->withCount(['returns as completed_returns_count' => function ($q) {
+                $q->where('status', 'completed');
+            }])
+            ->latest();
 
         if ($request->has('search') && $request->search) {
             $query->where(function($q) use ($request) {

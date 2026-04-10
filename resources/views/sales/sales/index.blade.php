@@ -121,7 +121,12 @@
                         <td><span class="badge bg-secondary">{{ $sale->items()->count() }}</span></td>
                         <td><strong>৳{{ number_format($sale->total_amount, 2) }}</strong></td>
                         <td>
-                            @if($sale->payment_status === 'paid')
+                            @if(($sale->completed_returns_count ?? 0) > 0)
+                                <span class="badge bg-info text-dark">Adjusted (Return)</span>
+                                @if($sale->due_amount > 0)
+                                    <div class="small text-danger mt-1">Due ৳{{ number_format($sale->due_amount, 0) }}</div>
+                                @endif
+                            @elseif($sale->payment_status === 'paid')
                                 <span class="badge bg-success">Paid</span>
                             @elseif($sale->payment_status === 'partial')
                                 <span class="badge bg-warning text-dark">Partial</span>
@@ -130,9 +135,13 @@
                             @endif
                         </td>
                         <td>
-                            <span class="badge {{ $sale->status === 'completed' ? 'bg-success' : ($sale->status === 'cancelled' ? 'bg-danger' : 'bg-warning text-dark') }}">
-                                {{ ucfirst($sale->status) }}
-                            </span>
+                            @if(($sale->completed_returns_count ?? 0) > 0)
+                                <span class="badge bg-info text-dark">Returned</span>
+                            @else
+                                <span class="badge {{ $sale->status === 'completed' ? 'bg-success' : ($sale->status === 'cancelled' ? 'bg-danger' : 'bg-warning text-dark') }}">
+                                    {{ ucfirst($sale->status) }}
+                                </span>
+                            @endif
                         </td>
                         <td class="text-end" onclick="event.stopPropagation();">
                             <div class="btn-group btn-group-sm">
