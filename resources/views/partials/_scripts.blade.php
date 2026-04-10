@@ -90,5 +90,7 @@
     }
 </script>
 
+@include('partials._number_clear_zero_inputs')
+
 @stack('scripts')
 

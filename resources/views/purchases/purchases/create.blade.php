@@ -140,17 +140,17 @@
                         <div class="p-4 pt-3">
                             <div class="mb-3">
                                 <label for="tax_amount" class="form-label small fw-semibold">Tax (৳)</label>
-                                <input type="number" step="0.01" class="form-control form-control-sm @error('tax_amount') is-invalid @enderror" id="tax_amount" name="tax_amount" value="{{ old('tax_amount', 0) }}" oninput="calculateTotals()">
+                                <input type="number" step="0.01" class="form-control form-control-sm js-clear-zero @error('tax_amount') is-invalid @enderror" id="tax_amount" name="tax_amount" value="{{ old('tax_amount', 0) }}" oninput="calculateTotals()">
                                 @error('tax_amount')<div class="invalid-feedback">{{ $message }}</div>@enderror
                             </div>
                             <div class="mb-3">
                                 <label for="discount_amount" class="form-label small fw-semibold">Discount (৳)</label>
-                                <input type="number" step="0.01" class="form-control form-control-sm @error('discount_amount') is-invalid @enderror" id="discount_amount" name="discount_amount" value="{{ old('discount_amount', 0) }}" oninput="calculateTotals()">
+                                <input type="number" step="0.01" class="form-control form-control-sm js-clear-zero @error('discount_amount') is-invalid @enderror" id="discount_amount" name="discount_amount" value="{{ old('discount_amount', 0) }}" oninput="calculateTotals()">
                                 @error('discount_amount')<div class="invalid-feedback">{{ $message }}</div>@enderror
                             </div>
                             <div class="mb-3">
                                 <label for="paid_amount" class="form-label small fw-semibold">Paid (৳)</label>
-                                <input type="number" step="0.01" class="form-control form-control-sm @error('paid_amount') is-invalid @enderror" id="paid_amount" name="paid_amount" value="{{ old('paid_amount', 0) }}" oninput="calculateTotals()">
+                                <input type="number" step="0.01" class="form-control form-control-sm js-clear-zero @error('paid_amount') is-invalid @enderror" id="paid_amount" name="paid_amount" value="{{ old('paid_amount', 0) }}" oninput="calculateTotals()">
                                 @error('paid_amount')<div class="invalid-feedback">{{ $message }}</div>@enderror
                             </div>
                             <div class="p-3 rounded-3 mb-3" style="background:#f8fafc;border:1px solid #e2e8f0;">
@@ -512,11 +512,11 @@ function updateScannedItemsTable() {
             </td>
             <td><strong>${qty}</strong></td>
             <td>
-                <input type="number" step="0.01" class="form-control form-control-sm" value="${item.cost_price}" 
+                <input type="number" step="0.01" class="form-control form-control-sm js-clear-zero" value="${item.cost_price}" 
                        onchange="updateCostPrice('${productId}', this.value)" style="width: 120px;">
             </td>
             <td>
-                <input type="number" step="0.01" class="form-control form-control-sm" value="${item.selling_price || ''}" 
+                <input type="number" step="0.01" class="form-control form-control-sm js-clear-zero" data-zero-restore="" value="${item.selling_price || ''}" 
                        onchange="updateSellingPrice('${productId}', this.value)" placeholder="Optional" style="width: 120px;">
             </td>
             <td><strong>৳${rowSubtotal.toFixed(2)}</strong></td>

@@ -358,11 +358,11 @@ function renderCart() {
                     <div><code class="small">${escapeHtml(line.barcode)}</code></div>
                     <div class="cost-cell">${costLabel}</div>
                     <div>
-                        <input type="number" step="0.01" min="0" value="${line.unit_price}"
+                        <input type="number" step="0.01" min="0" class="js-clear-zero" value="${line.unit_price}"
                             onchange="updateCartLinePrice(${line.uid}, this.value)" aria-label="Sell price">
                     </div>
                     <div>
-                        <input type="number" step="0.01" min="0" value="${line.discount || 0}"
+                        <input type="number" step="0.01" min="0" class="js-clear-zero" data-zero-restore="0" value="${line.discount || 0}"
                             onchange="updateCartLineDiscount(${line.uid}, this.value)" aria-label="Discount">
                     </div>
                     <div class="d-flex align-items-center gap-2 justify-content-end">

@@ -111,27 +111,27 @@
                         <div class="row g-3">
                             <div class="col-6 col-md-3">
                                 <label class="form-label fw-semibold small text-muted">Reorder level</label>
-                                <input type="number" min="0" class="form-control form-control-sm @error('reorder_level') is-invalid @enderror"
-                                       name="reorder_level" value="{{ old('reorder_level', 5) }}" placeholder="5">
+                                <input type="number" min="0" class="form-control form-control-sm js-clear-zero @error('reorder_level') is-invalid @enderror"
+                                       name="reorder_level" value="{{ old('reorder_level', 5) }}" data-zero-restore="{{ old('reorder_level', 5) }}" placeholder="5">
                                 @error('reorder_level')<div class="invalid-feedback">{{ $message }}</div>@enderror
                                 <div class="form-text small">Alert when stock ≤ this</div>
                             </div>
                             <div class="col-6 col-md-3">
                                 <label class="form-label fw-semibold small text-muted">Min stock</label>
-                                <input type="number" min="0" class="form-control form-control-sm @error('min_stock') is-invalid @enderror"
-                                       name="min_stock" value="{{ old('min_stock', 1) }}" placeholder="1">
+                                <input type="number" min="0" class="form-control form-control-sm js-clear-zero @error('min_stock') is-invalid @enderror"
+                                       name="min_stock" value="{{ old('min_stock', 1) }}" data-zero-restore="{{ old('min_stock', 1) }}" placeholder="1">
                                 @error('min_stock')<div class="invalid-feedback">{{ $message }}</div>@enderror
                             </div>
                             <div class="col-6 col-md-3">
                                 <label class="form-label fw-semibold small text-muted">Max stock</label>
-                                <input type="number" min="0" class="form-control form-control-sm @error('max_stock') is-invalid @enderror"
-                                       name="max_stock" value="{{ old('max_stock', 100) }}" placeholder="100">
+                                <input type="number" min="0" class="form-control form-control-sm js-clear-zero @error('max_stock') is-invalid @enderror"
+                                       name="max_stock" value="{{ old('max_stock', 100) }}" data-zero-restore="{{ old('max_stock', 100) }}" placeholder="100">
                                 @error('max_stock')<div class="invalid-feedback">{{ $message }}</div>@enderror
                             </div>
                             <div class="col-6 col-md-3">
                                 <label class="form-label fw-semibold small text-muted">Warranty (days)</label>
-                                <input type="number" min="0" class="form-control form-control-sm @error('warranty_period') is-invalid @enderror"
-                                       name="warranty_period" value="{{ old('warranty_period') }}" placeholder="0">
+                                <input type="number" min="0" class="form-control form-control-sm js-clear-zero @error('warranty_period') is-invalid @enderror"
+                                       name="warranty_period" value="{{ old('warranty_period') }}" data-zero-restore="" placeholder="0">
                                 @error('warranty_period')<div class="invalid-feedback">{{ $message }}</div>@enderror
                                 <div class="form-text small">0 = none</div>
                             </div>
@@ -159,7 +159,7 @@
                                 <label class="form-label fw-semibold">Cost price <span class="text-danger">*</span></label>
                                 <div class="input-group input-group-sm">
                                     <span class="input-group-text">৳</span>
-                                    <input type="number" step="0.01" min="0" class="form-control @error('cost_price') is-invalid @enderror"
+                                    <input type="number" step="0.01" min="0" class="form-control js-clear-zero @error('cost_price') is-invalid @enderror"
                                            name="cost_price" id="cost_price" value="{{ old('cost_price', 0) }}" required oninput="updateMargin()">
                                 </div>
                                 @error('cost_price')<div class="invalid-feedback d-block">{{ $message }}</div>@enderror
@@ -168,7 +168,7 @@
                                 <label class="form-label fw-semibold">Selling price <span class="text-danger">*</span></label>
                                 <div class="input-group input-group-sm">
                                     <span class="input-group-text">৳</span>
-                                    <input type="number" step="0.01" min="0" class="form-control @error('selling_price') is-invalid @enderror"
+                                    <input type="number" step="0.01" min="0" class="form-control js-clear-zero @error('selling_price') is-invalid @enderror"
                                            name="selling_price" id="selling_price" value="{{ old('selling_price', 0) }}" required oninput="updateMargin()">
                                 </div>
                                 @error('selling_price')<div class="invalid-feedback d-block">{{ $message }}</div>@enderror
@@ -177,8 +177,8 @@
                                 <label class="form-label fw-semibold small text-muted">Discount price</label>
                                 <div class="input-group input-group-sm">
                                     <span class="input-group-text">৳</span>
-                                    <input type="number" step="0.01" min="0" class="form-control @error('discount_price') is-invalid @enderror"
-                                           name="discount_price" value="{{ old('discount_price') }}" placeholder="0">
+                                    <input type="number" step="0.01" min="0" class="form-control js-clear-zero @error('discount_price') is-invalid @enderror"
+                                           name="discount_price" value="{{ old('discount_price') }}" data-zero-restore="" placeholder="0">
                                 </div>
                                 @error('discount_price')<div class="invalid-feedback d-block">{{ $message }}</div>@enderror
                             </div>
