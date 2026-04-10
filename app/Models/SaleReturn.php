@@ -149,7 +149,11 @@ class SaleReturn extends Model
             throw new \Exception('Return must be approved before completion.');
         }
         $this->status = 'completed';
-        $this->updateStock();
         $this->save();
+
+        // Persist status before stock restore so child items loading `saleReturn` see `completed` from DB.
+        $this->unsetRelation('items');
+        $this->load(['items.product', 'items.saleItem']);
+        $this->updateStock();
     }
 }

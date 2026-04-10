@@ -73,17 +73,21 @@ class SaleReturnItem extends Model
         }
 
         if ($this->product && $this->saleReturn->status === 'completed') {
-            $barcode = $this->barcode ?? 'N/A';
-            $notes = "Sale Return: {$this->saleReturn->return_number}" . ($this->barcode ? " - Barcode: {$this->barcode}" : "");
-            
-            // Add stock back when returning sold items
-            if ($this->barcode) {
-                // If barcode exists, add it back to product barcodes and increment stock
-                $this->product->addBarcode($this->barcode, true, $notes);
+            $barcode = trim((string) ($this->barcode ?? ''));
+            if ($barcode === '' && $this->sale_item_id) {
+                if (!$this->relationLoaded('saleItem')) {
+                    $this->load('saleItem');
+                }
+                $barcode = trim((string) ($this->saleItem->barcode ?? ''));
+            }
+
+            $notes = "Sale Return: {$this->saleReturn->return_number}" . ($barcode !== '' ? " - Barcode: {$barcode}" : '');
+
+            if ($barcode !== '') {
+                $this->product->addBarcode($barcode, true, $notes);
             } else {
-                // If no barcode, just add quantity to stock
                 $this->product->addStock(
-                    $this->quantity,
+                    (int) $this->quantity,
                     'in',
                     $notes,
                     'sale_return',

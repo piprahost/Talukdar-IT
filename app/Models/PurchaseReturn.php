@@ -130,7 +130,10 @@ class PurchaseReturn extends Model
             throw new \Exception('Return must be approved before completion.');
         }
         $this->status = 'completed';
-        $this->updateStock();
         $this->save();
+
+        $this->unsetRelation('items');
+        $this->load(['items.product', 'items.purchaseItem']);
+        $this->updateStock();
     }
 }
